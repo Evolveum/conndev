@@ -4,10 +4,9 @@
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
  */
-package com.evolveum.polygon.scim.rest;
+package com.evolveum.polygon.scim.rest.schema;
 
-public interface RetrievableContext {
-
+public class ConnIdAttributeMappingBuilder {
 
 
 }
