@@ -1,0 +1,29 @@
+package com.evolveum.polygon.conndev.build;
+
+import com.evolveum.polygon.conndev.api.FilterSpecification;
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+
+public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> {
+
+    /**
+     * Sets whether the search endpoint supports filtering with empty filter criteria.
+     *
+     * Only one such endpoint / custom script may be defined for whole search handler.
+     *
+     * @param emptyFilterSupported true if the endpoint should be used for searches without filters.
+     */
+    R emptyFilterSupported(boolean emptyFilterSupported);
+
+    FilterSpecification.Attribute attribute(String name);
+
+    R supportedFilter(FilterSpecification filterSpec);
+
+    R supportedFilter(FilterSpecification filterSpec, @DelegatesTo(value = FilterSupportImplementation.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+
+    interface FilterSupportImplementation {
+
+    }
+
+
+}
