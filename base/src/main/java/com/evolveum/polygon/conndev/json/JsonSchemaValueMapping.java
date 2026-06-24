@@ -41,8 +41,8 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
 
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
-            if (value instanceof Integer) {
-                return new IntNode((Integer) value);
+            if (value instanceof Integer integer) {
+                return new IntNode(integer);
             }
             return super.toWireValue(value);
         }

@@ -13,8 +13,8 @@ public interface BatchAwareResultHandler extends ResultsHandler {
     void batchFinished();
 
     static void batchFinished(ResultsHandler handler) {
-        if (handler instanceof BatchAwareResultHandler) {
-            ((BatchAwareResultHandler) handler).batchFinished();
+        if (handler instanceof BatchAwareResultHandler resultHandler) {
+            resultHandler.batchFinished();
         }
     }
 }

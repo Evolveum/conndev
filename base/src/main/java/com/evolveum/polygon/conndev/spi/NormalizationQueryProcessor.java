@@ -62,8 +62,7 @@ public class NormalizationQueryProcessor implements ObjectSearchOperation {
         }
         Class<Filter> filterClass = (Class<Filter>) filter.getClass();
 
-        if (filter instanceof AttributeFilter) {
-            var tmpFilter = (AttributeFilter) filter;
+        if (filter instanceof AttributeFilter tmpFilter) {
             var attr = tmpFilter.getAttribute().getValue();
             var attrName = tmpFilter.getName();
 
