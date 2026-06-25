@@ -68,14 +68,14 @@ objectClass("User") {
     }
     attribute("createdAt") {
         jsonType "string";
-        openApiFormat "dateTime";
+        openApiFormat "date-time";
         creatable false;
         updateable false;
         description "Time of creation";
     }
     attribute("updatedAt") {
         jsonType "string";
-        openApiFormat "dateTime";
+        openApiFormat "date-time";
         creatable false;
         updateable false;
         description "Time of the most recent change to the user";

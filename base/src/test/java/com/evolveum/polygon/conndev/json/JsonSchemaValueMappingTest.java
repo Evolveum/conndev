@@ -14,8 +14,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Base64;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.*;
 
 public class JsonSchemaValueMappingTest {
 
@@ -149,8 +148,7 @@ public class JsonSchemaValueMappingTest {
 
         var result = JsonSchemaValueMapping.BINARY.toConnIdValue(textNode);
 
-        assertThat(result).isNotNull();
-        assertThat((result instanceof byte[])).isTrue();
+        assertThat(result).isNotNull().isInstanceOf(byte[].class);
         assertThat(Arrays.equals((byte[]) result, original)).isTrue();
     }
 
@@ -193,9 +191,9 @@ public class JsonSchemaValueMappingTest {
 
     @Test
     public void test_from_unknown_returnsNull() {
-        assertThat(JsonSchemaValueMapping.from("unknown-type")).isNull();
-        assertThat(JsonSchemaValueMapping.from("int")).isNull();
-        assertThat(JsonSchemaValueMapping.from("text")).isNull();
+        assertThatThrownBy(() -> JsonSchemaValueMapping.from("unknown-type"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("unknown-type");
     }
 
 }

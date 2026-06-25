@@ -12,6 +12,7 @@ import org.identityconnectors.framework.common.objects.filter.ContainsFilter;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -25,7 +26,7 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface FilterSpecification {
 
-    static FilterSpecification EMPTY_FILTER = f -> f == null;
+    static FilterSpecification EMPTY_FILTER = Objects::isNull;
 
     static FilterSpecification.SingleValueAttribute UID_EQUALS_SINGLE_VALUE = FilterSpecification.attribute(Uid.NAME).eq().anySingleValue();
 
@@ -50,7 +51,7 @@ public interface FilterSpecification {
 
 
     static FilterSpecification.Attribute attribute(Predicate<AttributeFilter> filterPredicate) {
-        return filter -> filterPredicate.test((AttributeFilter) filter);
+        return filterPredicate::test;
     }
 
     /**
@@ -83,7 +84,7 @@ public interface FilterSpecification {
          *
          */
         default FilterSpecification.Attribute eq() {
-            return chain(f -> f instanceof EqualsFilter);
+            return chain(EqualsFilter.class::isInstance);
         }
 
         /**
@@ -92,7 +93,7 @@ public interface FilterSpecification {
          * @return A new {@link Attribute} specification that checks if an attribute contains a specific value.
          */
         default FilterSpecification.Attribute contains() {
-            return chain(f -> f instanceof ContainsFilter);
+            return chain(ContainsFilter.class::isInstance);
         }
 
         /**
@@ -129,7 +130,7 @@ public interface FilterSpecification {
          */
         public Object checkOnlyValue(Filter filter) {
             if (matches(filter) && filter instanceof AttributeFilter attrFilter) {
-                return attrFilter.getAttribute().getValue().getFirst();
+                return attrFilter.getAttribute().getValue().get(0);
             }
             return null;
         }

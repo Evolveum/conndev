@@ -21,7 +21,6 @@ import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.BOOLEAN;
 import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.INTEGER;
 import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.NUMBER;
 import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.STRING;
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.from;
 
 /**
  * Provides a mapping between OpenAPI data formats, their corresponding JSON
@@ -391,7 +390,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
 
     public static JsonValueMapping from(String jsonType, String openApiFormat) {
         for (OpenApiValueMapping am : values()) {
-            if (am.openApiFormat.equals(openApiFormat)) {
+            if (openApiFormat != null && openApiFormat.equals(am.openApiFormat)) {
                 return am;
             }
         }

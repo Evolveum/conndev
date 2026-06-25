@@ -24,12 +24,14 @@ objectClass("User") {
         description "the email for the new user, required if password empty";
     }
     attribute("groups") {
-        jsonType "array";
+        jsonType "string";
         description "the groups for the new user";
+        multiValued true
     }
     attribute("subadmin") {
-        jsonType "array";
-        description "the groups in which the new user is subadmin";
+        jsonType "string";
+        description "the groups in which the new user is subadmin"
+        multiValued true;
     }
     attribute("quota") {
         jsonType "string";

@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -15,8 +16,14 @@ public interface SchemaBuilder {
 
     ObjectClassSchemaBuilder objectClass(String name);
 
-    ObjectClassSchemaBuilder objectClass(String name, @DelegatesTo(ObjectClassSchemaBuilder.class) @Script.Initialization Closure<?> closure);
+    default ObjectClassSchemaBuilder objectClass(String name,
+                                         @Script.Initialization
+                                         @DelegatesTo(ObjectClassSchemaBuilder.class)  Closure<?> closure) {
+        return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));
+    }
 
-    RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) @Script.Initialization Closure<?> closure);
+    RelationshipBuilder relationship(String name,
+                                     @Script.Initialization
+                                     @DelegatesTo(RelationshipBuilder.class) Closure<?> closure);
 
 }

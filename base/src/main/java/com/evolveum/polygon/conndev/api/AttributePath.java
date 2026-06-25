@@ -198,10 +198,9 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
         Component previous = null;
         Component current = null;
 
-        var it =  components.iterator();
-        while(it.hasNext()) {
+        for (Component component : components) {
             previous = current;
-            current = it.next();
+            current = component;
             current.toString(ret, previous);
         }
         return ret.toString();

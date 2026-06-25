@@ -23,7 +23,7 @@ objectClass("Project") {
         description "Indicates whether the project is currently active or already archived\t";
     }
     attribute("statusExplanation") {
-        jsonType "formattable";
+        complexType "Formattable";
         description "A text detailing and explaining why the project has the reported status";
     }
     attribute("public") {
@@ -31,7 +31,7 @@ objectClass("Project") {
         description "Indicates whether the project is accessible for everybody";
     }
     attribute("description") {
-        jsonType "formattable";
+        complexType "Formattable";
     }
     attribute("createdAt") {
         jsonType "string";

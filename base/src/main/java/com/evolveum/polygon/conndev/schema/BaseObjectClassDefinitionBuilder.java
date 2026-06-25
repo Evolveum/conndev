@@ -36,6 +36,7 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
     private final BaseSchemaBuilder parent;
     Map<String, BaseAttributeBuilder> nativeAttributes = new HashMap<>();
     private String description;
+    private boolean embedded;
 
     public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, String name) {
         this.name = name;
@@ -45,22 +46,23 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
 
     @Override
     public BaseAttributeBuilder attribute(String name) {
-        return nativeAttributes.computeIfAbsent(name, (k) -> new BaseAttributeBuilder(this, k));
+        return nativeAttributes.computeIfAbsent(name, key -> new BaseAttributeBuilder(this, key));
     }
 
     @Override
     public BaseAttributeBuilder reference(String name) {
-        var builder = nativeAttributes.computeIfAbsent(name, (k) -> {
-            var ret = new BaseAttributeBuilder(BaseObjectClassDefinitionBuilder.this, k);
+        var builder = nativeAttributes.computeIfAbsent(name, key -> {
+            var ret = new BaseAttributeBuilder(BaseObjectClassDefinitionBuilder.this, key);
             ret.connIdBuilder.setType(ConnectorObjectReference.class);
             return ret;
         });
-        return (BaseAttributeBuilder) builder;
+        return builder;
     }
 
     @Override
     public ObjectClassSchemaBuilder embedded(boolean embedded) {
-        connIdBuilder.setEmbedded(true);
+        this.embedded = embedded;
+        connIdBuilder.setEmbedded(embedded);
         return this;
     }
 
@@ -112,6 +114,9 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
             connIdAttrs.put(attribute.connId().getName(), attribute);
             nativeAttrs.put(attribute.remoteName(), attribute);
         }
+        if (description != null) {
+            connIdBuilder.setDescription(description);
+        }
 
         return new BaseObjectClassDefinition(connIdBuilder.build(), nativeAttrs, connIdAttrs);
     }
@@ -120,9 +125,8 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
         return description;
     }
 
-    public boolean embedded() {
-        // Embedded means non-manageable object
-        return false;
+public boolean embedded() {
+        return embedded;
     }
 
     public Iterable<BaseAttributeBuilder> allAttributes() {

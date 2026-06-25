@@ -83,6 +83,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
         }
     },
     BINARY("binary", "A binary value", BinaryNode.class, TextNode.class) {
+        @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof byte[] byteArrayVal) {
                 return new BinaryNode(byteArrayVal);
@@ -108,10 +109,13 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
     private final Class<?> connidClass;
     private final Class<? extends JsonNode> primaryWireType;
     private final String jsonType;
+    private final String description;
 
+    @SafeVarargs
     JsonSchemaValueMapping(String jsonType, String description,
                            Class<?> connidClass, Class<? extends JsonNode>... jsonClass) {
         this.jsonType = jsonType;
+        this.description = description;
         this.primaryWireType = jsonClass[0];
         this.availableWireTypes = Set.of(jsonClass);
         this.connidClass = connidClass;
@@ -130,6 +134,10 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
     @Override
     public Class<?> connIdType() {
         return connidClass;
+    }
+
+    public String description() {
+        return description;
     }
 
     @Override
@@ -161,6 +169,6 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
                 return am;
             }
         }
-        return null;
+        throw new IllegalArgumentException("Unknown json schema type: " + jsonType);
     }
 }
