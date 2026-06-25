@@ -147,7 +147,7 @@ public interface AttributeBuilder {
         JsonMapping path(AttributePath path);
     }
 
-    interface ConnIdMapping {
+    interface ConnIdMapping extends ConnIdBuiltInAttribute.Mixin {
 
         ConnIdMapping name(String name);
 
