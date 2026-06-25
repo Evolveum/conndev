@@ -55,7 +55,7 @@ public class GroovyClosures {
             executionAware.beforeExecution();
         }
         @SuppressWarnings("unchecked")
-        T ret = (T) closure.call();
+        var ret = (T) closure.call();
         if (delegate instanceof ClosureExecutionAware executionAware) {
             executionAware.afterExecution();
         }
@@ -66,7 +66,7 @@ public class GroovyClosures {
         return (T input) -> {
             @SuppressWarnings("unchecked")
             var copy = (Closure<R>) closure.clone();
-            return (R) copy.call(input);
+            return copy.call(input);
         };
 
     }
