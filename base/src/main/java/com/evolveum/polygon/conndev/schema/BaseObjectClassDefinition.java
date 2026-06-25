@@ -31,7 +31,7 @@ public class BaseObjectClassDefinition {
     }
 
     public ConnectorObjectBuilder newObjectBuilder() {
-        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+        var builder = new ConnectorObjectBuilder();
         builder.setObjectClass(clazz);
         return builder;
     }

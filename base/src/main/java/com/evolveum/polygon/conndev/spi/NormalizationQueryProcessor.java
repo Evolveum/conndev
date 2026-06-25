@@ -154,7 +154,7 @@ public class NormalizationQueryProcessor implements ObjectSearchOperation {
     Filter createReversedFiler(Class<Filter> clazz, Attribute attr) {
 
         for (Constructor<?> ctor : clazz.getConstructors()) {
-            Class<?>[] params = ctor.getParameterTypes();
+            var params = ctor.getParameterTypes();
             if (params.length == 1) {
                 Class<?> paramType = params[0];
                 if (paramType.isAssignableFrom(attr.getClass())) {

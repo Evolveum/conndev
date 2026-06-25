@@ -56,7 +56,7 @@ public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, J
 
     @Override
     public EmbeddedObject toConnIdValue(JsonNode value) throws IllegalArgumentException {
-        BaseObjectClassDefinition objectClass = schema();
+        var objectClass = schema();
         if (value instanceof ObjectNode remoteObj) {
             if (remoteObj.isEmpty()) {
                 return null;
@@ -65,7 +65,7 @@ public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, J
             for (var attributeDef : objectClass.attributes()) {
                 var valueMapping = attributeDef.mapping(JsonAttributeMapping.class);
                 if (valueMapping != null) {
-                    Object connIdValues = valueMapping.valuesFromObject(remoteObj);
+                    var connIdValues = valueMapping.valuesFromObject(remoteObj);
                     if (connIdValues != null) {
                         attributes.add(attributeDef.attributeOf(connIdValues));
                     }

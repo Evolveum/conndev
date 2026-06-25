@@ -39,7 +39,7 @@ public class FilterBasedSearchDispatcher<HC> implements ObjectSearchOperation {
         var implementation = findImplementation(filter, operationOptions);
         if (implementation == null && IS_UID_FILTER_WITH_SINGLE_VALUE.matches(rewrittenFilter)) {
             // Let's try with name filter
-            EqualsFilter eqFilter = (EqualsFilter) rewrittenFilter;
+            var eqFilter = (EqualsFilter) rewrittenFilter;
             if (eqFilter.getAttribute() instanceof Uid uid) {
                 var nameHint = uid.getNameHint();
                 if (nameHint != null) {
