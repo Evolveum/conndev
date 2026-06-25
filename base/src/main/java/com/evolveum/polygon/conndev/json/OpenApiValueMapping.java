@@ -90,7 +90,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof ZonedDateTime zonedDateTimeVal) {
-                return JsonNodeFactory.instance.textNode(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(zonedDateTimeVal.toInstant()));
+                return JsonNodeFactory.instance.textNode(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(zonedDateTimeVal));
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
