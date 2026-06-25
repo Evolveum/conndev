@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.build;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -38,7 +39,10 @@ public interface ObjectClassSchemaBuilder {
      * @param closure a closure that configures the {@link AttributeBuilder} instance for the specified attribute
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AttributeBuilder attribute(String name, @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    AttributeBuilder attribute(String name,
+                               @Script.Initialization
+                               @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                               Closure<?> closure);
 
     /**
      * Creates / gets reference definition with the specified name, applying a closure to further configure it.
@@ -48,5 +52,15 @@ public interface ObjectClassSchemaBuilder {
      * @return an instance of {@link ReferenceAttributeBuilder} for further configuration of the reference attribute
      */
     ReferenceAttributeBuilder reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure);
+
+    /**
+     * Maps a ConnId builtin attribute name (like "UID", "NAME") to a protocol attribute.
+     * Supported built-in names: "UID", "NAME".
+     *
+     * @param connIdName the ConnId attribute name (must be "UID" or "NAME")
+     * @param attributeName the protocol (JSON) attribute name to bind it to
+     * @return this builder for chaining
+     */
+    ObjectClassSchemaBuilder connIdAttribute(String connIdName, String attributeName);
 
 }
