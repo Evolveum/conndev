@@ -65,7 +65,7 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
     }
 
     public Attribute onlyAttribute() {
-        if (components.size() == 1 && components.get(0) instanceof Attribute attribute) {
+        if (components.size() == 1 && components.getFirst() instanceof Attribute attribute) {
             return attribute;
         }
         return null;

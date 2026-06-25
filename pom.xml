@@ -6,8 +6,8 @@
   ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.evolveum.polygon.conndev</groupId>
@@ -19,8 +19,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
         <polygon.version>1.5.3.0-M3</polygon.version>
         <connId.version>1.7.0.0-SNAPSHOT</connId.version>
         <surefire.version>3.5.2</surefire.version>
@@ -54,7 +52,7 @@
             <url>https://nexus.evolveum.com/nexus/repository/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
-    
+
     <modules>
         <module>base</module>
     </modules>
@@ -84,6 +82,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -112,10 +111,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.12.1</version>
+                    <version>3.15.0</version>
                     <configuration>
-                        <source>${project.source.version}</source>
-                        <target>${project.source.version}</target>
+                        <release>${project.source.version}</release>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -179,7 +177,28 @@
                         <apiKey>${env.DTRACK_TOKEN}</apiKey>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>6.42.0</version>
+                    <configuration>
+                        <exportDatatables>true</exportDatatables>
+                        <activeRecipes>
+                            <recipe>org.openrewrite.java.OrderImports</recipe>
+                            <recipe>org.openrewrite.java.RemoveUnusedImports</recipe>
+                            <recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
+                        </activeRecipes>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-migrate-java</artifactId>
+                            <version>3.38.0</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
+
         </pluginManagement>
     </build>
 
@@ -200,6 +219,17 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>rewrite</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openrewrite.maven</groupId>
+                        <artifactId>rewrite-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

@@ -7,12 +7,12 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.filter.Filter;
-import org.identityconnectors.framework.common.exceptions.ConnectorException;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -6,16 +6,16 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
-import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
-import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.ValueMappingBuilder;
+import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
+import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;

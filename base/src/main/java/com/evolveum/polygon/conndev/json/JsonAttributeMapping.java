@@ -6,9 +6,9 @@
  */
 package com.evolveum.polygon.conndev.json;
 
-import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
+import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -78,7 +78,7 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
             return;
         }
         var name = path.onlyAttribute();
-        parent.set(name.name(),values.size() == 1 ? values.get(0) : parent.arrayNode().addAll(values));
+        parent.set(name.name(),values.size() == 1 ? values.getFirst() : parent.arrayNode().addAll(values));
 
     }
 }

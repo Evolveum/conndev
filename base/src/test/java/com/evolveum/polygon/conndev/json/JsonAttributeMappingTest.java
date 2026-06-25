@@ -7,8 +7,6 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.spi.ValueMapping;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.identityconnectors.framework.common.objects.Attribute;
@@ -115,7 +113,7 @@ public class JsonAttributeMappingTest {
 
         assertThat(result).isNotNull();
         assertThat(result.size()).isEqualTo(3);
-        assertThat(result.get(0)).isEqualTo("one");
+        assertThat(result.getFirst()).isEqualTo("one");
         assertThat(result.get(1)).isEqualTo("two");
         assertThat(result.get(2)).isEqualTo("three");
     }
@@ -136,7 +134,7 @@ public class JsonAttributeMappingTest {
 
         assertThat(result).isNotNull();
         assertThat(result.size()).isEqualTo(1);
-        assertThat(result.get(0)).isEqualTo("single");
+        assertThat(result.getFirst()).isEqualTo("single");
     }
 
     @Test

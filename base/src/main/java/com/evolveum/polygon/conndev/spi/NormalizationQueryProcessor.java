@@ -11,7 +11,8 @@ import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
-import org.identityconnectors.framework.common.objects.filter.*;
+import org.identityconnectors.framework.common.objects.filter.AttributeFilter;
+import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -69,11 +70,11 @@ public class NormalizationQueryProcessor implements ObjectSearchOperation {
             if (Name.NAME.equals(attrName)) {
 
                 return createReversedFiler(filterClass, AttributeBuilder.build(attrName,
-                        restoreName(attr.get(0).toString()).getValue()));
+                        restoreName(attr.getFirst().toString()).getValue()));
             } else if (Uid.NAME.equals(attrName)) {
 
                 return createReversedFiler(filterClass, AttributeBuilder.build(attrName,
-                       restoreUid(attr.get(0).toString()).getValue()));
+                       restoreUid(attr.getFirst().toString()).getValue()));
             }
         }
         return filter;

@@ -1,18 +1,18 @@
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import com.evolveum.polygon.conndev.build.UpdateOperationBuilder;
+import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
-
-import static com.evolveum.polygon.conndev.spi.AttributeAwareOperationHandler.Capability;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.evolveum.polygon.conndev.spi.AttributeAwareOperationHandler.Capability;
 
 public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
 

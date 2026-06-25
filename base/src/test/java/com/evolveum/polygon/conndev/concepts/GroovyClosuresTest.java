@@ -9,10 +9,10 @@ package com.evolveum.polygon.conndev.concepts;
 import groovy.lang.Closure;
 import org.testng.annotations.Test;
 
-import java.util.function.Function;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -152,8 +152,9 @@ public class GroovyClosuresTest {
     @Test
     public void copyAndCall_closureWithReturnAndAssignment() {
         Closure<String> prototype = groovyShellEval(
-            "counter = (delegate.counter ?: 0) + 1;\n" +
-            "return 'base=' + delegate.base"
+            """
+            counter = (delegate.counter ?: 0) + 1;
+            return 'base=' + delegate.base"""
         );
 
         var delegate = new RuntimeDelegate(5);

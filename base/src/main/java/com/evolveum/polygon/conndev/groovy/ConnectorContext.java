@@ -7,12 +7,10 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
+import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-
-import java.util.Map;
 
 public interface ConnectorContext extends ContextLookup, RetrievableContext {
 

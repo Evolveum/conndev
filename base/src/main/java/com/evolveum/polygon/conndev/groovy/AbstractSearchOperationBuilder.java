@@ -6,17 +6,18 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
-import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import com.evolveum.polygon.conndev.build.NormalizationBuilder;
 import com.evolveum.polygon.conndev.build.SearchOperationBuilder;
 import com.evolveum.polygon.conndev.build.SearchScriptBuilder;
-import com.evolveum.polygon.conndev.spi.AttributeResolvingSearchHandler;
-import com.evolveum.polygon.conndev.spi.FilterBasedSearchDispatcher;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
-import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
+import com.evolveum.polygon.conndev.spi.AttributeResolver;
+import com.evolveum.polygon.conndev.spi.AttributeResolvingSearchHandler;
 import com.evolveum.polygon.conndev.spi.FilterAwareExecuteQueryProcessor;
+import com.evolveum.polygon.conndev.spi.FilterBasedSearchDispatcher;
+import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class AbstractSearchOperationBuilder implements SearchOperationBuilder {
 

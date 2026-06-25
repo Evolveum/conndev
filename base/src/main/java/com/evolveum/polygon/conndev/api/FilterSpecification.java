@@ -129,7 +129,7 @@ public interface FilterSpecification {
          */
         public Object checkOnlyValue(Filter filter) {
             if (matches(filter) && filter instanceof AttributeFilter attrFilter) {
-                return attrFilter.getAttribute().getValue().get(0);
+                return attrFilter.getAttribute().getValue().getFirst();
             }
             return null;
         }

@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
  * Defines a contract for handling operations and object classes in the context of a specific object type.

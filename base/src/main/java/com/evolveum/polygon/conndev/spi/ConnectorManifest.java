@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-
-import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import java.util.List;
 
 public class ConnectorManifest {

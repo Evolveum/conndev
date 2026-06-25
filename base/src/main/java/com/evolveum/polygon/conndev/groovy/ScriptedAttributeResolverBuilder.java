@@ -6,20 +6,21 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
-import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.groovy.api.AttributeResolutionScriptContext;
-import com.evolveum.polygon.conndev.groovy.api.ObjectClassScriptingFacade;
-import com.evolveum.polygon.conndev.spi.AttributeResolver;
-import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.groovy.api.ObjectClassScripting;
+import com.evolveum.polygon.conndev.groovy.api.ObjectClassScriptingFacade;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
-
+import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.ConnectorObject;
+import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
+import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.util.ArrayList;
@@ -169,6 +170,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
             return ResolutionType.PER_OBJECT;
         }
     }
+
     private record SingleResolverContext(ConnectorContext context, BaseObjectClassDefinition definition, ConnectorObjectBuilder value) implements AttributeResolutionScriptContext {
 
         @Override

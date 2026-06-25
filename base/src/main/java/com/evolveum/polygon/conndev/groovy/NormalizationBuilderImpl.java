@@ -10,8 +10,8 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.NormalizationBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
-import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import com.evolveum.polygon.conndev.spi.NormalizationQueryProcessor;
+import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import groovy.lang.Closure;
 
 import java.util.function.BiFunction;

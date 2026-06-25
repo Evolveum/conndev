@@ -40,9 +40,7 @@ public interface ObjectClassScripting {
         var ret = new ArrayList<ConnectorObject>();
         search(filter, ret::add);
         return ret;
-    };
-
-    /**
+    }/**
      * Searches for objects of this class using a FilterBuilder.
      * 
      * @param filter the filter builder to create a filter

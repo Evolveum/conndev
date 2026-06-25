@@ -7,9 +7,9 @@
 package com.evolveum.polygon.conndev.build;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
-import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;

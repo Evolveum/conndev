@@ -160,7 +160,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             if (am.jsonType.equals(jsonType)) {
                 return am;
             }
-        };
+        }
         return null;
     }
 }

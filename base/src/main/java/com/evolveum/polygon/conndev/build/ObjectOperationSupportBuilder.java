@@ -6,8 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build;
 
-import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 

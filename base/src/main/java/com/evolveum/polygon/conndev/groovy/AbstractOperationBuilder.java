@@ -6,10 +6,9 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
+import com.evolveum.polygon.conndev.build.OperationBuilder;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
-import com.evolveum.polygon.conndev.build.OperationBuilder;
-
 import org.identityconnectors.framework.common.objects.ObjectClass;
 
 import java.util.HashMap;

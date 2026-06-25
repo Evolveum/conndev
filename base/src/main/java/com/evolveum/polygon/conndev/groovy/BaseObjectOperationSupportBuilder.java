@@ -6,14 +6,14 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
-import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
-import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import com.evolveum.polygon.conndev.build.*;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
+import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
+import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
+import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
 import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
 import com.evolveum.polygon.conndev.spi.ObjectDeleteOperation;
 import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
-import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
 import com.evolveum.polygon.conndev.spi.ObjectUpdateOperation;
 
 import java.util.HashMap;

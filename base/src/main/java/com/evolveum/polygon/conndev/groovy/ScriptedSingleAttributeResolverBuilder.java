@@ -7,11 +7,11 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.concepts.Deferred;
 import com.evolveum.polygon.conndev.groovy.api.AttributeResolutionScriptContext;
-import com.evolveum.polygon.conndev.spi.AttributeResolver;
-import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
+import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;

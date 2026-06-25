@@ -18,7 +18,6 @@
     </parent>
 
     <artifactId>conndev-base</artifactId>
-    <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Polygon ConnDev Low-Code Framework</name>
