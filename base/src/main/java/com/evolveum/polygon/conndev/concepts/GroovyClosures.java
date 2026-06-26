@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Evolveum and contributors
+ * Copyright (c) 2025-2026 Evolveum and contributors
  *
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
@@ -38,7 +38,7 @@ public class GroovyClosures {
      * These closures are stored as prototypes and executed later during operations.
      *
      * @param <T> The type of the delegate.
-     * @param prototype The original closure to be copied and executed.
+     * @param prototype The origin closure to be copied and executed.
      * @param delegate The delegate object that will be used within the closure.
      * @return The result of the closure execution.
      */

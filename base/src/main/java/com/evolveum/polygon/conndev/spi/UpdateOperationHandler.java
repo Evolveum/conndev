@@ -8,7 +8,7 @@ public interface UpdateOperationHandler extends AttributeAwareOperationHandler<A
 
 
     /**
-     * Returns True if Operation Handler requires to know original state of supported attributes
+     * Returns True if Operation Handler requires to know origin state of supported attributes
      * Otherwise False. Returing True may result in issuing get operations before.
      * @return
      */
