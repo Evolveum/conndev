@@ -37,6 +37,8 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
     Map<String, BaseAttributeBuilder> nativeAttributes = new HashMap<>();
     private String description;
     private boolean embedded;
+    private String locator;
+    private String namespace;
 
     public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, String name) {
         this.name = name;
@@ -84,6 +86,21 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
         return this;
     }
 
+    /**
+     * Where the object class lives in the remote system: the resource endpoint for REST/SCIM, the
+     * table for SQL — semantically the same concept, hence one generic property.
+     */
+    public BaseObjectClassDefinitionBuilder locator(String locator) {
+        this.locator = locator;
+        return this;
+    }
+
+    /** Namespace of the object class (SCIM schema URN, SQL schema name). */
+    public BaseObjectClassDefinitionBuilder namespace(String namespace) {
+        this.namespace = namespace;
+        return this;
+    }
+
 
     public String name() {
         return name;
@@ -118,7 +135,10 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
             connIdBuilder.setDescription(description);
         }
 
-        return new BaseObjectClassDefinition(connIdBuilder.build(), nativeAttrs, connIdAttrs);
+        var definition = new BaseObjectClassDefinition(connIdBuilder.build(), nativeAttrs, connIdAttrs);
+        definition.locator(locator);
+        definition.namespace(namespace);
+        return definition;
     }
 
     public String description() {

@@ -37,6 +37,7 @@ public abstract class AbstractAttributeBuilder implements AttributeBuilder {
     boolean emulated = false;
 
     String remoteName;
+    String nativeType;
     String connIdName;
     Class<?> connIdType;
 
@@ -59,6 +60,15 @@ public abstract class AbstractAttributeBuilder implements AttributeBuilder {
     @Override
     public AbstractAttributeBuilder remoteName(String remoteName) {
         this.remoteName = remoteName;
+        return this;
+    }
+
+    /**
+     * The native protocol type as declared by the remote system (e.g. SCIM {@code dateTime}, SQL
+     * {@code TIMESTAMP}) when it is richer than the mapped ConnId type.
+     */
+    public AbstractAttributeBuilder nativeType(String nativeType) {
+        this.nativeType = nativeType;
         return this;
     }
 

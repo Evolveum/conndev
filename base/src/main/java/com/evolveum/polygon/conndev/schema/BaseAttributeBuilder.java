@@ -20,6 +20,7 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
 
     public Deferred.Settable<BaseAttributeDefinition> deffered = Deferred.settable();
     private String referencedObjectClass;
+    String referencedAttribute;
     private boolean isReference = false;
     ScriptedSingleAttributeResolverBuilder resolverBuilder;
 
@@ -38,6 +39,12 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
     @Override
     public BaseAttributeBuilder subtype(String subtype) {
         this.connIdBuilder.setSubtype(subtype);
+        return this;
+    }
+
+    /** The attribute of the referenced object class this reference points to (e.g. a FK target column). */
+    public BaseAttributeBuilder referencedAttribute(String referencedAttribute) {
+        this.referencedAttribute = referencedAttribute;
         return this;
     }
 

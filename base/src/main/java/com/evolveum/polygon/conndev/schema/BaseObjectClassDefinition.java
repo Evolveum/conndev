@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.dev.ConnDevObjectClassSource;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfo;
@@ -14,12 +15,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BaseObjectClassDefinition {
+public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
 
     private final Map<String, BaseAttributeDefinition> nativeAttributes;
     private final Map<String, BaseAttributeDefinition> connIdAttributes;
     ObjectClass clazz;
     ObjectClassInfo connId;
+
+    // Native-side object-class metadata: where the object class lives in the remote system
+    // (endpoint for REST/SCIM, table for SQL) and its namespace (SCIM schema URN, SQL schema).
+    private String locator;
+    private String namespace;
 
     Map<String, BaseAttributeDefinition> attributes = new HashMap<>();
 
@@ -36,12 +42,32 @@ public class BaseObjectClassDefinition {
         return builder;
     }
 
+    @Override
     public Collection<BaseAttributeDefinition> attributes() {
         return nativeAttributes.values();
     }
 
+    @Override
     public ObjectClassInfo connId() {
         return connId;
+    }
+
+    @Override
+    public String locator() {
+        return locator;
+    }
+
+    void locator(String locator) {
+        this.locator = locator;
+    }
+
+    @Override
+    public String namespace() {
+        return namespace;
+    }
+
+    void namespace(String namespace) {
+        this.namespace = namespace;
     }
 
     public ObjectClass objectClass() {

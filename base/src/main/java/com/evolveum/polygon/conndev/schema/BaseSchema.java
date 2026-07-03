@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.schema;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Schema;
 
+import java.util.Collection;
 import java.util.Map;
 
 public class BaseSchema {
@@ -27,5 +28,9 @@ public class BaseSchema {
 
     public BaseObjectClassDefinition objectClass(String name) {
         return objectClasses.get(new ObjectClass(name));
+    }
+
+    public Collection<BaseObjectClassDefinition> objectClasses() {
+        return objectClasses.values();
     }
 }

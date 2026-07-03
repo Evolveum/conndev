@@ -14,16 +14,20 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Connector;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BaseSchemaBuilder implements SchemaBuilder {
 
     private final Class<? extends Connector> connectorClass;
     private final Map<String, BaseObjectClassDefinitionBuilder> objectClasses = new HashMap<>();
+    private final List<ObjectClassInfo> additionalObjectClasses = new ArrayList<>();
     private ContextLookup contextLookup;
 
     public BaseSchemaBuilder(Class<? extends Connector> connectorClass, ContextLookup context) {
@@ -51,6 +55,15 @@ public class BaseSchemaBuilder implements SchemaBuilder {
         return GroovyClosures.callAndReturnDelegate(closure, ret);
     }
 
+    /**
+     * Adds a ready-made ConnId object class (e.g. the shared conndev development object classes from
+     * {@code ConnDevSchema}) to the schema, alongside the mapped object classes.
+     */
+    public BaseSchemaBuilder defineObjectClass(ObjectClassInfo objectClass) {
+        additionalObjectClasses.add(objectClass);
+        return this;
+    }
+
     public BaseSchema build() {
         if (objectClasses.isEmpty()) {
             initializeDummySchema();
@@ -62,6 +75,12 @@ public class BaseSchemaBuilder implements SchemaBuilder {
             var objectClassDef = ocBuilder.build();
             freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
             objectClassMap.put(objectClassDef.objectClass(), objectClassDef);
+        }
+        for (var info : additionalObjectClasses) {
+            freshSchemaBuilder.defineObjectClass(info);
+            // wrap in a mapping-less definition so lookups by object class still resolve
+            var definition = new BaseObjectClassDefinition(info, Map.of(), Map.of());
+            objectClassMap.put(definition.objectClass(), definition);
         }
         return new BaseSchema(freshSchemaBuilder.build(), objectClassMap);
     }
