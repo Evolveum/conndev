@@ -6,11 +6,7 @@
  */
 package com.evolveum.polygon.conndev.dev;
 
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
-import org.identityconnectors.framework.common.objects.EmbeddedObject;
-import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,14 +42,12 @@ public final class ConnDevObjectClass {
     static final String F_REFERENCED_ATTRIBUTE = "referencedAttribute";
     static final String F_REFERENCE = "reference";
     static final String F_ROLE = "role";
-    static final String F_ENDPOINT = "endpoint";
-    static final String F_TABLE = "table";
+    static final String F_LOCATOR = "locator";
     static final String F_NAMESPACE = "namespace";
 
     private final String name;
     private String uid;
-    private String endpoint;
-    private String table;
+    private String locator;
     private String namespace;
     private final List<ConnDevAttribute> attributes = new ArrayList<>();
 
@@ -70,15 +64,12 @@ public final class ConnDevObjectClass {
         return this;
     }
 
-    /** REST/SCIM locator (e.g. the resource endpoint path). Not used by SQL — see {@link #table(String)}. */
-    public ConnDevObjectClass endpoint(String endpoint) {
-        this.endpoint = endpoint;
-        return this;
-    }
-
-    /** SQL locator: the target table. Not used by REST/SCIM — see {@link #endpoint(String)}. */
-    public ConnDevObjectClass table(String table) {
-        this.table = table;
+    /**
+     * Where the object class lives in the remote system: the resource endpoint path for REST/SCIM,
+     * the table for SQL. Semantically the same concept, hence one generic property.
+     */
+    public ConnDevObjectClass locator(String locator) {
+        this.locator = locator;
         return this;
     }
 
@@ -98,11 +89,8 @@ public final class ConnDevObjectClass {
         builder.setObjectClass(OBJECT_CLASS);
         builder.setUid(uid);
         builder.setName(name);
-        if (endpoint != null) {
-            builder.addAttribute(AttributeBuilder.build(F_ENDPOINT, endpoint));
-        }
-        if (table != null) {
-            builder.addAttribute(AttributeBuilder.build(F_TABLE, table));
+        if (locator != null) {
+            builder.addAttribute(AttributeBuilder.build(F_LOCATOR, locator));
         }
         if (namespace != null) {
             builder.addAttribute(AttributeBuilder.build(F_NAMESPACE, namespace));

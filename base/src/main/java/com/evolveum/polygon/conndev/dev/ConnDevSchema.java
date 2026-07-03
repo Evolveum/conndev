@@ -6,31 +6,11 @@
  */
 package com.evolveum.polygon.conndev.dev;
 
-import org.identityconnectors.framework.common.objects.AttributeInfo;
-import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
-import org.identityconnectors.framework.common.objects.EmbeddedObject;
-import org.identityconnectors.framework.common.objects.ObjectClassInfo;
-import org.identityconnectors.framework.common.objects.ObjectClassInfoBuilder;
+import org.identityconnectors.framework.common.objects.*;
 
 import java.util.List;
 
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.ATTRIBUTE_NAME;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_CREATABLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_ENDPOINT;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_MULTI_VALUED;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAME;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAMESPACE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_READABLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCED_ATTRIBUTE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCED_OBJECT_CLASS;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REQUIRED;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_RETURNED_BY_DEFAULT;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_ROLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_SUB_ATTRIBUTES;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_TABLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_TYPE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.OBJECT_CLASS_NAME;
+import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.*;
 
 /**
  * Declares the development-mode object classes ({@code conndev_ObjectClass} and the embedded
@@ -51,8 +31,7 @@ public final class ConnDevSchema {
     private static ObjectClassInfo objectClass() {
         var builder = new ObjectClassInfoBuilder();
         builder.setType(OBJECT_CLASS_NAME);
-        builder.addAttributeInfo(string(F_ENDPOINT));
-        builder.addAttributeInfo(string(F_TABLE));
+        builder.addAttributeInfo(string(F_LOCATOR));
         builder.addAttributeInfo(string(F_NAMESPACE));
         builder.addAttributeInfo(embedded("attributes", ATTRIBUTE_NAME));
         return builder.build();

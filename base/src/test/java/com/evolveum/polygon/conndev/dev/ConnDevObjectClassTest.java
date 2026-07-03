@@ -6,20 +6,14 @@
  */
 package com.evolveum.polygon.conndev.dev;
 
-import org.identityconnectors.framework.common.objects.AttributeInfo;
-import org.identityconnectors.framework.common.objects.AttributeUtil;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.EmbeddedObject;
-import org.identityconnectors.framework.common.objects.ObjectClassInfo;
+import org.identityconnectors.framework.common.objects.*;
 import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Verifies the shared dev-mode builder: a connector feeds rich data, the builder emits the uniform
@@ -30,7 +24,7 @@ public class ConnDevObjectClassTest {
     @Test
     public void buildsNormalizedConnectorObject() {
         var objectClass = ConnDevObjectClass.objectClass("User")
-                .uid("urn:User").endpoint("/Users").namespace("urn:User");
+                .uid("urn:User").locator("/Users").namespace("urn:User");
         objectClass.attribute("userName").type("string").required(true);
         objectClass.attribute("name").type("complex").subAttribute("familyName").type("string");
         objectClass.attribute("groups").type("reference").referencedObjectClass("Group")
@@ -41,7 +35,7 @@ public class ConnDevObjectClassTest {
         assertEquals(result.getObjectClass().getObjectClassValue(), "conndev_ObjectClass");
         assertEquals(result.getUid().getUidValue(), "urn:User");
         assertEquals(result.getName().getNameValue(), "User");
-        assertEquals(value(result, "endpoint"), "/Users");
+        assertEquals(value(result, "locator"), "/Users");
         assertEquals(value(result, "namespace"), "urn:User");
 
         var attributes = result.getAttributeByName("attributes").getValue();
@@ -55,7 +49,7 @@ public class ConnDevObjectClassTest {
         var name = embedded(attributes, "name");
         var subAttributes = AttributeUtil.find("subAttributes", name.getAttributes()).getValue();
         assertEquals(subAttributes.size(), 1);
-        assertEquals(string((EmbeddedObject) subAttributes.get(0), "name"), "familyName");
+        assertEquals(string((EmbeddedObject) subAttributes.getFirst(), "name"), "familyName");
 
         var groups = embedded(attributes, "groups");
         assertEquals(string(groups, "referencedObjectClass"), "Group");
@@ -72,9 +66,8 @@ public class ConnDevObjectClassTest {
 
         var result = objectClass.build();
 
-        // object-class level: endpoint/table/namespace were never set, so they are not emitted
-        assertNull(result.getAttributeByName("endpoint"));
-        assertNull(result.getAttributeByName("table"));
+        // object-class level: locator/namespace were never set, so they are not emitted
+        assertNull(result.getAttributeByName("locator"));
         assertNull(result.getAttributeByName("namespace"));
 
         // attribute level: only name + type were set, nothing else leaks in
@@ -91,14 +84,13 @@ public class ConnDevObjectClassTest {
     @Test
     public void buildsTableBackedObjectClass() {
         var objectClass = ConnDevObjectClass.objectClass("users")
-                .uid("users").table("users").namespace("public");
+                .uid("users").locator("users").namespace("public");
         objectClass.attribute("id").type("integer");
 
         var result = objectClass.build();
 
-        // table is the SQL locator; endpoint stays absent (the two are mutually exclusive)
-        assertEquals(value(result, "table"), "users");
-        assertNull(result.getAttributeByName("endpoint"));
+        // for SQL the locator is the table; the property is the same as for REST endpoints
+        assertEquals(value(result, "locator"), "users");
         assertEquals(value(result, "namespace"), "public");
     }
 

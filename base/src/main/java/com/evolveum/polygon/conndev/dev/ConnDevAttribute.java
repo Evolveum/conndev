@@ -15,21 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.ATTRIBUTE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_CREATABLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_MULTI_VALUED;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAME;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAMESPACE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_READABLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCED_ATTRIBUTE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REFERENCED_OBJECT_CLASS;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_ROLE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_REQUIRED;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_RETURNED_BY_DEFAULT;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_SUB_ATTRIBUTES;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_TYPE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_UPDATEABLE;
+import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.*;
 
 /**
  * Fluent builder for a {@code conndev_Attribute} embedded object. Only explicitly-set properties are
