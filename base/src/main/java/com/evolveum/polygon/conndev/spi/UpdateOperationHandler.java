@@ -1,6 +1,6 @@
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.build.UpdateOperationBuilder;
+import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import org.identityconnectors.framework.common.objects.AttributeDelta;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 

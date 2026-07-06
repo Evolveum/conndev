@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.build.ValueMappingBuilder;
+import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import groovy.lang.Closure;

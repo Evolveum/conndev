@@ -4,7 +4,7 @@
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
  */
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;

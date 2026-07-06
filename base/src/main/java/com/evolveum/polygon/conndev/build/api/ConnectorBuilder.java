@@ -5,7 +5,7 @@
  *
  */
 
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;

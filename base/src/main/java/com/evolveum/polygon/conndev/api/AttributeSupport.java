@@ -1,6 +1,6 @@
 package com.evolveum.polygon.conndev.api;
 
-import com.evolveum.polygon.conndev.build.UpdateOperationBuilder;
+import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import groovy.lang.Closure;

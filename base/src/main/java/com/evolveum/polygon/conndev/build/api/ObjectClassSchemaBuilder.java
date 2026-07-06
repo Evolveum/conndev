@@ -4,7 +4,7 @@
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
  */
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import groovy.lang.Closure;
@@ -22,7 +22,7 @@ public interface ObjectClassSchemaBuilder {
      * @param name the name of the attribute to be configured
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AttributeBuilder attribute(String name);
+    AttributeBuilder<AttributeBuilder, P> attribute(String name);
 
     /**
      * Creates / gets reference definition with the specified name.
@@ -39,8 +39,8 @@ public interface ObjectClassSchemaBuilder {
      * @param closure a closure that configures the {@link AttributeBuilder} instance for the specified attribute
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AttributeBuilder attribute(String name,
-                               @Script.Initialization
+    AttributeBuilder<AttributeBuilder, P> attribute(String name,
+                                                    @Script.Initialization
                                @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
                                Closure<?> closure);
 

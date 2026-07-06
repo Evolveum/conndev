@@ -8,7 +8,7 @@ package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
+import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.groovy.api.AttributeResolutionScriptContext;
 import com.evolveum.polygon.conndev.groovy.api.ObjectClassScripting;

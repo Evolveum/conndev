@@ -7,8 +7,8 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.build.RelationshipBuilder;
-import com.evolveum.polygon.conndev.build.SchemaBuilder;
+import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
+import com.evolveum.polygon.conndev.build.api.SchemaBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;

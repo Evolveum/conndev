@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.groovy.api;
 
-import com.evolveum.polygon.conndev.build.FilterBuilder;
+import com.evolveum.polygon.conndev.build.api.FilterBuilder;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.OperationOptions;

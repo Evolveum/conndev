@@ -8,8 +8,8 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.build.AttributeBuilder;
-import com.evolveum.polygon.conndev.build.ValueMappingBuilder;
+import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
+import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
@@ -26,7 +26,7 @@ import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractAttributeBuilder implements AttributeBuilder {
+public abstract class AbstractAttributeBuilder implements AttributeBuilder<AttributeBuilder, P> {
 
     BaseObjectClassDefinitionBuilder objectClass;
     AttributeInfoBuilder connIdBuilder = new AttributeInfoBuilder();

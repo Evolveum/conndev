@@ -7,7 +7,7 @@
 package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
-import com.evolveum.polygon.conndev.build.FilterBuilder;
+import com.evolveum.polygon.conndev.build.api.FilterBuilder;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 
 public interface BaseScriptContext {

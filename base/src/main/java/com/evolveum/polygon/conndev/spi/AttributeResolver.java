@@ -7,7 +7,7 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
+import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.OperationOptions;

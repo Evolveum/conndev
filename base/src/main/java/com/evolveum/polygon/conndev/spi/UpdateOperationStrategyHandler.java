@@ -1,6 +1,6 @@
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.build.UpdateOperationBuilder;
+import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;

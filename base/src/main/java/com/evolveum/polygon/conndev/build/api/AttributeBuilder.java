@@ -4,17 +4,21 @@
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
  */
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
 import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
+import com.evolveum.polygon.conndev.build.spi.SpiAttributeBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public interface AttributeBuilder {
+public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends SpiAttributeBuilder<B,P> {
 
     /**
      * Sets the readability of the attribute.
@@ -24,7 +28,9 @@ public interface AttributeBuilder {
      * @param readable true if the attribute should be readable, false otherwise
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    AttributeBuilder readable(boolean readable);
+    default B readable(boolean readable) {
+        return readable(DefinitionValue.from(readable, SourceLocation.capture()));
+    }
 
     /**
      * Specifies whether the attribute is required.
@@ -34,13 +40,21 @@ public interface AttributeBuilder {
      * @param required true if the attribute should be required, false otherwise
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    AttributeBuilder required(boolean required);
+    default B required(boolean required) {
+        return required(DefinitionValue.from(required, SourceLocation.capture()));
+    }
 
-    AttributeBuilder description(String description);
+    default B description(String description) {
+        return description(DefinitionValue.from(description, SourceLocation.capture()));
+    }
 
-    AttributeBuilder returnedByDefault(boolean returnedByDefault);
+    default B returnedByDefault(boolean returnedByDefault) {
+        return returnedByDefault(DefinitionValue.from(returnedByDefault, SourceLocation.capture()));
+    }
 
-    AttributeBuilder multiValued(boolean multiValued);
+    default B multiValued(boolean multiValued) {
+        return multiValued(DefinitionValue.from(multiValued, SourceLocation.capture()));
+    }
 
     /**
      * Specifies whether the attribute is creatable.
@@ -50,16 +64,22 @@ public interface AttributeBuilder {
      * @param creatable true if the attribute should be creatable, false otherwise
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    AttributeBuilder creatable(boolean creatable);
+    default B creatable(boolean creatable) {
+        return creatable(DefinitionValue.from(creatable, SourceLocation.capture()));
+    }
 
-    AttributeBuilder updatable(boolean updatable);
+    default B updatable(boolean updatable) {
+        return updatable(DefinitionValue.from(updatable, SourceLocation.capture()));
+    }
 
     @Groovy.AlternateSpelling
-    default AttributeBuilder updateable(boolean updatable) {
+    default B updateable(boolean updatable) {
         return updatable(updatable);
     }
 
-    void emulated(boolean emulated);
+    default B emulated(boolean emulated) {
+        return emulated(DefinitionValue.from(emulated, SourceLocation.capture()));
+    }
 
 
     // Protocol specific mappings
@@ -83,7 +103,10 @@ public interface AttributeBuilder {
      * @param protocolName the protocol name to be set for the attribute
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    AttributeBuilder protocolName(String protocolName);
+    @Deprecated
+    default B protocolName(String protocolName) {
+        return protocolName(DefinitionValue.from(protocolName, SourceLocation.capture()));
+    }
 
     /**
      * Sets the remote name of the attribute.
@@ -94,7 +117,10 @@ public interface AttributeBuilder {
      * @param remoteName the name of attribute in remote system
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    AttributeBuilder remoteName(String remoteName);
+    @Deprecated
+    default B remoteName(String remoteName) {
+        return remoteName(DefinitionValue.from(remoteName, SourceLocation.capture()));
+    }
 
     /**
      * Sets the JSON type of the attribute.
@@ -104,18 +130,21 @@ public interface AttributeBuilder {
      * @param jsonType the JSON type of the attribute
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
-    default AttributeBuilder jsonType(String jsonType) {
+    @Deprecated
+    default B jsonType(String jsonType) {
         json().type(jsonType);
-        return this;
+        return self();
+    }
+
+    default B complexType(String objectClass) {
+        return complexType(DefinitionValue.from(objectClass, SourceLocation.capture()));
     }
 
 
-    void complexType(String objectClass);
-
-
-    default AttributeBuilder openApiFormat(String openapiFormat) {
+    @Deprecated
+    default B openApiFormat(String openapiFormat) {
         json().openApiFormat(openapiFormat);
-        return this;
+        return self();
     }
 
     interface MappingBuilder<T extends MappingBuilder<T>> {

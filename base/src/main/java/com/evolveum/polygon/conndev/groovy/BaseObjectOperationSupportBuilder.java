@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
-import com.evolveum.polygon.conndev.build.*;
+import com.evolveum.polygon.conndev.build.api.*;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;

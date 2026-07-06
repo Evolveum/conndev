@@ -6,9 +6,9 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.build.AttributeResolverBuilder;
-import com.evolveum.polygon.conndev.build.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.build.RelationshipBuilder;
+import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
+import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
+import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;

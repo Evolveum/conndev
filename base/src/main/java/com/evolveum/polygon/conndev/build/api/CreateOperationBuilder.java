@@ -1,4 +1,4 @@
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
 

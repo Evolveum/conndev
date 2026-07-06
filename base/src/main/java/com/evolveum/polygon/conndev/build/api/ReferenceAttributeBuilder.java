@@ -4,12 +4,12 @@
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
  *
  */
-package com.evolveum.polygon.conndev.build;
+package com.evolveum.polygon.conndev.build.api;
 
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
-public interface ReferenceAttributeBuilder extends AttributeBuilder {
+public interface ReferenceAttributeBuilder extends AttributeBuilder<AttributeBuilder, P> {
 
     AttributeInfo.RoleInReference SUBJECT = AttributeInfo.RoleInReference.SUBJECT;
     AttributeInfo.RoleInReference OBJECT = AttributeInfo.RoleInReference.OBJECT;
@@ -47,12 +47,12 @@ public interface ReferenceAttributeBuilder extends AttributeBuilder {
         }
 
         @Override
-        default AttributeBuilder readable(boolean readable) {
+        default AttributeBuilder<AttributeBuilder, P> readable(boolean readable) {
             return delegate().readable(readable);
         }
 
         @Override
-        default AttributeBuilder required(boolean required) {
+        default AttributeBuilder<AttributeBuilder, P> required(boolean required) {
             return delegate().required(required);
         }
 
@@ -62,27 +62,27 @@ public interface ReferenceAttributeBuilder extends AttributeBuilder {
         }
 
         @Override
-        default AttributeBuilder returnedByDefault(boolean returnedByDefault) {
+        default AttributeBuilder<AttributeBuilder, P> returnedByDefault(boolean returnedByDefault) {
             return delegate().returnedByDefault(returnedByDefault);
         }
 
         @Override
-        default AttributeBuilder multiValued(boolean multiValued) {
+        default AttributeBuilder<AttributeBuilder, P> multiValued(boolean multiValued) {
             return delegate().multiValued(multiValued);
         }
 
         @Override
-        default AttributeBuilder creatable(boolean creatable) {
+        default AttributeBuilder<AttributeBuilder, P> creatable(boolean creatable) {
             return delegate().creatable(creatable);
         }
 
         @Override
-        default AttributeBuilder updateable(boolean updateable) {
+        default AttributeBuilder<AttributeBuilder, P> updateable(boolean updateable) {
             return delegate().updateable(updateable);
         }
 
         @Override
-        default AttributeBuilder description(String description) {
+        default AttributeBuilder<AttributeBuilder, P> description(String description) {
             return delegate().description(description);
         }
 
@@ -106,27 +106,27 @@ public interface ReferenceAttributeBuilder extends AttributeBuilder {
         }
 
         @Override
-        default AttributeBuilder protocolName(String protocolName) {
+        default AttributeBuilder<AttributeBuilder, P> protocolName(String protocolName) {
             return delegate().protocolName(protocolName);
         }
 
         @Override
-        default AttributeBuilder remoteName(String remoteName) {
+        default AttributeBuilder<AttributeBuilder, P> remoteName(String remoteName) {
             return delegate().remoteName(remoteName);
         }
 
         @Override
-        default AttributeBuilder jsonType(String jsonType) {
+        default AttributeBuilder<AttributeBuilder, P> jsonType(String jsonType) {
             return delegate().jsonType(jsonType);
         }
 
         @Override
-        default AttributeBuilder openApiFormat(String openapiFormat) {
+        default AttributeBuilder<AttributeBuilder, P> openApiFormat(String openapiFormat) {
             return delegate().openApiFormat(openapiFormat);
         }
 
         @Override
-        default AttributeBuilder updatable(boolean updatable) {
+        default AttributeBuilder<AttributeBuilder, P> updatable(boolean updatable) {
             delegate().updatable(updatable);
             return this;
         }

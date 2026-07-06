@@ -8,7 +8,7 @@ package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
-import com.evolveum.polygon.conndev.build.SearchScriptBuilder;
+import com.evolveum.polygon.conndev.build.api.SearchScriptBuilder;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.FilterAwareExecuteQueryProcessor;
 import groovy.lang.Closure;
