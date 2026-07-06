@@ -10,7 +10,7 @@ import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public interface RelationshipBuilder {
+public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,P>,P> {
 
 
     /**
@@ -20,7 +20,7 @@ public interface RelationshipBuilder {
      * @param closure Groovy closure which configures subject-part of relation
      * @return Builder which allows to customize subject part of relationship
      */
-    Participant subject(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    Participant<B, P> subject(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
 
 
     /**
@@ -30,15 +30,15 @@ public interface RelationshipBuilder {
      * @param closure Groovy closure to configure the participant part of the relationship.
      * @return Builder for customizing the participant part of the relationship.
      */
-    Participant object(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    Participant<B, P> object(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
 
 
 
-    interface Participant {
+    interface Participant<B extends Reference<B,P>, P> {
 
-        Reference attribute(String name);
+        B attribute(String name);
 
-        Reference attribute(String name, @DelegatesTo(value = Reference.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+        B attribute(String name, @DelegatesTo(value = Reference.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
 
         boolean owner();
 
@@ -52,10 +52,10 @@ public interface RelationshipBuilder {
          * @param owner true if the participant is the owner of relationship, false otherwise
          * @return this participant instance to allow chained invocations
          */
-        Participant owner(boolean owner);
+        B owner(boolean owner);
     }
 
-    interface Reference extends ReferenceAttributeBuilder {
+    interface Reference<B extends ReferenceAttributeBuilder<B,P>, P> extends ReferenceAttributeBuilder<B, P> {
 
         /**
          * Adds an attribute resolver with custom behavior defined.

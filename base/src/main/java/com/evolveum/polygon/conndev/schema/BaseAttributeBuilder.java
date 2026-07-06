@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.Deferred;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.groovy.ScriptedSingleAttributeResolverBuilder;
 import groovy.lang.Closure;
@@ -16,7 +17,7 @@ import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
 
-public class BaseAttributeBuilder extends AbstractAttributeBuilder implements ReferenceAttributeBuilder {
+public abstract class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, P>, P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B,P> implements ReferenceAttributeBuilder<B, P> {
 
     public Deferred.Settable<BaseAttributeDefinition> deffered = Deferred.settable();
     private String referencedObjectClass;
@@ -24,22 +25,22 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
     private boolean isReference = false;
     ScriptedSingleAttributeResolverBuilder resolverBuilder;
 
-    public BaseAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, String name) {
+    public BaseAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, DefinitionValue<String> name) {
         super(restObjectClassBuilder, name);
     }
 
     @Override
-    public BaseAttributeBuilder objectClass(String objectClass) {
+    public B objectClass(String objectClass) {
         isReference = true;
         this.referencedObjectClass = objectClass;
         this.connIdBuilder.setReferencedObjectClassName(objectClass);
-        return this;
+        return self();
     }
 
     @Override
-    public BaseAttributeBuilder subtype(String subtype) {
+    public B subtype(String subtype) {
         this.connIdBuilder.setSubtype(subtype);
-        return this;
+        return self();
     }
 
     /** The attribute of the referenced object class this reference points to (e.g. a FK target column). */
@@ -49,14 +50,14 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
     }
 
     @Override
-    public BaseAttributeBuilder role(String role) {
+    public B role(String role) {
         this.isReference = true;
         this.connIdBuilder.setRoleInReference(role);
-        return this;
+        return self();
     }
 
     @Override
-    public BaseAttributeBuilder role(AttributeInfo.RoleInReference role) {
+    public B role(AttributeInfo.RoleInReference role) {
         return role(role.toString());
     }
 
@@ -70,7 +71,7 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
      *
      * @return a new {@code RestAttribute} instance configured with the current settings
      */
-    public BaseAttributeDefinition build() {
+    public P build() {
         // FIXME: Could this be part of ConnID schema contributor?
         if (Uid.NAME.equals(connIdName)) {
             connId().type(String.class);
@@ -78,11 +79,11 @@ public class BaseAttributeBuilder extends AbstractAttributeBuilder implements Re
         if (Name.NAME.equals(connIdName)) {
             connId().type(String.class);
         }
-        return new BaseAttributeDefinition(this);
+        return (P) new BaseAttributeDefinition(this);
     }
 
     public AttributeResolverBuilder resolver(Closure<?> closure) {
-        this.emulated = true;
+        this.emulated = DefinitionValue.detected(true);
         this.resolverBuilder = new ScriptedSingleAttributeResolverBuilder(objectClass.name(), deffered);
         GroovyClosures.callAndReturnDelegate(closure, resolverBuilder);
         return resolverBuilder;

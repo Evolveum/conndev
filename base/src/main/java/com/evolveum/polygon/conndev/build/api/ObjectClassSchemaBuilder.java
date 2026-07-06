@@ -10,11 +10,17 @@ import com.evolveum.polygon.conndev.annotations.Script;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public interface ObjectClassSchemaBuilder {
+/**
+ *
+ * @param <B> Final Object Class Builder interface
+ * @param <AB> Final Attribute Builder interface
+ * @param <AP> Final Attribute interface
+ */
+public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, AB, AP> , AB extends AttributeBuilder<AB,AP>, AP> {
 
-    ObjectClassSchemaBuilder description(String description);
+    B description(String description);
 
-    ObjectClassSchemaBuilder embedded(boolean embedded);
+    B embedded(boolean embedded);
 
     /**
      * Creates / gets attribute definition with the specified name.
@@ -22,7 +28,7 @@ public interface ObjectClassSchemaBuilder {
      * @param name the name of the attribute to be configured
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AttributeBuilder<AttributeBuilder, P> attribute(String name);
+    AB attribute(String name);
 
     /**
      * Creates / gets reference definition with the specified name.
@@ -39,10 +45,10 @@ public interface ObjectClassSchemaBuilder {
      * @param closure a closure that configures the {@link AttributeBuilder} instance for the specified attribute
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AttributeBuilder<AttributeBuilder, P> attribute(String name,
-                                                    @Script.Initialization
-                               @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
-                               Closure<?> closure);
+    AB attribute(String name,
+                 @Script.Initialization
+                 @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                 Closure<?> closure);
 
     /**
      * Creates / gets reference definition with the specified name, applying a closure to further configure it.
@@ -61,6 +67,6 @@ public interface ObjectClassSchemaBuilder {
      * @param attributeName the protocol (JSON) attribute name to bind it to
      * @return this builder for chaining
      */
-    ObjectClassSchemaBuilder connIdAttribute(String connIdName, String attributeName);
+    B connIdAttribute(String connIdName, String attributeName);
 
 }

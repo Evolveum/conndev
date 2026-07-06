@@ -14,20 +14,16 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.identityconnectors.framework.common.objects.ObjectClassInfo;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Connector;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class BaseSchemaBuilder implements SchemaBuilder {
+public abstract class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends BaseObjectClassDefinitionBuilder<OB,?,?>> implements SchemaBuilder<SB, OB> {
 
     private final Class<? extends Connector> connectorClass;
-    private final Map<String, BaseObjectClassDefinitionBuilder> objectClasses = new HashMap<>();
-    private final List<ObjectClassInfo> additionalObjectClasses = new ArrayList<>();
+    private final Map<String, OB> objectClasses = new HashMap<>();
     private ContextLookup contextLookup;
 
     public BaseSchemaBuilder(Class<? extends Connector> connectorClass, ContextLookup context) {
@@ -35,13 +31,15 @@ public class BaseSchemaBuilder implements SchemaBuilder {
         this.contextLookup = context;
     }
 
+    /*
     @Override
     public BaseObjectClassDefinitionBuilder objectClass(String name) {
         return objectClasses.computeIfAbsent(name, k -> new BaseObjectClassDefinitionBuilder(BaseSchemaBuilder.this, k));
     }
+    */
 
     @Override
-    public BaseObjectClassDefinitionBuilder objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
+    public OB objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
         var objectClass = objectClass(name);
         closure.setDelegate(objectClass);
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
@@ -50,19 +48,11 @@ public class BaseSchemaBuilder implements SchemaBuilder {
     }
 
     @Override
-    public RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure) {
+    public abstract RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure);
+    /**{
         var ret =  new AbstractRelationshipBuilder(name, this);
         return GroovyClosures.callAndReturnDelegate(closure, ret);
-    }
-
-    /**
-     * Adds a ready-made ConnId object class (e.g. the shared conndev development object classes from
-     * {@code ConnDevSchema}) to the schema, alongside the mapped object classes.
-     */
-    public BaseSchemaBuilder defineObjectClass(ObjectClassInfo objectClass) {
-        additionalObjectClasses.add(objectClass);
-        return this;
-    }
+    }**/
 
     public BaseSchema build() {
         if (objectClasses.isEmpty()) {
@@ -75,12 +65,6 @@ public class BaseSchemaBuilder implements SchemaBuilder {
             var objectClassDef = ocBuilder.build();
             freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
             objectClassMap.put(objectClassDef.objectClass(), objectClassDef);
-        }
-        for (var info : additionalObjectClasses) {
-            freshSchemaBuilder.defineObjectClass(info);
-            // wrap in a mapping-less definition so lookups by object class still resolve
-            var definition = new BaseObjectClassDefinition(info, Map.of(), Map.of());
-            objectClassMap.put(definition.objectClass(), definition);
         }
         return new BaseSchema(freshSchemaBuilder.build(), objectClassMap);
     }
@@ -95,7 +79,7 @@ public class BaseSchemaBuilder implements SchemaBuilder {
         oc.attribute("name").connId().name(Name.NAME).type(String.class);
     }
 
-    public Iterable<BaseObjectClassDefinitionBuilder> allObjectClasses() {
+    public Iterable<OB> allObjectClasses() {
         return objectClasses.values();
     }
 

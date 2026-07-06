@@ -9,6 +9,9 @@ package com.evolveum.polygon.conndev.concepts;
 public record DefinitionValue<T>(T value, Origin origin, SourceLocation location) {
 
 
+    public static final DefinitionValue<Boolean> DEFAULT_FALSE = defaultFrom(Boolean.FALSE);
+    public static final DefinitionValue<Boolean> DEFAULT_TRUE = defaultFrom(Boolean.TRUE);
+
     public static <T> DefinitionValue<T> of(T value, Origin original, SourceLocation location) {
         return new DefinitionValue<>(value, original, location);
     }
@@ -48,7 +51,7 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
      * @throws IllegalStateException if both values have the DEFAULT origin
      * @throws IllegalArgumentException if both values have the DECLARED origin at different locations
      */
-    DefinitionValue<T> moreSpecific(DefinitionValue<T> other) {
+    public DefinitionValue<T> moreSpecific(DefinitionValue<T> other) {
         if (this.origin == other.origin) {
             if (this.origin == Origin.DEFAULT) {
                 throw new IllegalStateException("Multiple default values declared.");

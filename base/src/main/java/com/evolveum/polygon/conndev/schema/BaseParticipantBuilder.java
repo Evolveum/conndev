@@ -13,15 +13,15 @@ import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 
-public class BaseParticipantBuilder implements RelationshipBuilder.Participant {
+public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Reference<B,P>, P> implements RelationshipBuilder.Participant<B,P> {
 
     private final BaseObjectClassDefinitionBuilder objectClass;
-    private final AbstractRelationshipBuilder parent;
+    private final B parent;
 
     private AttributeBuilder attribute;
     private Boolean owner;
 
-    public BaseParticipantBuilder(AbstractRelationshipBuilder relationshipBuilder, BaseObjectClassDefinitionBuilder targetClass) {
+    public BaseParticipantBuilder(B relationshipBuilder, BaseObjectClassDefinitionBuilder targetClass) {
         this.parent = relationshipBuilder;
         this.objectClass = targetClass;
     }
@@ -31,17 +31,17 @@ public class BaseParticipantBuilder implements RelationshipBuilder.Participant {
     }
 
     @Override
-    public AttributeBuilder attribute(String name) {
+    public abstract B attribute(String name);/* {
         if (attribute == null) {
             attribute = new AttributeBuilder(objectClass.attribute(name));
             attribute.delegate.connIdBuilder.setType(ConnectorObjectReference.class);
             attribute.delegate.subtype(parent.name);
         }
         return attribute;
-    }
+    }*/
 
     @Override
-    public RelationshipBuilder.Reference attribute(String name, Closure<?> closure) {
+    public B attribute(String name, Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, attribute(name));
     }
 
@@ -51,31 +51,33 @@ public class BaseParticipantBuilder implements RelationshipBuilder.Participant {
     }
 
     @Override
-    public RelationshipBuilder.Participant owner(boolean owner) {
+    public B owner(boolean owner) {
         this.owner = owner;
-        return this;
+        return (B) this;
     }
 
     public String objectClass() {
         return objectClass.name();
     }
 
-    static class AttributeBuilder implements RelationshipBuilder.Reference, ReferenceAttributeBuilder.Delegator {
+    static abstract class AttributeBuilder<B extends ReferenceAttributeBuilder<B,P>,P > implements RelationshipBuilder.Reference<B,P>, ReferenceAttributeBuilder.Delegator<B,P> {
 
-        private final BaseAttributeBuilder delegate;
+        private final B delegate;
 
-        public AttributeBuilder(BaseAttributeBuilder delegate) {
+        public AttributeBuilder(B delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public ReferenceAttributeBuilder delegate() {
+        public B delegate() {
             return delegate;
         }
 
+        /*
         @Override
-        public AttributeResolverBuilder resolver(Closure<?> closure) {
+        public B resolver(Closure<?> closure) {
             return delegate.resolver(closure);
         }
+        */
     }
 }

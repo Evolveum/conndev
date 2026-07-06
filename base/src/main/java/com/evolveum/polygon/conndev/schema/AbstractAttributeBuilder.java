@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
@@ -26,7 +27,7 @@ import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractAttributeBuilder implements AttributeBuilder<AttributeBuilder, P> {
+public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,P>, P> implements AttributeBuilder<B, P> {
 
     BaseObjectClassDefinitionBuilder objectClass;
     AttributeInfoBuilder connIdBuilder = new AttributeInfoBuilder();
@@ -34,91 +35,85 @@ public abstract class AbstractAttributeBuilder implements AttributeBuilder<Attri
     Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMappingBuilder> protocolMappings = new HashMap<>();
 
 
-    boolean emulated = false;
+    DefinitionValue<Boolean> emulated = DefinitionValue.DEFAULT_FALSE;
 
-    String remoteName;
-    String nativeType;
+    DefinitionValue<String> remoteName;
     String connIdName;
     Class<?> connIdType;
 
     private String complexType;
 
-    protected AbstractAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, String name) {
+    protected AbstractAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, DefinitionValue<String> name) {
         this.remoteName = name;
-        connIdBuilder.setName(name);
-        connIdBuilder.setNativeName(name);
+        connIdBuilder.setName(name.value());
+        connIdBuilder.setNativeName(name.value());
         this.objectClass = restObjectClassBuilder;
     }
 
 
     @Override
-    public AbstractAttributeBuilder protocolName(String protocolName) {
+    @Deprecated
+    public B protocolName(String protocolName) {
         json().name(protocolName);
-        return this;
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder remoteName(String remoteName) {
-        this.remoteName = remoteName;
-        return this;
-    }
-
-    /**
-     * The native protocol type as declared by the remote system (e.g. SCIM {@code dateTime}, SQL
-     * {@code TIMESTAMP}) when it is richer than the mapped ConnId type.
-     */
-    public AbstractAttributeBuilder nativeType(String nativeType) {
-        this.nativeType = nativeType;
-        return this;
+    @Deprecated
+    public B remoteName(DefinitionValue<String> newName) {
+        this.remoteName = this.remoteName.moreSpecific(newName);
+        return self();
     }
 
     @Override
-    public void emulated(boolean emulated) {
-        this.emulated = emulated;
+    public B emulated(DefinitionValue<Boolean> emulated) {
+        this.emulated = this.emulated.moreSpecific(emulated);
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder readable(boolean readable) {
+    public B readable(boolean readable) {
         connIdBuilder.setReadable(readable);
         if (!readable) {
             connIdBuilder.setReturnedByDefault(false);
         }
-        return this;
+        return self();
     }
 
 
     @Override
-    public AbstractAttributeBuilder required(boolean required) {
+    public B required(boolean required) {
         connIdBuilder.setRequired(required);
-        return this;
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder updatable(boolean updatable) {
+    public B updatable(boolean updatable) {
         connIdBuilder.setUpdateable(updatable);
-        return this;
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder creatable(boolean creatable) {
+    public B creatable(boolean creatable) {
         connIdBuilder.setCreateable(creatable);
-        return this;
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder description(String description) {
+    public B description(String description) {
         connIdBuilder.setDescription(description);
-        return this;
+        return self();
     }
 
 
     @Override
-    public void complexType(String objectClass) {
+    public B complexType(String objectClass) {
         this.complexType = objectClass;
         connId().type(EmbeddedObject.class);
         connIdBuilder.setRoleInReference(AttributeInfo.RoleInReference.SUBJECT.toString());
         connIdBuilder.setReferencedObjectClassName(objectClass);
         json().implementation(new EmbeddedObjectJsonMapping(contextLookup(), objectClass));
+        return self();
     }
 
     protected ContextLookup contextLookup() {
@@ -127,15 +122,15 @@ public abstract class AbstractAttributeBuilder implements AttributeBuilder<Attri
 
 
     @Override
-    public AbstractAttributeBuilder returnedByDefault(boolean returnedByDefault) {
+    public B returnedByDefault(boolean returnedByDefault) {
         connIdBuilder.setReturnedByDefault(returnedByDefault);
-        return this;
+        return self();
     }
 
     @Override
-    public AbstractAttributeBuilder multiValued(boolean multiValued) {
+    public B multiValued(boolean multiValued) {
         connIdBuilder.setMultiValued(multiValued);
-        return this;
+        return self();
     }
 
 
@@ -179,7 +174,7 @@ public abstract class AbstractAttributeBuilder implements AttributeBuilder<Attri
 
 
         JsonBuilder() {
-            this.name = remoteName;
+            this.name = remoteName.value();
         }
 
         @Override

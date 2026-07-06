@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.dev.ConnDevAttributeSource;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.AttributeResolver;
@@ -19,20 +19,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BaseAttributeDefinition implements ConnDevAttributeSource {
+public class BaseAttributeDefinition {
 
     private final AttributeInfo info;
-    private final String remoteName;
-    private final String nativeType;
-    private final String referencedAttribute;
+    private final DefinitionValue<String> remoteName;
     private final Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMapping<?,?>> protocolMappings = new HashMap<>();
-    private final boolean emulated;
+    private final DefinitionValue<Boolean> emulated;
     private AttributeResolver resolver;
 
-    public BaseAttributeDefinition(BaseAttributeBuilder mappedBuilder) {
+    public BaseAttributeDefinition(BaseAttributeBuilder<?,?> mappedBuilder) {
         remoteName = mappedBuilder.remoteName;
-        nativeType = mappedBuilder.nativeType;
-        referencedAttribute = mappedBuilder.referencedAttribute;
         emulated = mappedBuilder.emulated;
 
         Class<?> suggestedConnIdType = null;
@@ -75,19 +71,8 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
 
     }
 
-    @Override
     public String remoteName() {
-        return this.remoteName;
-    }
-
-    @Override
-    public String nativeType() {
-        return nativeType;
-    }
-
-    @Override
-    public String referencedAttribute() {
-        return referencedAttribute;
+        return this.remoteName.value();
     }
 
     public Attribute attributeOf(Object connIdValues) {
@@ -97,7 +82,6 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
         return AttributeBuilder.build(info.getName(), connIdValues);
     }
 
-    @Override
     public AttributeInfo connId() {
         return this.info;
     }
@@ -111,7 +95,7 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
     }
 
     public boolean emulated() {
-        return emulated;
+        return emulated.value();
     }
 
     public AttributeResolver resolver() {

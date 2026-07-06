@@ -6,30 +6,32 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
-public class AbstractRelationshipBuilder implements RelationshipBuilder, GroovyClosures.ClosureExecutionAware {
+public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.Reference<B,P>, P> implements RelationshipBuilder<B,P>, GroovyClosures.ClosureExecutionAware {
 
     private final BaseSchemaBuilder schemaBuilder;
 
     final String name;
-    BaseParticipantBuilder subject;
-    BaseParticipantBuilder object;
+    BaseParticipantBuilder<B,P> subject;
+    BaseParticipantBuilder<B,P> object;
 
     public AbstractRelationshipBuilder(String name, BaseSchemaBuilder schemaBuilder) {
         this.name = name;
         this.schemaBuilder = schemaBuilder;
     }
 
-    private BaseParticipantBuilder participant(String objectClass) {
+    /*
+    private BaseParticipantBuilder<B,P> participant(String objectClass) {
         return new BaseParticipantBuilder(this, schemaBuilder.objectClass(objectClass));
     }
 
     @Override
-    public Participant subject(String objectClass, Closure<?> closure) {
+    public Participant<B,P> subject(String objectClass, Closure<?> closure) {
         if (subject == null) {
             subject = participant(objectClass);
         }
@@ -37,12 +39,13 @@ public class AbstractRelationshipBuilder implements RelationshipBuilder, GroovyC
     }
 
     @Override
-    public Participant object(String objectClass, Closure<?> closure) {
+    public Participant<B,P> object(String objectClass, Closure<?> closure) {
         if (object == null) {
             object = participant(objectClass);
         }
         return GroovyClosures.callAndReturnDelegate(closure,object);
     }
+    */
 
     @Override
     public void afterExecution() {

@@ -22,7 +22,7 @@ public enum ConnIdBuiltInAttribute {
     }
 
     @Groovy.Convenience
-    interface Mixin {
+    public interface Mixin {
         ConnIdBuiltInAttribute UID = ConnIdBuiltInAttribute.UID;
         ConnIdBuiltInAttribute NAME = ConnIdBuiltInAttribute.NAME;
         ConnIdBuiltInAttribute PASSWORD = ConnIdBuiltInAttribute.PASSWORD;

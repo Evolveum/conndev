@@ -11,12 +11,12 @@ import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public interface SchemaBuilder {
+public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends ObjectClassSchemaBuilder<OB,?,?>> {
 
 
-    ObjectClassSchemaBuilder objectClass(String name);
+    OB objectClass(String name);
 
-    default ObjectClassSchemaBuilder objectClass(String name,
+    default OB objectClass(String name,
                                          @Script.Initialization
                                          @DelegatesTo(ObjectClassSchemaBuilder.class)  Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));

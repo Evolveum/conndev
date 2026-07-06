@@ -9,16 +9,13 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
-import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.concepts.GroovyClosures;
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
+
 import org.identityconnectors.framework.common.objects.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilder {
+public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClassDefinitionBuilder<B, AB, AP> , AB extends BaseAttributeBuilder<AB,AP>, AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<B, AB, AP> {
 
     private static final Map<String, String> BUILT_IN_ATTRIBUTES;
 
@@ -46,6 +43,7 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
         connIdBuilder.setType(name);
     }
 
+    /*
     @Override
     public BaseAttributeBuilder attribute(String name) {
         return nativeAttributes.computeIfAbsent(name, key -> new BaseAttributeBuilder(this, key));
@@ -60,14 +58,16 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
         });
         return builder;
     }
+    */
 
     @Override
-    public ObjectClassSchemaBuilder embedded(boolean embedded) {
+    public B embedded(boolean embedded) {
         this.embedded = embedded;
         connIdBuilder.setEmbedded(embedded);
-        return this;
+        return (B) this;
     }
 
+    /*
     @Override
     public AbstractAttributeBuilder attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure closure) {
         var attr = attribute(name);
@@ -79,11 +79,11 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
         var attr = reference(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
-
+    */
     @Override
-    public BaseObjectClassDefinitionBuilder description(String description) {
+    public B description(String description) {
         this.description = description;
-        return this;
+        return (B) this;
     }
 
     /**
@@ -108,7 +108,7 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
 
 
 
-    public BaseObjectClassDefinitionBuilder connIdAttribute(String connIdName, String attributeName) {
+    public B connIdAttribute(String connIdName, String attributeName) {
         var finalName = BUILT_IN_ATTRIBUTES.get(connIdName);
         if (finalName == null) {
             throw new IllegalArgumentException("No such built-in ConnID attribute: " + connIdName);
@@ -118,7 +118,7 @@ public class BaseObjectClassDefinitionBuilder implements ObjectClassSchemaBuilde
             throw new IllegalArgumentException("Attribute " + attributeName + " not found");
         }
         attribute.connId().name(finalName);
-        return this;
+        return (B) this;
     }
 
 
