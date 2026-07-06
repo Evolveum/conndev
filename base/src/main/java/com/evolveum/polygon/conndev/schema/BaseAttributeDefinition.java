@@ -46,16 +46,16 @@ public class BaseAttributeDefinition {
             }
         }
         if (suggestedConnIdType == null) {
-            suggestedConnIdType = mappedBuilder.connIdType;
+            suggestedConnIdType = mappedBuilder.connIdBuilder.type().value();
         }
 
         if (!mappedBuilder.isReference()) {
             if (suggestedConnIdType == null) {
                 throw new IllegalArgumentException("Missing ConnId type definition for attribute " + remoteName);
             }
-            mappedBuilder.connIdBuilder.setType(suggestedConnIdType);
+            mappedBuilder.connIdBuilder.type(DefinitionValue.detected(suggestedConnIdType));
         } else {
-            mappedBuilder.connIdBuilder.setType(ConnectorObjectReference.class);
+            mappedBuilder.connIdBuilder.type(DefinitionValue.detected(ConnectorObjectReference.class));
         }
         // FIXME: Do the reference attribute mappings
 
@@ -65,10 +65,6 @@ public class BaseAttributeDefinition {
         if (mappedBuilder.resolverBuilder != null) {
             this.resolver = mappedBuilder.resolverBuilder.build();
         }
-
-
-
-
     }
 
     public String remoteName() {

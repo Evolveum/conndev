@@ -9,7 +9,9 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.build.api.SchemaBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
@@ -20,7 +22,7 @@ import org.identityconnectors.framework.spi.Connector;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends BaseObjectClassDefinitionBuilder<OB,?,?>> implements SchemaBuilder<SB, OB> {
+public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends BaseObjectClassDefinitionBuilder<OB,?,?,?>> implements SchemaBuilder<SB, OB> {
 
     private final Class<? extends Connector> connectorClass;
     private final Map<String, OB> objectClasses = new HashMap<>();
@@ -31,12 +33,17 @@ public abstract class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB
         this.contextLookup = context;
     }
 
-    /*
+
     @Override
-    public BaseObjectClassDefinitionBuilder objectClass(String name) {
-        return objectClasses.computeIfAbsent(name, k -> new BaseObjectClassDefinitionBuilder(BaseSchemaBuilder.this, k));
+    public OB objectClass(String name) {
+        var definitionName = DefinitionValue.from(name, SourceLocation.capture());
+        return objectClasses.computeIfAbsent(name, k -> newObjectClass(definitionName));
     }
-    */
+
+    protected OB newObjectClass(DefinitionValue<String> name) {
+        return (OB) new BaseObjectClassDefinitionBuilder(BaseSchemaBuilder.this, name);
+    }
+
 
     @Override
     public OB objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
@@ -48,11 +55,14 @@ public abstract class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB
     }
 
     @Override
-    public abstract RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure);
-    /**{
+    public RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure) {
+        /**
         var ret =  new AbstractRelationshipBuilder(name, this);
         return GroovyClosures.callAndReturnDelegate(closure, ret);
-    }**/
+         **/
+        // FIXME
+        return null;
+    }
 
     public BaseSchema build() {
         if (objectClasses.isEmpty()) {

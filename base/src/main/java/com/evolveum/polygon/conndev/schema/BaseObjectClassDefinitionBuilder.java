@@ -10,12 +10,22 @@ import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 
+import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
+import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClassDefinitionBuilder<B, AB, AP> , AB extends BaseAttributeBuilder<AB,AP>, AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<B, AB, AP> {
+public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefinitionBuilder<OB, AB, RB, AP> ,
+        AB extends BaseAttributeBuilder<AB,AP>,
+        RB extends BaseAttributeBuilder<RB,AP>,
+        AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<OB, AB, RB> {
 
     private static final Map<String, String> BUILT_IN_ATTRIBUTES;
 
@@ -28,7 +38,7 @@ public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClass
 
     }
 
-    private final String name;
+    private final DefinitionValue<String> name;
     private final ObjectClassInfoBuilder connIdBuilder = new ObjectClassInfoBuilder();
     private final BaseSchemaBuilder parent;
     Map<String, BaseAttributeBuilder> nativeAttributes = new HashMap<>();
@@ -37,53 +47,53 @@ public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClass
     private String locator;
     private String namespace;
 
-    public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, String name) {
+    public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, DefinitionValue<String> name) {
         this.name = name;
         this.parent = restSchemaBuilder;
-        connIdBuilder.setType(name);
+
     }
 
-    /*
+
     @Override
-    public BaseAttributeBuilder attribute(String name) {
-        return nativeAttributes.computeIfAbsent(name, key -> new BaseAttributeBuilder(this, key));
+    public AB attribute(String name) {
+        var def = DefinitionValue.from(name, SourceLocation.capture());
+        return (AB) nativeAttributes.computeIfAbsent(name, key -> new BaseAttributeBuilder(this, def));
     }
 
     @Override
-    public BaseAttributeBuilder reference(String name) {
+    public RB reference(String name) {
+        var def = DefinitionValue.from(name, SourceLocation.capture());
         var builder = nativeAttributes.computeIfAbsent(name, key -> {
-            var ret = new BaseAttributeBuilder(BaseObjectClassDefinitionBuilder.this, key);
-            ret.connIdBuilder.setType(ConnectorObjectReference.class);
+            var ret = new BaseAttributeBuilder(BaseObjectClassDefinitionBuilder.this, def);
+            ret.connIdBuilder.type(def.derived(ConnectorObjectReference.class));
             return ret;
         });
-        return builder;
+        return (RB) builder;
     }
-    */
 
     @Override
-    public B embedded(boolean embedded) {
+    public OB embedded(boolean embedded) {
         this.embedded = embedded;
         connIdBuilder.setEmbedded(embedded);
-        return (B) this;
+        return (OB) this;
     }
 
-    /*
     @Override
-    public AbstractAttributeBuilder attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure closure) {
+    public AB attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure<?> closure) {
         var attr = attribute(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
 
     @Override
-    public BaseAttributeBuilder reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure closure) {
+    public RB reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure) {
         var attr = reference(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
-    */
+
     @Override
-    public B description(String description) {
+    public OB description(String description) {
         this.description = description;
-        return (B) this;
+        return (OB) this;
     }
 
     /**
@@ -103,12 +113,12 @@ public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClass
 
 
     public String name() {
-        return name;
+        return name.value();
     }
 
 
 
-    public B connIdAttribute(String connIdName, String attributeName) {
+    public OB connIdAttribute(String connIdName, String attributeName) {
         var finalName = BUILT_IN_ATTRIBUTES.get(connIdName);
         if (finalName == null) {
             throw new IllegalArgumentException("No such built-in ConnID attribute: " + connIdName);
@@ -118,11 +128,12 @@ public abstract class BaseObjectClassDefinitionBuilder<B extends BaseObjectClass
             throw new IllegalArgumentException("Attribute " + attributeName + " not found");
         }
         attribute.connId().name(finalName);
-        return (B) this;
+        return (OB) this;
     }
 
 
     public BaseObjectClassDefinition build() {
+        connIdBuilder.setType(name.value());
         var connIdAttrs = new HashMap<String, BaseAttributeDefinition>();
         var nativeAttrs = new HashMap<String, BaseAttributeDefinition>();
         for (var attrBuilder : nativeAttributes.values()) {

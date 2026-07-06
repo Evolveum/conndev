@@ -29,7 +29,8 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
     default B readable(boolean readable) {
-        return readable(DefinitionValue.from(readable, SourceLocation.capture()));
+        connId().readable(DefinitionValue.from(readable, SourceLocation.capture()));
+        return self();
     }
 
     /**
@@ -41,19 +42,23 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
     default B required(boolean required) {
-        return required(DefinitionValue.from(required, SourceLocation.capture()));
+        connId().required(DefinitionValue.from(required, SourceLocation.capture()));
+        return self();
     }
 
     default B description(String description) {
-        return description(DefinitionValue.from(description, SourceLocation.capture()));
+        connId().description(DefinitionValue.from(description, SourceLocation.capture()));
+        return self();
     }
 
     default B returnedByDefault(boolean returnedByDefault) {
-        return returnedByDefault(DefinitionValue.from(returnedByDefault, SourceLocation.capture()));
+        connId().returnedByDefault(DefinitionValue.from(returnedByDefault, SourceLocation.capture()));
+        return self();
     }
 
     default B multiValued(boolean multiValued) {
-        return multiValued(DefinitionValue.from(multiValued, SourceLocation.capture()));
+        connId().multiValued(DefinitionValue.from(multiValued, SourceLocation.capture()));
+        return self();
     }
 
     /**
@@ -65,11 +70,13 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @return the current instance of {@code RestAttributeBuilder} for method chaining
      */
     default B creatable(boolean creatable) {
-        return creatable(DefinitionValue.from(creatable, SourceLocation.capture()));
+        connId().creatable(DefinitionValue.from(creatable, SourceLocation.capture()));
+        return self();
     }
 
     default B updatable(boolean updatable) {
-        return updatable(DefinitionValue.from(updatable, SourceLocation.capture()));
+        connId().updatable(DefinitionValue.from(updatable, SourceLocation.capture()));
+        return self();
     }
 
     @Groovy.AlternateSpelling
@@ -176,11 +183,35 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         JsonMapping path(AttributePath path);
     }
 
-    interface ConnIdMapping extends ConnIdBuiltInAttribute.Mixin {
+    interface ConnIdMapping extends SpiAttributeBuilder.ConnIdMapping<ConnIdMapping>, ConnIdBuiltInAttribute.Mixin {
 
-        ConnIdMapping name(String name);
+        default ConnIdMapping name(String name) {
+            return name(DefinitionValue.from(name, SourceLocation.capture()));
+        }
 
-        ConnIdMapping type(Class<?> connIdType);
+        default ConnIdMapping type(Class<?> connIdType) {
+            return type(DefinitionValue.from(connIdType, SourceLocation.capture()));
+        }
+
+        default ConnIdMapping required(boolean required) {
+            return required(DefinitionValue.from(required, SourceLocation.capture()));
+        }
+
+        default ConnIdMapping description(String description) {
+            return description(DefinitionValue.from(description, SourceLocation.capture()));
+        }
+
+        default ConnIdMapping returnedByDefault(boolean returnedByDefault) {
+            return returnedByDefault(DefinitionValue.from(returnedByDefault, SourceLocation.capture()));
+        }
+
+        default ConnIdMapping multiValued(boolean multiValued) {
+            return multiValued(DefinitionValue.from(multiValued, SourceLocation.capture()));
+        }
+
+        default ConnIdMapping nativeName(String name) {
+            return nativeName(DefinitionValue.from(name, SourceLocation.capture()));
+        }
     }
 
 }

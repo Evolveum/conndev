@@ -8,23 +8,10 @@ package com.evolveum.polygon.conndev.build.spi;
 
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 
 public interface SpiAttributeBuilder<B extends AttributeBuilder<B,P>, P> extends FluentBuilder<B, P> {
-
-    B readable(DefinitionValue<Boolean> readable);
-
-    B required(DefinitionValue<Boolean> required);
-
-    B description(DefinitionValue<String> description);
-
-    B returnedByDefault(DefinitionValue<Boolean> returnedByDefault);
-
-    B multiValued(DefinitionValue<Boolean> multiValued);
-
-    B creatable(DefinitionValue<Boolean> creatable);
-
-    B updatable(DefinitionValue<Boolean> updatable);
 
     B emulated(DefinitionValue<Boolean> emulated);
 
@@ -37,5 +24,36 @@ public interface SpiAttributeBuilder<B extends AttributeBuilder<B,P>, P> extends
     @Override
     default P build() {
         throw new UnsupportedOperationException("Implementation required");
+    }
+
+    interface ConnIdMapping<F extends ConnIdMapping<F>> extends Fluent<F> {
+
+        F name(DefinitionValue<String> name);
+
+        F nativeName(DefinitionValue<String> name);
+
+        F type(DefinitionValue<Class<?>> connIdType);
+
+        F readable(DefinitionValue<Boolean> readable);
+
+        F required(DefinitionValue<Boolean> required);
+
+        F description(DefinitionValue<String> description);
+
+        F returnedByDefault(DefinitionValue<Boolean> returnedByDefault);
+
+        F multiValued(DefinitionValue<Boolean> multiValued);
+
+        F creatable(DefinitionValue<Boolean> creatable);
+
+        F updatable(DefinitionValue<Boolean> updatable);
+
+        F roleInReference(DefinitionValue<String> detected);
+
+        F referencedObjectClassName(DefinitionValue<String> complexType);
+
+        F subtype(DefinitionValue<String> from);
+
+        DefinitionValue<Class<?>> type();
     }
 }

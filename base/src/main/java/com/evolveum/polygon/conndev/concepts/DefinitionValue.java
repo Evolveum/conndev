@@ -6,11 +6,16 @@
  */
 package com.evolveum.polygon.conndev.concepts;
 
+import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
+
+import java.util.Objects;
+
 public record DefinitionValue<T>(T value, Origin origin, SourceLocation location) {
 
 
     public static final DefinitionValue<Boolean> DEFAULT_FALSE = defaultFrom(Boolean.FALSE);
     public static final DefinitionValue<Boolean> DEFAULT_TRUE = defaultFrom(Boolean.TRUE);
+    public static final DefinitionValue<Void> DEFAULT_NULL = defaultFrom(null);
 
     public static <T> DefinitionValue<T> of(T value, Origin original, SourceLocation location) {
         return new DefinitionValue<>(value, original, location);
@@ -18,6 +23,12 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
 
     public static <T> DefinitionValue<T> from(T value, SourceLocation location) {
         return new DefinitionValue<>(value, Origin.DECLARED, location);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    public static <T> DefinitionValue<T> emptyDefault() {
+        return (DefinitionValue<T>) DEFAULT_NULL;
     }
 
     /**
@@ -57,11 +68,23 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
                 throw new IllegalStateException("Multiple default values declared.");
             } else if (this.origin == Origin.DETECTED) {
                 return other;
-            } else {
-                throw new IllegalArgumentException("Multiple declarations for the same value detected: " + other.location());
+            } else if (!Objects.equals(this.value, other.value)) {
+                throw new IllegalArgumentException("Multiple declarations for the same definition detected. Current value " + this + " other: " + other);
             }
         }
         return this.origin.compareTo(other.origin) > 0 ? this : other;
+    }
+
+    public boolean isPresent() {
+        return value != null;
+    }
+
+    public DefinitionValue<T> asDefault() {
+        return defaultFrom(value);
+    }
+
+    public <X> DefinitionValue<X> derived(X value) {
+        return of(value, origin, location);
     }
 
     public enum Origin {
@@ -70,7 +93,7 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
          */
          DEFAULT,
          /**
-         * Value detected from remote system, more specific than default, less specific then explicitly declared
+         * Value detected from remote system / computed, more specific than default, less specific then explicitly declared
          */
         DETECTED,
         /**

@@ -13,10 +13,10 @@ import groovy.lang.DelegatesTo;
 /**
  *
  * @param <B> Final Object Class Builder interface
- * @param <AB> Final Attribute Builder interface
- * @param <AP> Final Attribute interface
+ * @param <A> Final Attribute Builder interface
+ * @param <R> Final Reference Attribute Builder interface
  */
-public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, AB, AP> , AB extends AttributeBuilder<AB,AP>, AP> {
+public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<A,?>, R extends ReferenceAttributeBuilder<R, ?>> {
 
     B description(String description);
 
@@ -28,7 +28,7 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param name the name of the attribute to be configured
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AB attribute(String name);
+    A attribute(String name);
 
     /**
      * Creates / gets reference definition with the specified name.
@@ -36,7 +36,7 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param name the name of the reference attribute to be configured
      * @return an instance of {@link ReferenceAttributeBuilder} for further configuration of the reference attribute
      */
-    ReferenceAttributeBuilder reference(String name);
+    R reference(String name);
 
     /**
      * Creates or gets an attribute definition with the specified name, applying a closure to further configure it.
@@ -45,7 +45,7 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param closure a closure that configures the {@link AttributeBuilder} instance for the specified attribute
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
-    AB attribute(String name,
+    A attribute(String name,
                  @Script.Initialization
                  @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
                  Closure<?> closure);
@@ -57,7 +57,7 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param closure a closure that configures the {@link ReferenceAttributeBuilder} instance for the specified reference attribute
      * @return an instance of {@link ReferenceAttributeBuilder} for further configuration of the reference attribute
      */
-    ReferenceAttributeBuilder reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure);
+    R reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure);
 
     /**
      * Maps a ConnId builtin attribute name (like "UID", "NAME") to a protocol attribute.
