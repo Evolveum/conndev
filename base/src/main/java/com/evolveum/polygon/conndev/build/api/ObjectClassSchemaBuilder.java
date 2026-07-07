@@ -16,7 +16,7 @@ import groovy.lang.DelegatesTo;
  * @param <A> Final Attribute Builder interface
  * @param <R> Final Reference Attribute Builder interface
  */
-public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<A,?>, R extends ReferenceAttributeBuilder<R, ?>> {
+public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<? super R,?>, R extends ReferenceAttributeBuilder<R, A, ?>> {
 
     B description(String description);
 

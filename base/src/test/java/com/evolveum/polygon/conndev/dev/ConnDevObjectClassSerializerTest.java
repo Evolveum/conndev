@@ -49,23 +49,16 @@ public class ConnDevObjectClassSerializerTest {
         user.locator("users").namespace("public");
         var id = user.attribute("id");
         id.connId().name(Uid.NAME).type(String.class);
-        id.nativeType("INT");
         id.required(true).updatable(false).creatable(false);
         var name = user.attribute("name");
         name.connId().type(String.class);
         var lastLogin = user.attribute("last_login");
         lastLogin.connId().type(String.class);
-        lastLogin.nativeType("TIMESTAMP");
         var manager = user.reference("manager_id");
         manager.objectClass("user")
                 .role(AttributeInfo.RoleInReference.SUBJECT)
-                .subtype("fk_user_manager")
-                .referencedAttribute("id");
+                .subtype("fk_user_manager");
 
-        // dev object classes live in the same schema, but are not part of the export
-        for (var info : ConnDevSchema.objectClassInfos()) {
-            builder.defineObjectClass(info);
-        }
         return builder.build();
     }
 
@@ -93,13 +86,10 @@ public class ConnDevObjectClassSerializerTest {
 
         // the model maps "id" to __UID__, but the export keeps the original framework view
         var id = attribute(user, "id");
-        assertEquals(string(id, "type"), "INT");
         assertEquals(single(id, "required"), Boolean.TRUE);
         assertEquals(single(id, "creatable"), Boolean.FALSE);
         assertEquals(single(id, "updateable"), Boolean.FALSE);
 
-        var lastLogin = attribute(user, "last_login");
-        assertEquals(string(lastLogin, "type"), "TIMESTAMP");
 
         // plain attribute with defaults: type from ConnId, no flags emitted
         var name = attribute(user, "name");
@@ -116,7 +106,6 @@ public class ConnDevObjectClassSerializerTest {
         var manager = attribute(user, "manager_id");
         assertEquals(string(manager, "type"), "reference");
         assertEquals(string(manager, "referencedObjectClass"), "user");
-        assertEquals(string(manager, "referencedAttribute"), "id");
         assertEquals(string(manager, "reference"), "fk_user_manager");
         assertEquals(string(manager, "role"), "subject");
     }

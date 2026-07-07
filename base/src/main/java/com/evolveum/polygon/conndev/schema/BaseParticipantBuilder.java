@@ -6,19 +6,18 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
+import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
-import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 
-public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Reference<B,P>, P> implements RelationshipBuilder.Participant<B,P> {
+public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Reference<B,?,P>, P> implements RelationshipBuilder.Participant<B,P> {
 
     private final BaseObjectClassDefinitionBuilder objectClass;
     private final B parent;
 
-    private AttributeBuilder attribute;
+    private ReferenceBuilder attribute;
     private Boolean owner;
 
     public BaseParticipantBuilder(B relationshipBuilder, BaseObjectClassDefinitionBuilder targetClass) {
@@ -26,7 +25,7 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
         this.objectClass = targetClass;
     }
 
-    AttributeBuilder attribute() {
+    ReferenceBuilder attribute() {
         return attribute;
     }
 
@@ -60,11 +59,11 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
         return objectClass.name();
     }
 
-    static abstract class AttributeBuilder<B extends ReferenceAttributeBuilder<B,P>,P > implements RelationshipBuilder.Reference<B,P>, ReferenceAttributeBuilder.Delegator<B,P> {
+    abstract static class ReferenceBuilder<B extends ReferenceAttributeBuilder<B, A, P>, A extends AttributeBuilder<? super B, P>, P> implements RelationshipBuilder.Reference<B,A,P>, ReferenceAttributeBuilder.Delegator<B,A, P> {
 
         private final B delegate;
 
-        public AttributeBuilder(B delegate) {
+        public ReferenceBuilder(B delegate) {
             this.delegate = delegate;
         }
 

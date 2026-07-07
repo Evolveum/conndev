@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefinitionBuilder<OB, AB, RB, AP> ,
-        AB extends BaseAttributeBuilder<AB,AP>,
-        RB extends BaseAttributeBuilder<RB,AP>,
+        AB extends BaseAttributeBuilder<RB, AB,AP>,
+        RB extends BaseAttributeBuilder<RB,AB, AP>,
         AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<OB, AB, RB> {
 
     private static final Map<String, String> BUILT_IN_ATTRIBUTES;

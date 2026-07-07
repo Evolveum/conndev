@@ -9,7 +9,7 @@ package com.evolveum.polygon.conndev.build.api;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
-public interface ReferenceAttributeBuilder<B extends AttributeBuilder<B, P>, P> extends AttributeBuilder<B, P> {
+public interface ReferenceAttributeBuilder<B extends ReferenceAttributeBuilder<B, A, P>, A extends AttributeBuilder<? super B, P>, P> extends AttributeBuilder<B, P> {
 
     AttributeInfo.RoleInReference SUBJECT = AttributeInfo.RoleInReference.SUBJECT;
     AttributeInfo.RoleInReference OBJECT = AttributeInfo.RoleInReference.OBJECT;
@@ -22,7 +22,7 @@ public interface ReferenceAttributeBuilder<B extends AttributeBuilder<B, P>, P> 
 
     B role(AttributeInfo.RoleInReference role);
 
-    interface Delegator<B extends ReferenceAttributeBuilder<B, P>, P> extends ReferenceAttributeBuilder<B, P>  {
+    interface Delegator<B extends ReferenceAttributeBuilder<B, A,  P>,  A extends AttributeBuilder<? super B, P>, P> extends ReferenceAttributeBuilder<B, A,  P>  {
 
         B delegate();
 
@@ -77,8 +77,8 @@ public interface ReferenceAttributeBuilder<B extends AttributeBuilder<B, P>, P> 
         }
 
         @Override
-        default B updateable(boolean updateable) {
-            return delegate().updateable(updateable);
+        default B updateable(boolean updatable) {
+            return delegate().updateable(updatable);
         }
 
         @Override

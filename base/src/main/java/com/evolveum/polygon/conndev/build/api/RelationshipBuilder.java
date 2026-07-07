@@ -10,7 +10,7 @@ import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
-public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,P>,P> {
+public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?,P>,P> {
 
 
     /**
@@ -34,7 +34,7 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,P
 
 
 
-    interface Participant<B extends Reference<B,P>, P> {
+    interface Participant<B extends Reference<B, ?, P>, P> {
 
         B attribute(String name);
 
@@ -55,7 +55,7 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,P
         B owner(boolean owner);
     }
 
-    interface Reference<B extends ReferenceAttributeBuilder<B,P>, P> extends ReferenceAttributeBuilder<B, P> {
+    interface Reference<B extends ReferenceAttributeBuilder<B,A,P>, A extends AttributeBuilder<? super B, P>, P> extends ReferenceAttributeBuilder<B, A, P> {
 
         /**
          * Adds an attribute resolver with custom behavior defined.

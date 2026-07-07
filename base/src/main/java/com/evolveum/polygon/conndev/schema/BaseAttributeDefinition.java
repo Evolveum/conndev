@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.dev.ConnDevAttributeSource;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.AttributeResolver;
@@ -19,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BaseAttributeDefinition {
+public class BaseAttributeDefinition implements ConnDevAttributeSource {
 
     private final AttributeInfo info;
     private final DefinitionValue<String> remoteName;
@@ -27,7 +28,7 @@ public class BaseAttributeDefinition {
     private final DefinitionValue<Boolean> emulated;
     private AttributeResolver resolver;
 
-    public BaseAttributeDefinition(BaseAttributeBuilder<?,?> mappedBuilder) {
+    public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?> mappedBuilder) {
         remoteName = mappedBuilder.remoteName;
         emulated = mappedBuilder.emulated;
 

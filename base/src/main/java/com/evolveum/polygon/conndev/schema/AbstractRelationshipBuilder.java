@@ -12,7 +12,7 @@ import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
-public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.Reference<B,P>, P> implements RelationshipBuilder<B,P>, GroovyClosures.ClosureExecutionAware {
+public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.Reference<B,?,P>, P> implements RelationshipBuilder<B,P>, GroovyClosures.ClosureExecutionAware {
 
     private final BaseSchemaBuilder schemaBuilder;
 

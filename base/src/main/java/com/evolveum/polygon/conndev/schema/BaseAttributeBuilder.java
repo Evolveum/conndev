@@ -18,7 +18,7 @@ import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
 
-public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, P>, P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B,P> implements ReferenceAttributeBuilder<B, P> {
+public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B,A, P>,  A extends BaseAttributeBuilder<? super B, A, P>, P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B,P> implements ReferenceAttributeBuilder<B, A,  P> {
 
     public Deferred.Settable<BaseAttributeDefinition> deffered = Deferred.settable();
     private DefinitionValue<String> referencedObjectClass = DefinitionValue.emptyDefault();
@@ -59,11 +59,6 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, P>, P extend
 
     public boolean isReference() {
         return isReference;
-    }
-
-    @Override
-    public B self() {
-        return null;
     }
 
     /**
