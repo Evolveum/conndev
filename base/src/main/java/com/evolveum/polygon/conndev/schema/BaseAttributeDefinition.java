@@ -28,7 +28,7 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
     private final DefinitionValue<Boolean> emulated;
     private AttributeResolver resolver;
 
-    public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?> mappedBuilder) {
+    public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> mappedBuilder) {
         remoteName = mappedBuilder.remoteName;
         emulated = mappedBuilder.emulated;
 

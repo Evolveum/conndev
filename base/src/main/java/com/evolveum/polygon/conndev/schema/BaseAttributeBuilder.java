@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.Deferred;
@@ -18,7 +19,10 @@ import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
 
-public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B,A, P>,  A extends BaseAttributeBuilder<? super B, A, P>, P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B,P> implements ReferenceAttributeBuilder<B, A,  P> {
+public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
+        A extends AttributeBuilder<? super R, P>,
+        R extends ReferenceAttributeBuilder<R, A, P>,
+        P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B ,R, P> implements ReferenceAttributeBuilder<R, A,  P> {
 
     public Deferred.Settable<BaseAttributeDefinition> deffered = Deferred.settable();
     private DefinitionValue<String> referencedObjectClass = DefinitionValue.emptyDefault();
@@ -30,7 +34,7 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B,A, P>,  A ext
     }
 
     @Override
-    public B objectClass(String objectClass) {
+    public R objectClass(String objectClass) {
         var definition = DefinitionValue.from(objectClass, SourceLocation.capture());
         isReference = true;
         this.referencedObjectClass = this.referencedObjectClass.moreSpecific(definition);
@@ -39,20 +43,20 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B,A, P>,  A ext
     }
 
     @Override
-    public B subtype(String subtype) {
+    public R subtype(String subtype) {
         connId().subtype(DefinitionValue.from(subtype, SourceLocation.capture()));
         return self();
     }
 
     @Override
-    public B role(String role) {
+    public R role(String role) {
         connId().roleInReference(DefinitionValue.from(role, SourceLocation.capture()));
         this.isReference = true;
         return self();
     }
 
     @Override
-    public B role(AttributeInfo.RoleInReference role) {
+    public R role(AttributeInfo.RoleInReference role) {
         return role(role.toString());
     }
 

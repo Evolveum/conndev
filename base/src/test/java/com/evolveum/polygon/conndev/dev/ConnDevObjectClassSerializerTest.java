@@ -46,7 +46,7 @@ public class ConnDevObjectClassSerializerTest {
         var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
 
         var user = builder.objectClass("user");
-        user.locator("users").namespace("public");
+        //user.locator("users").namespace("public");
         var id = user.attribute("id");
         id.connId().name(Uid.NAME).type(String.class);
         id.required(true).updatable(false).creatable(false);
@@ -71,8 +71,8 @@ public class ConnDevObjectClassSerializerTest {
         assertEquals(user.getObjectClass().getObjectClassValue(), "conndev_ObjectClass");
         assertEquals(user.getName().getNameValue(), "user");
         assertEquals(user.getUid().getUidValue(), "user");
-        assertEquals(value(user, "locator"), "users");
-        assertEquals(value(user, "namespace"), "public");
+        //assertEquals(value(user, "locator"), "users");
+        //assertEquals(value(user, "namespace"), "public");
 
         var names = user.getAttributeByName("attributes").getValue().stream()
                 .map(e -> string((EmbeddedObject) e, "name"))

@@ -22,10 +22,11 @@ import org.identityconnectors.framework.common.objects.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefinitionBuilder<OB, AB, RB, AP> ,
-        AB extends BaseAttributeBuilder<RB, AB,AP>,
-        RB extends BaseAttributeBuilder<RB,AB, AP>,
-        AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<OB, AB, RB> {
+public class BaseObjectClassDefinitionBuilder<
+        B extends ObjectClassSchemaBuilder<B, A, R> ,
+        A extends AttributeBuilder<? super R,AP>, R extends ReferenceAttributeBuilder<R, A, AP>,
+        AB extends BaseAttributeBuilder<AB, A, R,  AP>,
+        AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<B, A, R> {
 
     private static final Map<String, String> BUILT_IN_ATTRIBUTES;
 
@@ -41,7 +42,7 @@ public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefiniti
     private final DefinitionValue<String> name;
     private final ObjectClassInfoBuilder connIdBuilder = new ObjectClassInfoBuilder();
     private final BaseSchemaBuilder parent;
-    Map<String, BaseAttributeBuilder> nativeAttributes = new HashMap<>();
+    Map<String, AB> nativeAttributes = new HashMap<>();
     private String description;
     private boolean embedded;
     private String locator;
@@ -50,50 +51,53 @@ public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefiniti
     public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, DefinitionValue<String> name) {
         this.name = name;
         this.parent = restSchemaBuilder;
-
     }
 
 
     @Override
-    public AB attribute(String name) {
-        var def = DefinitionValue.from(name, SourceLocation.capture());
-        return (AB) nativeAttributes.computeIfAbsent(name, key -> new BaseAttributeBuilder(this, def));
+    public A attribute(String name) {
+        return reference(DefinitionValue.from(name, SourceLocation.capture())).asAttribute();
+    }
+
+    public R reference(DefinitionValue<String> name) {
+        return nativeAttributes.computeIfAbsent(name.value(), key -> newAttribute(name)).self();
+    }
+
+    // FIXME: Should be abstract in future
+    protected AB newAttribute(DefinitionValue<String> def) {
+        return (AB) new BaseAttributeBuilder(this, def);
     }
 
     @Override
-    public RB reference(String name) {
-        var def = DefinitionValue.from(name, SourceLocation.capture());
-        var builder = nativeAttributes.computeIfAbsent(name, key -> {
-            var ret = new BaseAttributeBuilder(BaseObjectClassDefinitionBuilder.this, def);
-            ret.connIdBuilder.type(def.derived(ConnectorObjectReference.class));
-            return ret;
-        });
-        return (RB) builder;
+    public R reference(String name) {
+        var ref = reference(DefinitionValue.from(name, SourceLocation.capture()));
+        ref.connId().type(DefinitionValue.detected(ConnectorObjectReference.class));
+        return ref;
     }
 
     @Override
-    public OB embedded(boolean embedded) {
+    public B embedded(boolean embedded) {
         this.embedded = embedded;
         connIdBuilder.setEmbedded(embedded);
-        return (OB) this;
+        return self();
     }
 
     @Override
-    public AB attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure<?> closure) {
+    public A attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure<?> closure) {
         var attr = attribute(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
 
     @Override
-    public RB reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure) {
+    public R reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure) {
         var attr = reference(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
 
     @Override
-    public OB description(String description) {
+    public B description(String description) {
         this.description = description;
-        return (OB) this;
+        return self();
     }
 
     /**
@@ -118,7 +122,7 @@ public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefiniti
 
 
 
-    public OB connIdAttribute(String connIdName, String attributeName) {
+    public B connIdAttribute(String connIdName, String attributeName) {
         var finalName = BUILT_IN_ATTRIBUTES.get(connIdName);
         if (finalName == null) {
             throw new IllegalArgumentException("No such built-in ConnID attribute: " + connIdName);
@@ -128,7 +132,7 @@ public class BaseObjectClassDefinitionBuilder<OB extends BaseObjectClassDefiniti
             throw new IllegalArgumentException("Attribute " + attributeName + " not found");
         }
         attribute.connId().name(finalName);
-        return (OB) this;
+        return self();
     }
 
 
@@ -160,7 +164,7 @@ public boolean embedded() {
         return embedded;
     }
 
-    public Iterable<BaseAttributeBuilder> allAttributes() {
+    public Iterable<AB> allAttributes() {
         return nativeAttributes.values();
     }
 

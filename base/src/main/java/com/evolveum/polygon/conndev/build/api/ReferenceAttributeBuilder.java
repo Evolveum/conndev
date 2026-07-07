@@ -130,4 +130,9 @@ public interface ReferenceAttributeBuilder<B extends ReferenceAttributeBuilder<B
             return delegate().updatable(updatable);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    default A asAttribute() {
+        return (A) this;
+    }
 }

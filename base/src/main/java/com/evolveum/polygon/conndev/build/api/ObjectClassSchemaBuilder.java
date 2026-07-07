@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -16,7 +17,7 @@ import groovy.lang.DelegatesTo;
  * @param <A> Final Attribute Builder interface
  * @param <R> Final Reference Attribute Builder interface
  */
-public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<? super R,?>, R extends ReferenceAttributeBuilder<R, A, ?>> {
+public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<? super R,?>, R extends ReferenceAttributeBuilder<R, A, ?>> extends Fluent<B> {
 
     B description(String description);
 

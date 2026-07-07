@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.build.api.SchemaBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
@@ -22,7 +23,9 @@ import org.identityconnectors.framework.spi.Connector;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends BaseObjectClassDefinitionBuilder<OB,?,?,?>> implements SchemaBuilder<SB, OB> {
+public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB, OA>,
+        OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?>,
+        OA extends ObjectClassSchemaBuilder<OA,?,?>> implements SchemaBuilder<SB, OA> {
 
     private final Class<? extends Connector> connectorClass;
     private final Map<String, OB> objectClasses = new HashMap<>();
@@ -35,9 +38,9 @@ public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends 
 
 
     @Override
-    public OB objectClass(String name) {
+    public OA objectClass(String name) {
         var definitionName = DefinitionValue.from(name, SourceLocation.capture());
-        return objectClasses.computeIfAbsent(name, k -> newObjectClass(definitionName));
+        return objectClasses.computeIfAbsent(name, k -> newObjectClass(definitionName)).self();
     }
 
     protected OB newObjectClass(DefinitionValue<String> name) {
@@ -46,12 +49,8 @@ public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB>, OB extends 
 
 
     @Override
-    public OB objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
-        var objectClass = objectClass(name);
-        closure.setDelegate(objectClass);
-        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        closure.call();
-        return objectClass;
+    public OA objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
+        return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));
     }
 
     @Override

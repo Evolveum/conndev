@@ -26,7 +26,7 @@ import org.identityconnectors.framework.common.objects.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,P>, P> implements AttributeBuilder<B, P> {
+public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,A,P>, A extends AttributeBuilder<A,P>, P> implements AttributeBuilder<A, P> {
 
     BaseObjectClassDefinitionBuilder objectClass;
 
@@ -49,13 +49,13 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     }
 
     @Override
-    public B protocolName(DefinitionValue<String> protocolName) {
+    public A protocolName(DefinitionValue<String> protocolName) {
         this.remoteName = this.remoteName.moreSpecific(protocolName);
         return self();
     }
 
     @Override
-    public B complexType(DefinitionValue<String> objectClass) {
+    public A complexType(DefinitionValue<String> objectClass) {
         this.complexType = complexType.moreSpecific(objectClass);
         if (complexType.isPresent()) {
             // FIXME: THis should be moved somewhere else
@@ -69,13 +69,13 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     }
 
     @Override
-    public B emulated(DefinitionValue<Boolean> emulated) {
+    public A emulated(DefinitionValue<Boolean> emulated) {
         this.emulated = this.emulated.moreSpecific(emulated);
         return self();
     }
 
     @Override
-    public B remoteName(DefinitionValue<String> remoteName) {
+    public A remoteName(DefinitionValue<String> remoteName) {
         this.remoteName = this.remoteName.moreSpecific(remoteName);
         return self();
     }
