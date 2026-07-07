@@ -26,96 +26,215 @@ import org.identityconnectors.framework.common.objects.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstract base implementation of {@link AttributeBuilder} that manages ConnId metadata
+ * and protocol mapping builders (JSON, embedded object).
+ *
+ * <p>This class implements the core attribute builder logic including:
+ * managing the ConnId-side metadata via an inner {@link ConnIdBuilder}, providing
+ * JSON protocol mapping via an inner {@link JsonBuilder}, and tracking embedded object
+ * complex types.</p>
+ *
+ * <p>Subclasses can override {@link #newProtocolMapping(Class)} to inject custom protocol
+ * mapping implementations.</p>
+ *
+ * @param <B> The concrete builder type (CRTP self-type)
+ * @param <A> The public attribute builder interface
+ * @param <P> The attribute definition type produced by {@code build()}
+ */
 public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,A,P>, A extends AttributeBuilder<A,P>, P> implements AttributeBuilder<A, P> {
 
-    BaseObjectClassDefinitionBuilder objectClass;
-
+    /**
+     * The ConnId-side attribute metadata builder.
+     *
+     * Tracks ConnId attribute name, type, multiplicity, readability,
+     * required flag, creatable/updatable flags, and role within relationships.
+     */
     final ConnIdBuilder connIdBuilder;
 
+    /**
+     * The parent object class builder that owns this attribute.
+     */
+    final BaseObjectClassDefinitionBuilder objectClass;
+
+    /**
+     * Registry of protocol-specific mappings keyed by mapping class (e.g., {@link JsonAttributeMapping}).
+     */
     Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMappingBuilder> protocolMappings = new HashMap<>();
 
 
+    /**
+     * Whether this attribute is emulated (resolved at runtime rather than exposed in remote metadata).
+     */
     DefinitionValue<Boolean> emulated = DefinitionValue.DEFAULT_FALSE;
 
+    /**
+     * The remote (protocol-side) name of the attribute, captured from the definition value.
+     */
     DefinitionValue<String> remoteName;
+
+    /**
+     * The ConnId Java type. Null until set via a protocol mapping or explicit type definition.
+     */
     Class<?> connIdType;
 
+    /**
+     * The complex type (referenced object class name) for embedded objects.
+     */
     private DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
 
+    /**
+     * Creates a new attribute builder for the given name within the specified object class.
+     *
+     * @param restObjectClassBuilder the parent object class builder
+     * @param name the attribute name definition
+     */
     protected AbstractAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, DefinitionValue<String> name) {
         this.remoteName = name;
         this.connIdBuilder = new ConnIdBuilder(name.asDefault());
         this.objectClass = restObjectClassBuilder;
     }
 
+    /**
+     * Sets the remote name (protocol-side attribute name).
+     *
+     * @param protocolName the protocol name definition
+     * @return this builder for chaining
+     */
     @Override
     public A protocolName(DefinitionValue<String> protocolName) {
         this.remoteName = this.remoteName.moreSpecific(protocolName);
         return self();
     }
 
+    /**
+     * Associates this attribute with a complex type (embedded object).
+     *
+     * <p>When a complex type is specified, the ConnId type is automatically set to
+     * {@link EmbeddedObject} and the role is set to SUBJECT. A JSON mapping using
+     * {@link EmbeddedObjectJsonMapping} is also configured.</p>
+     *
+     * @param objectClass the object class of the referenced type
+     * @return this builder for chaining
+     */
     @Override
     public A complexType(DefinitionValue<String> objectClass) {
         this.complexType = complexType.moreSpecific(objectClass);
         if (complexType.isPresent()) {
-            // FIXME: THis should be moved somewhere else
+            // FIX: This logic should be moved somewhere else
             connId().type(DefinitionValue.detected(EmbeddedObject.class));
             connId().roleInReference(DefinitionValue.detected(AttributeInfo.RoleInReference.SUBJECT.toString()));
             connId().referencedObjectClassName(this.complexType);
-            // FIXME: Should be definition value
+            // FIX: Should use definition value pattern
             json().implementation(new EmbeddedObjectJsonMapping(contextLookup(), objectClass.value()));
         }
         return self();
     }
 
+    /**
+     * Marks this attribute as emulated (resolved at runtime).
+     *
+     * @param emulated the emulated flag with metadata
+     * @return this builder for chaining
+     */
     @Override
     public A emulated(DefinitionValue<Boolean> emulated) {
         this.emulated = this.emulated.moreSpecific(emulated);
         return self();
     }
 
+    /**
+     * Sets the remote name (the name as it appears in the protocol representation).
+     *
+     * @param remoteName the remote name definition
+     * @return this builder for chaining
+     */
     @Override
     public A remoteName(DefinitionValue<String> remoteName) {
         this.remoteName = this.remoteName.moreSpecific(remoteName);
         return self();
     }
 
+    /**
+     * Returns the context lookup for attribute value resolution.
+     *
+     * @return the context lookup
+     */
     protected ContextLookup contextLookup() {
         return objectClass.contextLookup();
     }
 
+    /**
+     * Returns the JSON protocol mapping builder, creating it if necessary.
+     *
+     * @return the JSON mapping builder
+     */
     @Override
     public JsonMapping json() {
         return (JsonBuilder) protocolMappings.computeIfAbsent(JsonAttributeMapping.class, m -> new JsonBuilder());
     }
 
+    /**
+     * Configures the JSON protocol mapping via a closure.
+     *
+     * @param closure the closure for configuring the JSON mapping
+     * @return the JSON mapping builder
+     */
     @Override
     public JsonMapping json(@DelegatesTo(value = JsonMapping.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure,json());
     }
 
+    /**
+     * Returns the ConnId-side attribute metadata builder.
+     *
+     * @return the ConnId builder
+     */
     @Override
     public ConnIdMapping connId() {
         return connIdBuilder;
     }
 
+    /**
+     * ConnId-side attribute metadata builder.
+     *
+     * <p>Holds the complete ConnId attribute definition including name, type, multiplicity,
+     * readability, required/creatable/updatable flags, and role within relationships.</p>
+     */
     class ConnIdBuilder implements ConnIdMapping {
 
+        /** The ConnId attribute name. */
         private DefinitionValue<String> name;
+        /** The ConnId attribute native (protocol-side) name. */
         private DefinitionValue<String> nativeName;
-
+        /** The ConnId Java type of the attribute. */
         private DefinitionValue<Class<?>> type = DefinitionValue.defaultFrom(String.class);
+        /** Whether the attribute is readable. */
         private DefinitionValue<Boolean> readable = DefinitionValue.DEFAULT_TRUE;
+        /** Whether the attribute is required. */
         private DefinitionValue<Boolean> required = DefinitionValue.DEFAULT_FALSE;
+        /** The attribute description. */
         private DefinitionValue<String> description = DefinitionValue.emptyDefault();
+        /** Whether the attribute is returned by default. */
         private DefinitionValue<Boolean> returnedByDefault = DefinitionValue.DEFAULT_TRUE;
+        /** Whether the attribute is multi-valued. */
         private DefinitionValue<Boolean> multiValued = DefinitionValue.DEFAULT_FALSE;
+        /** Whether the attribute is creatable. */
         private DefinitionValue<Boolean> creatable = DefinitionValue.DEFAULT_TRUE;
+        /** Whether the attribute is updatable. */
         private DefinitionValue<Boolean> updatable = DefinitionValue.DEFAULT_TRUE;
+        /** The role within a reference relationship (e.g., SUBJECT, REFERENCED). */
         private DefinitionValue<String> roleInReference = DefinitionValue.emptyDefault();
+        /** The referenced object class name for reference relationships. */
         private DefinitionValue<String> referencedObjectClassName = DefinitionValue.emptyDefault();
+        /** The ConnId attribute subtype. */
         private DefinitionValue<String> subtype = DefinitionValue.emptyDefault();
 
+        /**
+         * Creates a new ConnId attribute builder with the given name.
+         *
+         * @param name the attribute name definition
+         */
         public ConnIdBuilder(DefinitionValue<String> name) {
             this.name = name;
             this.nativeName = name;
@@ -127,13 +246,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             return this;
         }
 
-
         @Override
         public ConnIdMapping name(DefinitionValue<String> name) {
             this.name = this.name.moreSpecific(name);
             return self();
         }
 
+        /**
+         * Returns the ConnId Java type.
+         *
+         * @return the type definition value
+         */
         @Override
         public DefinitionValue<Class<?>> type() {
             return this.type;
@@ -210,6 +333,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             return self();
         }
 
+        /**
+         * Builds the {@link AttributeInfo} from all configured ConnId metadata,
+         * automatically setting the type to {@Link String} for canonical Uid and Name attributes.
+         *
+         * @return the built AttributeInfo
+         */
         public AttributeInfo build() {
             var builder = new AttributeInfoBuilder();
 
@@ -245,13 +374,21 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
     class JsonBuilder implements AttributeProtocolMappingBuilder, JsonMapping {
 
+        /** The protocol-side name of this JSON mapping. */
         private String name;
+        /** The JSON path for navigating to the attribute value. */
         private AttributePath path;
+        /** The JSON type string (e.g., "string", "integer", "boolean"). */
         private String type;
+        /** The OpenAPI format for typed JSON values (e.g., "date-time", "email"). */
         private String openApiFormat;
+        /** The JSON value mapping implementation. */
         private ValueMapping<Object, JsonNode> implementation;
 
 
+        /**
+         * Creates a new JSON mapping builder with the remote name as default.
+         */
         JsonBuilder() {
             this.name = remoteName.value();
         }
@@ -302,21 +439,33 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         @Override
         public MappingTableBuilder mappingTable() {
-            // FIXME: Implement later
+            // TODO: Implement later
             return null;
         }
 
         @Override
         public MappingTableBuilder mappingTable(Closure<?> closure) {
-            // FIXME: Implement later
+            // TODO: Implement later
             return null;
         }
 
+        /**
+         * Returns the suggested ConnId type for this JSON mapping.
+         *
+         * @return always null (not yet implemented)
+         */
         @Override
         public Class<?> suggestedConnIdType() {
             return null;
         }
 
+        /**
+         * Builds the {@link JsonAttributeMapping}. If no implementation is set, creates
+         * one from the JSON type and OpenAPI format. Applies a {@link ValueTypeOverrideMapping}
+         * if the ConnId type differs from the implementation's native type.
+         *
+         * @return the built JsonAttributeMapping
+         */
         @Override
         public AttributeProtocolMapping<?,?> build() {
 
@@ -324,7 +473,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                 implementation = OpenApiValueMapping.from(type, openApiFormat);
             }
             if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
-                // we need to to ConnID override
+                // apply ConnId type override
                 implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
             }
             if (path == null) {

@@ -20,20 +20,50 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Represents a single attribute definition within a ConnDev connector schema.
+ *
+ * <p>This class encapsulates all metadata needed to describe an attribute: its ConnId
+ * {@link AttributeInfo}, the remote/system-side identifier ({@code remoteName}), any
+ * protocol-specific mappings (e.g. JSON path mappings), whether the attribute should
+ * be treated as emulated, and an optional {@link AttributeResolver} for runtime value
+ * resolution.</p>
+ *
+ * <p>Instance construction performs type resolution across all protocol mappings and
+ * the ConnId builder, producing a consistent {@link AttributeInfo} ready for use by
+ * the ConnId framework.</p>
+ */
 public class BaseAttributeDefinition implements ConnDevAttributeSource {
 
+    /** The ConnId {@link AttributeInfo} describing attributes name, type, multi-valued-ness, etc. */
     private final AttributeInfo info;
+
+    /** The remote (target system) name for this attribute, as a lazily-resolved value. */
     private final DefinitionValue<String> remoteName;
+
+    /** Protocol-specific mappings (keyed by mapping class) that describe how the attribute appears in various protocols. */
     private final Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMapping<?,?>> protocolMappings = new HashMap<>();
+
+    /** Whether this attribute is emulated (i.e. simulated rather than directly present on the target). */
     private final DefinitionValue<Boolean> emulated;
+
+    /** Optional resolver for computing or transforming attribute values at runtime. */
     private AttributeResolver resolver;
 
-    public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> mappedBuilder) {
-        remoteName = mappedBuilder.remoteName;
-        emulated = mappedBuilder.emulated;
+    /**
+     * Constructs a {@code BaseAttributeDefinition} from the supplied builder, performing type
+     * resolution across protocol mappings and building the final {@link AttributeInfo}.
+     *
+     * @param builder the {@code BaseAttributeBuilder} providing all metadata for this attribute
+     * @throws IllegalStateException if multiple protocol mappings declare conflicting ConnId types
+     * @throws IllegalArgumentException if no ConnId type can be resolved for a non-reference attribute
+     */
+    public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> builder) {
+        remoteName = builder.remoteName;
+        emulated = builder.emulated;
 
         Class<?> suggestedConnIdType = null;
-        for (var proto : mappedBuilder.protocolMappings.entrySet()) {
+        for (var proto : builder.protocolMappings.entrySet()) {
             var protocolMapping = proto.getValue().build();
             if (protocolMapping == null) {
                 continue;
@@ -47,31 +77,46 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
             }
         }
         if (suggestedConnIdType == null) {
-            suggestedConnIdType = mappedBuilder.connIdBuilder.type().value();
+            suggestedConnIdType = builder.connIdBuilder.type().value();
         }
 
-        if (!mappedBuilder.isReference()) {
+        if (!builder.isReference()) {
             if (suggestedConnIdType == null) {
                 throw new IllegalArgumentException("Missing ConnId type definition for attribute " + remoteName);
             }
-            mappedBuilder.connIdBuilder.type(DefinitionValue.detected(suggestedConnIdType));
+            builder.connIdBuilder.type(DefinitionValue.detected(suggestedConnIdType));
         } else {
-            mappedBuilder.connIdBuilder.type(DefinitionValue.detected(ConnectorObjectReference.class));
+            builder.connIdBuilder.type(DefinitionValue.detected(ConnectorObjectReference.class));
         }
-        // FIXME: Do the reference attribute mappings
 
-        info = mappedBuilder.connIdBuilder.build();
-        mappedBuilder.deffered.set(this);
+        info = builder.connIdBuilder.build();
+        builder.deffered.set(this);
 
-        if (mappedBuilder.resolverBuilder != null) {
-            this.resolver = mappedBuilder.resolverBuilder.build();
+        if (builder.resolverBuilder != null) {
+            this.resolver = builder.resolverBuilder.build();
         }
     }
 
+    /**
+     * Returns the remote (target-system) name for this attribute, resolving the
+     * {@link DefinitionValue} at call time.
+     *
+     * @return the remote name as a {@code String}
+     */
     public String remoteName() {
         return this.remoteName.value();
     }
 
+    /**
+     * Builds a ConnId {@link Attribute} from the given ConnId-side value(s), using
+     * the {@code info} (attribute name) contained in this definition.
+     *
+     * <p>If the supplied value is a {@link List}, a multi-valued attribute is created.
+     * Otherwise, a single-valued attribute is produced.</p>
+     *
+     * @param connIdValues the value(s) to place in the attribute
+     * @return a new {@link Attribute} instance
+     */
     public Attribute attributeOf(Object connIdValues) {
         if (connIdValues instanceof List) {
             return AttributeBuilder.build(info.getName(), (List<Object>) connIdValues);
@@ -79,26 +124,62 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
         return AttributeBuilder.build(info.getName(), connIdValues);
     }
 
+    /**
+     * Returns the ConnId {@link AttributeInfo} for this attribute, describing
+     * its name, type, multi-valued status, and other ConnId-level metadata.
+     *
+     * @return the read-only {@link AttributeInfo}
+     */
     public AttributeInfo connId() {
         return this.info;
     }
 
+    /**
+     * Returns the JSON protocol mapping for this attribute, if one is defined.
+     *
+     * @return the {@link JsonAttributeMapping}, or {@code null} if not configured
+     */
     public JsonAttributeMapping json() {
         return mapping(JsonAttributeMapping.class);
     }
 
+    /**
+     * Returns the protocol mapping for the given mapping type, if one has been registered.
+     *
+     * @param type the {@link AttributeProtocolMapping} class (e.g. {@link JsonAttributeMapping})
+     * @param <T>  the concrete mapping type
+     * @return the matching mapping instance, or {@code null} if not configured
+     */
     public <T extends AttributeProtocolMapping<?,?>> T mapping(Class<T> type) {
         return type.cast(protocolMappings.get(type));
     }
 
+    /**
+     * Indicates whether this attribute is emulated (i.e. simulated rather than
+     * natively present on the target system).
+     *
+     * @return {@code true} if the attribute is emulated
+     */
     public boolean emulated() {
         return emulated.value();
     }
 
+    /**
+     * Returns the {@link AttributeResolver} associated with this attribute, if one has been
+     * configured via the builder.
+     *
+     * @return the resolver, or {@code null} if no resolver was defined
+     */
     public AttributeResolver resolver() {
         return resolver;
     }
 
+    /**
+     * Returns a human-readable string summarizing this attribute definition,
+     * including the ConnId attribute name and the remote name.
+     *
+     * @return a string such as {@code BaseAttributeDefinition{connid=foo, remoteName=bar}}
+     */
     @Override
     public String toString() {
         return new StringBuilder(getClass().getSimpleName())

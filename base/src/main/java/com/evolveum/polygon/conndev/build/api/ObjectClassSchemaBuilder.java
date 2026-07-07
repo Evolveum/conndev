@@ -19,8 +19,23 @@ import groovy.lang.DelegatesTo;
  */
 public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<? super R,?>, R extends ReferenceAttributeBuilder<R, A, ?>> extends Fluent<B> {
 
+    /**
+     * Sets a description for this object class definition.
+     *
+     * @param description the object class description
+     * @return this builder for chaining
+     */
     B description(String description);
 
+    /**
+     * Marks the object class as embedded.
+     *
+     * An embedded object class is returned inline rather than by reference,
+     * typically used for simple data containers such as addresses or contact details.
+     *
+     * @param embedded true if the object class is embedded, false if it is referenced
+     * @return this builder for chaining
+     */
     B embedded(boolean embedded);
 
     /**
@@ -69,5 +84,12 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @return this builder for chaining
      */
     B connIdAttribute(String connIdName, String attributeName);
+
+    /**
+     * Returns the self reference for method chaining.
+     *
+     * @return this instance
+     */
+    B self();
 
 }

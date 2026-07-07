@@ -23,46 +23,98 @@ import org.identityconnectors.framework.spi.Connector;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Builder for constructing a {@link BaseSchema} from Groovy connector definitions.
+ *
+ * <p>Extends {@link SchemaBuilder} with type-safe generics for the object class builder
+ * and attribute builder types. Each object class is registered by name and its
+ * definition is lazily created via {@link #newObjectClass(DefinitionValue)}.</p>
+ *
+ * @param <SB> the concrete builder type extending this class
+ * @param <OB> the object class definition builder type
+ * @param <OA> the attribute/object attribute builder type
+ */
 public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB, OA>,
         OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?>,
         OA extends ObjectClassSchemaBuilder<OA,?,?>> implements SchemaBuilder<SB, OA> {
 
+    /** The connector class for which this schema is being built. */
     private final Class<? extends Connector> connectorClass;
+    /** The registered object class builders, keyed by name. */
     private final Map<String, OB> objectClasses = new HashMap<>();
+    /** The context lookup for resolving values during schema initialization. */
     private ContextLookup contextLookup;
 
+    /**
+     * Constructs a new BaseSchemaBuilder for the given connector class and context.
+     *
+     * @param connectorClass the connector class for which schema is being built
+     * @param context the context lookup for value resolution
+     */
     public BaseSchemaBuilder(Class<? extends Connector> connectorClass, ContextLookup context) {
         this.connectorClass = connectorClass;
         this.contextLookup = context;
     }
 
 
+    /**
+     * Returns the object class builder for the given name, creating it lazily if it does not exist.
+     *
+     * @param name the object class name
+     * @return the object class builder for fluent configuration
+     */
     @Override
     public OA objectClass(String name) {
         var definitionName = DefinitionValue.from(name, SourceLocation.capture());
         return objectClasses.computeIfAbsent(name, k -> newObjectClass(definitionName)).self();
     }
 
+    /**
+     * Creates a new object class builder instance. Override this method to provide a custom
+     * object class builder implementation.
+     *
+     * @param name the object class name
+     * @return a new object class builder
+     */
     protected OB newObjectClass(DefinitionValue<String> name) {
         return (OB) new BaseObjectClassDefinitionBuilder(BaseSchemaBuilder.this, name);
     }
 
 
+    /**
+     * Defines an object class with the given name and applies the closure to its builder.
+     *
+     * @param name the object class name
+     * @param closure the closure to configure the object class builder
+     * @return the object class builder for further configuration
+     */
     @Override
     public OA objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));
     }
 
+    /**
+     * Defines a relationship with the given name and applies the closure to its builder.
+     *
+     * <p>Currently returns {@code null} as the relationship implementation is pending.
+     * See {@link #relationship(String, Closure)} for future implementation.</p>
+     *
+     * @param name the relationship name
+     * @param closure the closure to configure the relationship builder (unused)
+     * @return TODO - relationship builder implementation
+     */
     @Override
     public RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure) {
-        /**
-        var ret =  new AbstractRelationshipBuilder(name, this);
-        return GroovyClosures.callAndReturnDelegate(closure, ret);
-         **/
-        // FIXME
+        // FIXME: Instantiate AbstractRelationshipBuilder once subject/object methods are implemented
         return null;
     }
 
+    /**
+     * Builds the {@link BaseSchema} from all registered object classes or creates a dummy schema
+     * if none have been defined.
+     *
+     * @return the fully constructed BaseSchema
+     */
     public BaseSchema build() {
         if (objectClasses.isEmpty()) {
             initializeDummySchema();
@@ -88,10 +140,20 @@ public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB, OA>,
         oc.attribute("name").connId().name(Name.NAME).type(String.class);
     }
 
+    /**
+     * Returns all registered object class builders.
+     *
+     * @return iterable of all OB object class builder instances
+     */
     public Iterable<OB> allObjectClasses() {
         return objectClasses.values();
     }
 
+    /**
+     * Returns the context lookup used for resolving values during schema building.
+     *
+     * @return the ContextLookup instance
+     */
     public ContextLookup contextLookup() {
         return this.contextLookup;
     }

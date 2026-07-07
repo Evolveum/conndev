@@ -7,9 +7,16 @@
 
 package com.evolveum.polygon.conndev.build.api;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-
+/**
+ * Placeholder connector-level builder for GDSL script validation
+ *
+ * <p>Currently contains only commented-out code suggesting a future design direction.
+ * This interface is not yet functional.</p>
+ *
+ * @see SchemaBuilder
+ * @see ObjectClassSchemaBuilder
+ * @see ObjectOperationSupportBuilder
+ */
 public interface ConnectorBuilder {
 
     /*
