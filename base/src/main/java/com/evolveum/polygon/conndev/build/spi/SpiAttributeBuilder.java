@@ -30,7 +30,7 @@ import com.evolveum.polygon.conndev.concepts.FluentBuilder;
  * @see com.evolveum.polygon.conndev.build.api.AttributeBuilder
  * @see com.evolveum.polygon.conndev.schema.AbstractAttributeBuilder
  */
-public interface SpiAttributeBuilder<B extends AttributeBuilder<B,P>, P> extends FluentBuilder<B, P> {
+public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> extends FluentBuilder<B, P> {
 
     /**
      * Marks the attribute as emulated.

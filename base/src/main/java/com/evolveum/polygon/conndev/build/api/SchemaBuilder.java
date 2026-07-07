@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.build.spi.SpiSchemaBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -21,7 +22,7 @@ import groovy.lang.DelegatesTo;
  * @param <SB> The concrete schema builder type (self-type for CRTP)
  * @param <OB> The object class schema builder type
  */
-public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends ObjectClassSchemaBuilder<OB,?,?>> {
+public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends ObjectClassSchemaBuilder<OB,?,?>> extends SpiSchemaBuilder<SB, OB> {
 
     /**
      * Creates or gets an object class schema builder by name.

@@ -22,6 +22,8 @@ import org.identityconnectors.framework.spi.Connector;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Builder for constructing a {@link BaseSchema} from Groovy connector definitions.
@@ -30,12 +32,13 @@ import java.util.Map;
  * and attribute builder types. Each object class is registered by name and its
  * definition is lazily created via {@link #newObjectClass(DefinitionValue)}.</p>
  *
- * @param <SB> the concrete builder type extending this class
+ * @param <T> the concrete builder type extending this class
  * @param <OB> the object class definition builder type
  * @param <OA> the attribute/object attribute builder type
  */
-public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB, OA>,
+public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
         OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?>,
+        SB extends SchemaBuilder<SB, OA>,
         OA extends ObjectClassSchemaBuilder<OA,?,?>> implements SchemaBuilder<SB, OA> {
 
     /** The connector class for which this schema is being built. */
@@ -66,7 +69,17 @@ public class BaseSchemaBuilder<SB extends BaseSchemaBuilder<SB, OB, OA>,
     @Override
     public OA objectClass(String name) {
         var definitionName = DefinitionValue.from(name, SourceLocation.capture());
-        return objectClasses.computeIfAbsent(name, k -> newObjectClass(definitionName)).self();
+        return objectClass(definitionName);
+    }
+
+    @Override
+    public OA objectClass(DefinitionValue<String> name) {
+        return objectClasses.computeIfAbsent(name.value(), k -> newObjectClass(name)).self();
+    }
+
+    @Override
+    public Optional<OA> lookupObjectClass(Predicate<OA> lookup) {
+        return objectClasses.values().stream().map(o -> o.self()).filter(lookup).findFirst();
     }
 
     /**
