@@ -1,0 +1,7 @@
+objectClass: Address
+embedded: true
+attributes:
+  street:
+    jsonType: string
+  city:
+    jsonType: string

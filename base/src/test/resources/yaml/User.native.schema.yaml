@@ -1,0 +1,24 @@
+objectClass: User
+attributes:
+  id:
+    jsonType: integer
+    openApiFormat: int64
+    creatable: false
+    updateable: false
+    description: "User's id"
+  login:
+    jsonType: string
+    description: "User's login name"
+  email:
+    jsonType: string
+    openApiFormat: email
+  admin:
+    jsonType: boolean
+  password:
+    jsonType: string
+    readable: false
+  createdAt:
+    jsonType: string
+    openApiFormat: date-time
+    creatable: false
+    updateable: false

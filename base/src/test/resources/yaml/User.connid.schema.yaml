@@ -1,0 +1,4 @@
+objectClass: User
+connId:
+  UID: id
+  NAME: login

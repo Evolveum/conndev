@@ -1,0 +1,19 @@
+objectClass: Group
+description: SCIM group
+locator: /Groups
+namespace: urn:ietf:params:scim:schemas:core:2.0:Group
+attributes:
+  id:
+    jsonType: string
+    connId:
+      name: __UID__
+      type: string
+  displayName:
+    jsonType: string
+    required: true
+references:
+  members:
+    objectClass: User
+    role: object
+    subtype: _User_Group_Membership
+    multiValued: true
