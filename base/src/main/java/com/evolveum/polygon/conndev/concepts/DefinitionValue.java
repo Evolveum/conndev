@@ -6,8 +6,6 @@
  */
 package com.evolveum.polygon.conndev.concepts;
 
-import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
-
 import java.util.Objects;
 
 public record DefinitionValue<T>(T value, Origin origin, SourceLocation location) {
@@ -18,11 +16,11 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
     public static final DefinitionValue<Void> DEFAULT_NULL = defaultFrom(null);
 
     public static <T> DefinitionValue<T> of(T value, Origin original, SourceLocation location) {
-        return new DefinitionValue<>(value, original, location);
+        return new DefinitionValue<>(value, original, location != null ? location : SourceLocation.UNKNOWN);
     }
 
     public static <T> DefinitionValue<T> from(T value, SourceLocation location) {
-        return new DefinitionValue<>(value, Origin.DECLARED, location);
+        return of(value, Origin.DECLARED, location);
     }
 
 
@@ -80,7 +78,7 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
     }
 
     public DefinitionValue<T> asDefault() {
-        return defaultFrom(value);
+        return of(value, Origin.DEFAULT, location);
     }
 
     public <X> DefinitionValue<X> derived(X value) {
