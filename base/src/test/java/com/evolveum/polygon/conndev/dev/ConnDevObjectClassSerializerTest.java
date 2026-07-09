@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.dev;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import org.identityconnectors.framework.common.objects.*;
@@ -35,12 +34,7 @@ public class ConnDevObjectClassSerializerTest {
         @Override public void dispose() { }
     }
 
-    private static final ContextLookup NOOP_CONTEXT = new ContextLookup() {
-        @Override
-        public <T extends RetrievableContext> T get(Class<T> contextType) {
-            throw new IllegalStateException("No context registered for " + contextType);
-        }
-    };
+    private static final ContextLookup NOOP_CONTEXT = ContextLookup.none();
 
     private BaseSchema schema() {
         var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);

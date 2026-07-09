@@ -11,7 +11,6 @@ import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.spi.Connector;
@@ -51,12 +50,7 @@ public class SchemaLoadingTest {
      * ContextLookup has a generic method that Java lambda inference cannot handle,
      * so we use an anonymous class.
      */
-    private static final ContextLookup NOOP_CONTEXT = new ContextLookup() {
-        @Override
-        public <T extends RetrievableContext> T get(Class<T> contextType) throws IllegalStateException {
-            throw new IllegalStateException("No context registered for " + contextType);
-        }
-    };
+    private static final ContextLookup NOOP_CONTEXT = ContextLookup.none();
 
 
     /**

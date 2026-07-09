@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.yaml;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
@@ -40,12 +39,7 @@ public class YamlSchemaLoadingTest {
         @Override public void dispose() { }
     }
 
-    private static final ContextLookup NOOP_CONTEXT = new ContextLookup() {
-        @Override
-        public <T extends RetrievableContext> T get(Class<T> contextType) {
-            throw new IllegalStateException("No context registered for " + contextType);
-        }
-    };
+    private static final ContextLookup NOOP_CONTEXT = ContextLookup.none();
 
     private static BaseSchemaBuilder schemaBuilder() {
         return new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
