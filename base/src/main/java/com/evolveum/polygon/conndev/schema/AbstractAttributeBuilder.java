@@ -44,6 +44,16 @@ import java.util.Map;
  */
 public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,A,P>, A extends AttributeBuilder<A,P>, P> implements AttributeBuilder<A, P> {
 
+
+    /**
+     * Attribute name used to identify this attribute in object class definition
+     *
+     * Usually it is same as application attribute name and protocol attribute name.
+     *
+     */
+    DefinitionValue<String> name;
+
+
     /**
      * The ConnId-side attribute metadata builder.
      *
@@ -90,7 +100,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
      * @param name the attribute name definition
      */
     protected AbstractAttributeBuilder(BaseObjectClassDefinitionBuilder restObjectClassBuilder, DefinitionValue<String> name) {
-        this.remoteName = name;
+        this.name = name;
+        this.remoteName = name.asDefault();
         this.connIdBuilder = new ConnIdBuilder(name.asDefault());
         this.objectClass = restObjectClassBuilder;
     }
