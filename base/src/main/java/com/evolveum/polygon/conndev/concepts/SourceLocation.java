@@ -101,7 +101,7 @@ public interface SourceLocation {
      * @return a SourceLocation instance containing the source, or UNKNOWN if development mode is disabled or no match is found
      */
     static SourceLocation capture() {
-        if (DevelopmentMode.enabled()) {
+        if (DevelopmentMode.isEnabled()) {
             return forceCapture(1, "groovy");
         }
         return UNKNOWN;
@@ -116,7 +116,7 @@ public interface SourceLocation {
      * @return a SourceLocation instance containing the matched file name and line number, or UNKNOWN if no match is found or development mode is disabled
      */
     static SourceLocation capture(String... sourceExtension) {
-        if (DevelopmentMode.enabled()) {
+        if (DevelopmentMode.isEnabled()) {
             return forceCapture(1, sourceExtension);
         }
         return UNKNOWN;
