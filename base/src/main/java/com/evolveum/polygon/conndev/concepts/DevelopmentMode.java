@@ -33,7 +33,7 @@ public final class DevelopmentMode {
      *
      * @return true if active, false otherwise
      */
-    public static boolean enabled() {
+    public static boolean isEnabled() {
         return DEVELOPMENT_MODE.get();
     }
 
@@ -43,6 +43,29 @@ public final class DevelopmentMode {
      */
     public static void unset() {
         DEVELOPMENT_MODE.remove();
+    }
+
+    public static void enable() {
+        DEVELOPMENT_MODE.set(true);
+    }
+
+    /**
+     * Executes the specified runnable with development mode temporarily set to the given value for the current thread.
+     * The current development mode state is preserved and automatically restored after the runnable completes.
+     *
+     * @param developmentMode the development mode state to apply during the execution of the runnable
+     * @param runnable the callable operation to execute
+     * @return the result produced by the runnable
+     * @throws E if the runnable throws a exception
+     */
+    public static <V,E extends Throwable> V run(boolean developmentMode, CheckedCallable<V,E> runnable) throws E {
+        var previous = isEnabled();
+        set(developmentMode);
+        try {
+            return runnable.call();
+        } finally {
+            set(previous);
+        }
     }
 }
 
