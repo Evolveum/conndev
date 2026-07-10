@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.build.api.FilterBuilder;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.OperationOptions;
@@ -79,6 +80,6 @@ public interface ObjectClassScripting {
         return FilterBuilder.forAttribute(attribute.connId().getName());
     }
 
-    BaseObjectClassDefinition definition();
+    BaseObjectClassDefinition<BaseAttributeDefinition> definition();
 
 }

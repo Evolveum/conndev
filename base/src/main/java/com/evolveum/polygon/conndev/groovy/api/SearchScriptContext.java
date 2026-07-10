@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
@@ -23,7 +24,7 @@ public interface SearchScriptContext extends BaseScriptContext {
      * 
      * @return the object class definition
      */
-    BaseObjectClassDefinition definition();
+    BaseObjectClassDefinition<BaseAttributeDefinition> definition();
 
     /**
      * Returns the result handler for the current search operation.
@@ -48,11 +49,11 @@ public interface SearchScriptContext extends BaseScriptContext {
     OperationOptions operationOptions();
 
 
-    record Default(ConnectorContext context, BaseObjectClassDefinition definition, Filter filter,
+    record Default(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> definition, Filter filter,
                    ResultsHandler resultHandler, OperationOptions operationOptions) implements SearchScriptContext {
 
         @Override
-        public BaseObjectClassDefinition definition() {
+        public BaseObjectClassDefinition<BaseAttributeDefinition> definition() {
             return definition;
         }
 

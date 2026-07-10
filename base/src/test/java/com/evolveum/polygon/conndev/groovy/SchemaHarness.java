@@ -53,7 +53,7 @@ final class SchemaHarness {
     /**
      * @return the object class defined by {@code name}
      */
-    public BaseObjectClassDefinition objectClass(String name) {
+    public BaseObjectClassDefinition<BaseAttributeDefinition> objectClass(String name) {
         return build().objectClass(name);
     }
 

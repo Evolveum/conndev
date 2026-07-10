@@ -7,14 +7,9 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.build.api.*;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
-import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
-import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
-import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
-import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
-import com.evolveum.polygon.conndev.spi.ObjectDeleteOperation;
-import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
-import com.evolveum.polygon.conndev.spi.ObjectUpdateOperation;
+import com.evolveum.polygon.conndev.spi.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +20,14 @@ public abstract class BaseObjectOperationSupportBuilder<
         U extends AbstractUpdateOperationBuilder,
         D extends AbstractDeleteOperationBuilder> implements ObjectOperationSupportBuilder {
 
-    private final BaseObjectClassDefinition objectClass;
+    private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
     final ConnectorContext context;
 
     ObjectClassHandler product;
     Map<Class<? extends ObjectClassOperation>, ObjectClassOperation> buildedOperations = new HashMap<>();
 
 
-    public BaseObjectOperationSupportBuilder(ConnectorContext context, BaseObjectClassDefinition restObjectClass) {
+    public BaseObjectOperationSupportBuilder(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> restObjectClass) {
         this.objectClass = restObjectClass;
         this.context = context;
     }
@@ -61,7 +56,7 @@ public abstract class BaseObjectOperationSupportBuilder<
     @Override
     public abstract D delete();
 
-    public BaseObjectClassDefinition getObjectClass() {
+    public BaseObjectClassDefinition<BaseAttributeDefinition> getObjectClass() {
         return objectClass;
     }
 

@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.groovy.api.SearchScriptContext;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.FilterAwareExecuteQueryProcessor;
 import groovy.lang.Closure;
@@ -21,7 +22,7 @@ import java.util.Set;
 
 public class ScriptedExecuteQueryProcessor implements FilterAwareExecuteQueryProcessor {
 
-    private final BaseObjectClassDefinition objectClass;
+    private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
     private final Closure<?> implementation;
     private final Set<FilterSpecification> supportedFilters;
     private final ConnectorContext context;

@@ -10,6 +10,7 @@ package com.evolveum.polygon.conndev.spi;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,7 +25,7 @@ public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, J
 
     private final ContextLookup lookup;
     private final String name;
-    private BaseObjectClassDefinition schema;
+    private BaseObjectClassDefinition<BaseAttributeDefinition> schema;
 
 
     public EmbeddedObjectJsonMapping(ContextLookup contextLookup, String objectClassName) {
@@ -47,7 +48,7 @@ public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, J
         throw new UnsupportedAddressTypeException();
     }
 
-    BaseObjectClassDefinition schema() {
+    BaseObjectClassDefinition<BaseAttributeDefinition> schema() {
         if (this.schema == null) {
             this.schema = lookup.get(ConnectorContext.class).schema().objectClass(name);
         }

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.build.api.SearchScriptBuilder;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.FilterAwareExecuteQueryProcessor;
 import groovy.lang.Closure;
@@ -19,14 +20,14 @@ import java.util.Set;
 public class GroovySearchScriptBuilder implements SearchScriptBuilder, FilterAwareSearchProcessorBuilder {
 
     final ConnectorContext context;
-    public BaseObjectClassDefinition objectClass;
+    public BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
     public final Set<FilterSpecification> supportedFilters = new HashSet<>();
     private Boolean emptyFilterSupported;
 //    Set<FilterToRequestMapper> filterMappers = new HashSet<>();
     Closure<?> implementationPrototype;
     private boolean enabled = true;
 
-    public GroovySearchScriptBuilder(ConnectorContext context, BaseObjectClassDefinition objectClass) {
+    public GroovySearchScriptBuilder(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> objectClass) {
         this.context = context;
         this.objectClass = objectClass;
     }

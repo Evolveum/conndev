@@ -16,12 +16,12 @@ import java.util.Map;
  * Schema representation holding the ConnId schema object and a map of
  * all defined object class definitions for a connector.
  */
-public class BaseSchema {
+public class BaseSchema<O extends BaseObjectClassDefinition<?>> {
 
     /** The underlying ConnId {@link Schema} that can be returned by the connector. */
     private final Schema connIdSchema;
     /** Map containing all object class definitions keyed by their ConnId ObjectClass. */
-    private final Map<ObjectClass, BaseObjectClassDefinition> objectClasses;
+    private final Map<ObjectClass, O> objectClasses;
 
     /**
      * Constructs a new BaseSchema.
@@ -29,7 +29,7 @@ public class BaseSchema {
      * @param connIdSchema the ConnId Schema object
      * @param objectClasses the map of object class definitions
      */
-    public BaseSchema(Schema connIdSchema, Map<ObjectClass, BaseObjectClassDefinition> objectClasses) {
+    public BaseSchema(Schema connIdSchema, Map<ObjectClass, O> objectClasses) {
         this.connIdSchema = connIdSchema;
         this.objectClasses = objectClasses;
     }
@@ -49,7 +49,7 @@ public class BaseSchema {
      * @param name the object class name
      * @return the matching BaseObjectClassDefinition, or null if not found
      */
-    public BaseObjectClassDefinition objectClass(String name) {
+    public O objectClass(String name) {
         return objectClasses.get(new ObjectClass(name));
     }
 
@@ -58,7 +58,7 @@ public class BaseSchema {
      *
      * @return collection of all BaseObjectClassDefinition instances
      */
-    public Collection<BaseObjectClassDefinition> objectClasses() {
+    public Collection<O> objectClasses() {
         return objectClasses.values();
     }
 }

@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
+import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
@@ -16,7 +17,7 @@ import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 
-public record ObjectClassScriptingFacade(ContextLookup rest, BaseObjectClassDefinition schema, ObjectClassHandler handler) implements ObjectClassScripting {
+public record ObjectClassScriptingFacade(ContextLookup rest, BaseObjectClassDefinition<BaseAttributeDefinition> schema, ObjectClassHandler handler) implements ObjectClassScripting {
 
     public static ObjectClassScriptingFacade from(ConnectorContext context, String objectClass) {
         var schema = context.schema().objectClass(objectClass);
@@ -28,7 +29,7 @@ public record ObjectClassScriptingFacade(ContextLookup rest, BaseObjectClassDefi
     }
 
     @Override
-    public BaseObjectClassDefinition definition() {
+    public BaseObjectClassDefinition<BaseAttributeDefinition> definition() {
         return schema;
     }
 

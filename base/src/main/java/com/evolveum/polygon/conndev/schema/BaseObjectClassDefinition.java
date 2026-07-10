@@ -26,13 +26,13 @@ import java.util.Map;
  * <p>Implements {@link ConnDevObjectClassSource} to expose a read-only view of the object class
  * to the ConnDev development-mode export pipeline.</p>
  */
-public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
+public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implements ConnDevObjectClassSource {
 
     /** Native (remote-system) attribute definitions, keyed by their protocol name. */
-    private final Map<String, BaseAttributeDefinition> nativeAttributes;
+    private final Map<String, A> nativeAttributes;
 
     /** ConnId-side attribute definitions, keyed by ConnId attribute name. */
-    private final Map<String, BaseAttributeDefinition> connIdAttributes;
+    private final Map<String, A> connIdAttributes;
 
     /** The ConnId {@link ObjectClass} instance derived from the {@link #connId} info. */
     ObjectClass clazz;
@@ -50,7 +50,7 @@ public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
     private String namespace;
 
     /** Full attribute map keyed by attribute name, combining both native and ConnId attributes. */
-    Map<String, BaseAttributeDefinition> attributes = new HashMap<>();
+    Map<String, A> attributes = new HashMap<>();
 
     /**
      * Constructs a new object-class definition with the given ConnId information and attribute maps.
@@ -62,7 +62,7 @@ public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
      * @param nativeAttrs map of native (remote-system) attribute definitions keyed by attribute name
      * @param connIdAttrs map of ConnId-side attribute definitions keyed by ConnId attribute name
      */
-    public BaseObjectClassDefinition(ObjectClassInfo connId, Map<String, BaseAttributeDefinition> nativeAttrs, Map<String, BaseAttributeDefinition> connIdAttrs) {
+    public BaseObjectClassDefinition(ObjectClassInfo connId, Map<String, A> nativeAttrs, Map<String, A> connIdAttrs) {
         this.connId = connId;
         this.clazz = new ObjectClass(connId.getType());
         this.nativeAttributes = nativeAttrs;
@@ -89,7 +89,7 @@ public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
      * @return an unmodifiable collection of all native attribute definitions
      */
     @Override
-    public Collection<BaseAttributeDefinition> attributes() {
+    public Collection<A> attributes() {
         return nativeAttributes.values();
     }
 
@@ -169,7 +169,7 @@ public class BaseObjectClassDefinition implements ConnDevObjectClassSource {
      * @param name the ConnId attribute name
      * @return the matching {@link BaseAttributeDefinition}, or {@code null} if not found
      */
-    public BaseAttributeDefinition attributeFromConnIdName(String name) {
+    public A attributeFromConnIdName(String name) {
         return connIdAttributes.get(name);
     }
 }

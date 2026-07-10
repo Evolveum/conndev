@@ -96,7 +96,7 @@ public class SchemaLoadingTest {
     public void forgejoMinimalUser_parsesAllAttributes() {
         var schema = schemaForResource("/schema/ForgejoMinimalUser.groovy");
 
-        BaseObjectClassDefinition def = schema.objectClass("User");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("User");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("User");
         assertThat(def.attributes()).hasSize(5);
@@ -170,7 +170,7 @@ public class SchemaLoadingTest {
     public void nextcloudUser_parsesAllAttributes() {
         var schema = schemaForResource("/nextCloud/User.groovy");
 
-        BaseObjectClassDefinition def = schema.objectClass("User");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("User");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("User");
         assertThat(def.attributes()).hasSize(8);
@@ -221,7 +221,7 @@ public class SchemaLoadingTest {
     public void nextCloudGroup_parsesAttributes() {
         var schema = schemaForResource("/nextCloud/Group.groovy");
 
-        BaseObjectClassDefinition def = schema.objectClass("Group");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Group");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("Group");
         assertThat(def.attributes()).hasSize(3);
@@ -260,7 +260,7 @@ public class SchemaLoadingTest {
     public void nextCloudApp_parsesSingleAttribute() {
         var schema = schemaForResource("/nextCloud/App.groovy");
 
-        BaseObjectClassDefinition def = schema.objectClass("App");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("App");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("App");
         assertThat(def.attributes()).hasSize(1);
@@ -278,7 +278,7 @@ public class SchemaLoadingTest {
     public void openProjectUser_parsesAllAttributes() {
         var schema = schemaForResource("/openProject/User.groovy");
 
-        BaseObjectClassDefinition def = schema.objectClass("User");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("User");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("User");
         assertThat(def.attributes()).hasSize(14);
@@ -357,7 +357,7 @@ public class SchemaLoadingTest {
     @Test
     public void openProjectProject_parsesAllAttributes() {
         var schema = schemaForResource("/openProject/Project.groovy");
-        BaseObjectClassDefinition def = schema.objectClass("Project");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Project");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("Project");
         assertThat(def.attributes()).hasSize(9);
@@ -390,7 +390,7 @@ public class SchemaLoadingTest {
     @Test
     public void openProjectGroup_parsesAttributes() {
         var schema = schemaForResource("/openProject/Group.groovy");
-        BaseObjectClassDefinition def = schema.objectClass("Group");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Group");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("Group");
         assertThat(def.attributes()).hasSize(4);
@@ -409,7 +409,7 @@ public class SchemaLoadingTest {
     @Test
     public void openProjectRole_parsesAllAttributes() {
         var schema = schemaForResource("/openProject/Role.groovy");
-        BaseObjectClassDefinition def = schema.objectClass("Role");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Role");
         assertThat(def).isNotNull();
         assertThat(def.name()).isEqualTo("Role");
         assertThat(def.attributes()).hasSize(2);
@@ -533,7 +533,7 @@ public class SchemaLoadingTest {
             }
             """);
 
-        BaseObjectClassDefinition def = schema.objectClass("EmbeddedData");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("EmbeddedData");
 
         assertThat(def).isNotNull();
         assertThat(def.connId().getType()).isEqualTo("EmbeddedData");
@@ -550,7 +550,7 @@ public class SchemaLoadingTest {
             }
             """);
 
-        BaseObjectClassDefinition def = schema.objectClass("Config");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Config");
 
         assertThat(def).isNotNull();
         assertThat(def.connId().getDescription()).isEqualTo("System configuration object");
@@ -603,7 +603,7 @@ public class SchemaLoadingTest {
         var schema = builder.build();
 
         // Should contain a __Dummy object class
-        BaseObjectClassDefinition dummy = schema.objectClass("__Dummy");
+        BaseObjectClassDefinition<BaseAttributeDefinition> dummy = schema.objectClass("__Dummy");
         assertThat(dummy).isNotNull();
         assertThat(dummy.attributes()).isNotEmpty();
     }
@@ -612,7 +612,7 @@ public class SchemaLoadingTest {
     public void dummySchemaHasUidAndName() {
         var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
         var schema = builder.build();
-        BaseObjectClassDefinition dummy = schema.objectClass("__Dummy");
+        BaseObjectClassDefinition<BaseAttributeDefinition> dummy = schema.objectClass("__Dummy");
 
         assertThat(dummy.attributeFromConnIdName(Uid.NAME)).isNotNull();
         assertThat(dummy.attributeFromConnIdName(Name.NAME)).isNotNull();
@@ -820,7 +820,7 @@ public class SchemaLoadingTest {
             }
             """);
 
-        BaseObjectClassDefinition def = schema.objectClass("Product");
+        BaseObjectClassDefinition<BaseAttributeDefinition> def = schema.objectClass("Product");
 
         assertThat(def).isNotNull();
         assertThat(def.attributes()).hasSize(5);

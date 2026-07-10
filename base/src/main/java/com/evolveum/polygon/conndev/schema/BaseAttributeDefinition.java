@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
-import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.dev.ConnDevAttributeSource;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
@@ -34,13 +33,10 @@ import java.util.Map;
  * the ConnId builder, producing a consistent {@link AttributeInfo} ready for use by
  * the ConnId framework.</p>
  */
-public class BaseAttributeDefinition implements AttributeDefinition, ConnDevAttributeSource {
+public class BaseAttributeDefinition implements ConnDevAttributeSource {
 
     /** The ConnId {@link AttributeInfo} describing attributes name, type, multi-valued-ness, etc. */
     private final AttributeInfo info;
-
-
-    private final DefinitionValue<String> name;
 
     /** The remote (target system) name for this attribute, as a lazily-resolved value. */
     private final DefinitionValue<String> remoteName;
@@ -63,7 +59,6 @@ public class BaseAttributeDefinition implements AttributeDefinition, ConnDevAttr
      * @throws IllegalArgumentException if no ConnId type can be resolved for a non-reference attribute
      */
     public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> builder) {
-        name = builder.name;
         remoteName = builder.remoteName;
         emulated = builder.emulated;
 
@@ -87,7 +82,7 @@ public class BaseAttributeDefinition implements AttributeDefinition, ConnDevAttr
 
         if (!builder.isReference()) {
             if (suggestedConnIdType == null) {
-                throw new IllegalArgumentException("Missing ConnId type definition for attribute " + name);
+                throw new IllegalArgumentException("Missing ConnId type definition for attribute " + remoteName);
             }
             builder.connIdBuilder.type(DefinitionValue.detected(suggestedConnIdType));
         } else {
@@ -185,22 +180,13 @@ public class BaseAttributeDefinition implements AttributeDefinition, ConnDevAttr
      *
      * @return a string such as {@code BaseAttributeDefinition{connid=foo, remoteName=bar}}
      */
-    public SourceLocation getSourceLocation() {
-        return name.location();
-    }
-
-    @Override
-    public DefinitionValue<String> name() {
-        return name;
-    }
-
     @Override
     public String toString() {
         return new StringBuilder(getClass().getSimpleName())
                 .append("{connid=")
                 .append(info.getName())
                 .append(", remoteName=")
-                .append(name)
+                .append(remoteName)
                 .append('}')
                 .toString();
     }

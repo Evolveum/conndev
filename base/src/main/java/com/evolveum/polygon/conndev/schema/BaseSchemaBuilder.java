@@ -37,14 +37,14 @@ import java.util.function.Predicate;
  * @param <OA> the attribute/object attribute builder type
  */
 public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
-        OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?>,
+        OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?,?>,
         SB extends SchemaBuilder<SB, OA>,
         OA extends ObjectClassSchemaBuilder<OA,?,?>> implements SchemaBuilder<SB, OA> {
 
     /** The connector class for which this schema is being built. */
-    private final Class<? extends Connector> connectorClass;
+    protected final Class<? extends Connector> connectorClass;
     /** The registered object class builders, keyed by name. */
-    private final Map<String, OB> objectClasses = new HashMap<>();
+    protected final Map<String, OB> objectClasses = new HashMap<>();
     /** The context lookup for resolving values during schema initialization. */
     private ContextLookup contextLookup;
 
@@ -134,11 +134,11 @@ public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
         }
 
         var freshSchemaBuilder = new org.identityconnectors.framework.common.objects.SchemaBuilder(connectorClass);
-        Map<ObjectClass, BaseObjectClassDefinition> objectClassMap = new HashMap<>();
+        Map<ObjectClass, BaseObjectClassDefinition<BaseAttributeDefinition>> objectClassMap = new HashMap<>();
         for (var ocBuilder : objectClasses.values()) {
             var objectClassDef = ocBuilder.build();
             freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
-            objectClassMap.put(objectClassDef.objectClass(), objectClassDef);
+            objectClassMap.put(objectClassDef.objectClass(), (BaseObjectClassDefinition) objectClassDef);
         }
         return new BaseSchema(freshSchemaBuilder.build(), objectClassMap);
     }
@@ -147,7 +147,7 @@ public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
      * This is workaround for state in connector development (and MidPoint), which prevents issuing test connection
      * without any object class
      */
-    private void initializeDummySchema() {
+    protected void initializeDummySchema() {
         var oc = objectClass("__Dummy");
         oc.attribute("id").connId().name(Uid.NAME).type(String.class);
         oc.attribute("name").connId().name(Name.NAME).type(String.class);

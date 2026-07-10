@@ -11,10 +11,10 @@ import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.spi.ObjectClassDefinition;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.*;
@@ -42,7 +42,9 @@ import java.util.Map;
  */
 public class BaseObjectClassDefinitionBuilder<
         B extends ObjectClassSchemaBuilder<B, A, R> ,
-        A extends AttributeBuilder<? super R,AP>, R extends ReferenceAttributeBuilder<R, A, AP>,
+        O extends BaseObjectClassDefinition<AP>,
+        A extends AttributeBuilder<? super R,AP>,
+        R extends ReferenceAttributeBuilder<R, A, AP>,
         AB extends BaseAttributeBuilder<AB, A, R,  AP>,
         AP extends BaseAttributeDefinition> implements ObjectClassSchemaBuilder<B, A, R> {
 
@@ -334,10 +336,10 @@ public class BaseObjectClassDefinitionBuilder<
      *
      * @return the fully built object class definition
      */
-    public BaseObjectClassDefinition build() {
+    public O build() {
         connIdBuilder.setType(name.value());
-        var connIdAttrs = new HashMap<String, BaseAttributeDefinition>();
-        var nativeAttrs = new HashMap<String, BaseAttributeDefinition>();
+        var connIdAttrs = new HashMap<String, AP>();
+        var nativeAttrs = new HashMap<String, AP>();
         for (var attrBuilder : nativeAttributes.values()) {
             var attribute = attrBuilder.build();
             connIdBuilder.addAttributeInfo(attribute.connId());
@@ -348,10 +350,14 @@ public class BaseObjectClassDefinitionBuilder<
             connIdBuilder.setDescription(description);
         }
 
-        var definition = new BaseObjectClassDefinition(connIdBuilder.build(), nativeAttrs, connIdAttrs);
+        var definition = buildImpl(connIdBuilder.build(), nativeAttrs, connIdAttrs);
         definition.locator(locator);
         definition.namespace(namespace);
         return definition;
+    }
+
+    protected O buildImpl(ObjectClassInfo build, Map<String, AP> nativeAttrs, Map<String, AP> connIdAttrs) {
+        return (O) new BaseObjectClassDefinition<AP>(build, nativeAttrs, connIdAttrs);
     }
 
     /**
