@@ -84,6 +84,9 @@ public interface AttributeResolverBuilder {
      */
     AttributeResolverBuilder attribute(String attributeName);
 
+
+    AttributeResolverBuilder attributes(String... attributeNames);
+
     interface SearchBased {
 
     }

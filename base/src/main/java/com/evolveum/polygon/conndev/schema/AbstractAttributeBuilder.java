@@ -51,7 +51,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
      * Usually it is same as application attribute name and protocol attribute name.
      *
      */
-    DefinitionValue<String> name;
+    protected DefinitionValue<String> name;
 
 
     /**
@@ -260,6 +260,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public ConnIdMapping name(DefinitionValue<String> name) {
             this.name = this.name.moreSpecific(name);
+            forceBuiltInTypes();
             return self();
         }
 
@@ -276,6 +277,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public ConnIdMapping type(DefinitionValue<Class<?>> connIdType) {
             this.type = this.type.moreSpecific(connIdType);
+            forceBuiltInTypes();
             return self();
         }
 
@@ -352,15 +354,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
          */
         public AttributeInfo build() {
             var builder = new AttributeInfoBuilder();
-
-            if (Uid.NAME.equals(name.value())) {
-                connId().type(String.class);
-            }
-            if (Name.NAME.equals(name.value())) {
-                connId().type(String.class);
-            }
-
-
+            forceBuiltInTypes();
 
             builder.setType(type.value());
             builder.setName(name.value());
@@ -379,6 +373,16 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             builder.setReferencedObjectClassName(referencedObjectClassName.value());
             builder.setSubtype(subtype.value());
             return builder.build();
+        }
+
+        private void forceBuiltInTypes() {
+            if (Uid.NAME.equals(name.value())) {
+                type = DefinitionValue.detected(String.class);
+            }
+            if (Name.NAME.equals(name.value())) {
+                type = DefinitionValue.detected(String.class);
+            }
+
         }
 
     }

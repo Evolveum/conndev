@@ -77,6 +77,10 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
         return value != null;
     }
 
+    public boolean isEmpty() {
+        return value == null;
+    }
+
     public DefinitionValue<T> asDefault() {
         return of(value, Origin.DEFAULT, location);
     }

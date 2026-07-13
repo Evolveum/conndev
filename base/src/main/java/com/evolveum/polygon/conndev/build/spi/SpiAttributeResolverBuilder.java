@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.build.spi;
 
+import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
@@ -29,7 +30,7 @@ public interface SpiAttributeResolverBuilder extends Fluent<SpiAttributeResolver
      * @param type the resolution type with metadata
      * @return This builder instance for method chaining.
      */
-    SpiAttributeResolverBuilder resolutionType(DefinitionValue<ResolutionType> type);
+    SpiAttributeResolverBuilder resolutionType(DefinitionValue<AttributeResolverBuilder.ResolutionType> type);
 
     /**
      * Search-based resolver. Resolves reference values by performing search of target object class.
@@ -37,7 +38,7 @@ public interface SpiAttributeResolverBuilder extends Fluent<SpiAttributeResolver
      * @param filterClosure Closure which builds filter with metadata.
      * @return This builder instance for method chaining.
      */
-    SpiAttributeResolverBuilder search(@DelegatesTo(value = SpiSearchScriptBuilder.class, strategy = Closure.DELEGATE_FIRST) Closure<?> filterClosure);
+    SpiAttributeResolverBuilder search(DefinitionValue<Closure<?>> filterClosure);
 
     /**
      * Groovy implementation of attribute resolution.
@@ -45,7 +46,7 @@ public interface SpiAttributeResolverBuilder extends Fluent<SpiAttributeResolver
      * @param implementationClosure The closure defining custom behavior for attribute resolution with metadata.
      * @return This builder instance for method chaining.
      */
-    SpiAttributeResolverBuilder implementation(@DelegatesTo(value = SpiAttributeResolverBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> implementationClosure);
+    SpiAttributeResolverBuilder implementation(DefinitionValue<Closure<?>> implementationClosure);
 
     /**
      * Marks attribute as supported for resolver.
@@ -55,17 +56,4 @@ public interface SpiAttributeResolverBuilder extends Fluent<SpiAttributeResolver
      */
     SpiAttributeResolverBuilder attribute(DefinitionValue<String> attributeName);
 
-    /**
-     * The resolution type enumeration.
-     */
-    enum ResolutionType {
-        /**
-         * Each object will be handled individually, regardless of the total number of objects involved.
-         */
-        PER_OBJECT,
-        /**
-         * Objects will be handled in batches, use this if backing implementation supports handling multiple objects per request.
-         */
-        BATCH
-    }
 }

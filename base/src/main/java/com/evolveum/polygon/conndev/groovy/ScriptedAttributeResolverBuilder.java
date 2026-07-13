@@ -46,6 +46,14 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
     }
 
     @Override
+    public AttributeResolverBuilder attributes(String... attributeNames) {
+        for (var attributeName : attributeNames) {
+            attributes.add(objectClass.attributeFromProtocolName(attributeName));
+        }
+        return this;
+    }
+
+    @Override
     public ScriptedAttributeResolverBuilder resolutionType(ResolutionType type) {
         this.resolutionType = type;
         return this;

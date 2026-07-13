@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @param <D> the delegate ConnId type (the type expected by the underlying mapping)
  * @param <P> the protocol (wire) value type
  */
-record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMapping<D,P> impl, Function<O,D> toDelegate, Function<D, O> toOverride)  implements ValueMapping<O,P> {
+public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMapping<D,P> impl, Function<O,D> toDelegate, Function<D, O> toOverride)  implements ValueMapping<O,P> {
 
     /**
      * Factory method that wraps or casts a value mapping to expose {@code Object} as the ConnId type.

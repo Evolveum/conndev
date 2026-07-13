@@ -38,6 +38,11 @@ public class ScriptedSingleAttributeResolverBuilder implements AttributeResolver
     }
 
     @Override
+    public AttributeResolverBuilder attributes(String... attributeNames) {
+        return this;
+    }
+
+    @Override
     public ScriptedSingleAttributeResolverBuilder resolutionType(ResolutionType type) {
         this.resolutionType = type;
         return this;
