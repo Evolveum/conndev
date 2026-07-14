@@ -105,14 +105,14 @@ public class BaseObjectClassDefinitionBuilder<
     /**
      * Human-readable description of the object class.
      */
-    private String description;
+    private DefinitionValue<String> description = DefinitionValue.emptyDefault();
 
     /**
      * Whether this object class is embedded (returned inline rather than by reference).
      *
      * @see ObjectClassSchemaBuilder#embedded(boolean)
      */
-    private boolean embedded;
+    private DefinitionValue<Boolean> embedded = DefinitionValue.DEFAULT_FALSE;
 
     /**
      * Locator identifying where this object class lives in the remote system,
@@ -199,14 +199,13 @@ public class BaseObjectClassDefinitionBuilder<
     /**
      * Marks the object class as embedded (returned inline rather than by reference).
      *
-     * @param embedded true if the object class is embedded, false if it is referenced
+     * @param value true if the object class is embedded, false if it is referenced
      * @return this builder for chaining
      * @see ObjectClassSchemaBuilder#embedded(boolean)
      */
     @Override
-    public B embedded(boolean embedded) {
-        this.embedded = embedded;
-        connIdBuilder.setEmbedded(embedded);
+    public B embedded(DefinitionValue<Boolean> value) {
+        this.embedded = this.embedded.moreSpecific(value);
         return self();
     }
 
@@ -250,8 +249,8 @@ public class BaseObjectClassDefinitionBuilder<
      * @see ObjectClassSchemaBuilder#description(String)
      */
     @Override
-    public B description(String description) {
-        this.description = description;
+    public B description(DefinitionValue<String> description) {
+        this.description = this.description.moreSpecific(description);
         return self();
     }
 
@@ -338,6 +337,7 @@ public class BaseObjectClassDefinitionBuilder<
      */
     public O build() {
         connIdBuilder.setType(name.value());
+        connIdBuilder.setEmbedded(embedded.value());
         var connIdAttrs = new HashMap<String, AP>();
         var nativeAttrs = new HashMap<String, AP>();
         for (var attrBuilder : nativeAttributes.values()) {
@@ -346,8 +346,8 @@ public class BaseObjectClassDefinitionBuilder<
             connIdAttrs.put(attribute.connId().getName(), attribute);
             nativeAttrs.put(attribute.remoteName(), attribute);
         }
-        if (description != null) {
-            connIdBuilder.setDescription(description);
+        if (description.isPresent()) {
+            connIdBuilder.setDescription(description.value());
         }
 
         var definition = buildImpl(connIdBuilder.build(), nativeAttrs, connIdAttrs);
@@ -367,7 +367,7 @@ public class BaseObjectClassDefinitionBuilder<
      * @see #description(String)
      */
     public String description() {
-        return description;
+        return description.value();
     }
 
     /**
@@ -377,7 +377,7 @@ public class BaseObjectClassDefinitionBuilder<
      * @see #embedded(boolean)
      */
     public boolean embedded() {
-        return embedded;
+        return embedded.value();
     }
 
     /**

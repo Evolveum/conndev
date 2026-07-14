@@ -7,7 +7,9 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -25,7 +27,13 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param description the object class description
      * @return this builder for chaining
      */
-    B description(String description);
+    default B description(String description) {
+        return description(DefinitionValue.from(description, SourceLocation.capture()));
+    }
+
+
+    B description(DefinitionValue<String> description);
+
 
     /**
      * Marks the object class as embedded.
@@ -36,8 +44,11 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param embedded true if the object class is embedded, false if it is referenced
      * @return this builder for chaining
      */
-    B embedded(boolean embedded);
+    default B embedded(boolean embedded) {
+        return embedded(DefinitionValue.from(embedded, SourceLocation.capture()));
+    }
 
+    B embedded(DefinitionValue<Boolean> embedded);
     /**
      * Creates / gets attribute definition with the specified name.
      *
