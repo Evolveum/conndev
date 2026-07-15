@@ -13,6 +13,9 @@ import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
+import java.util.Collection;
+import java.util.function.Predicate;
+
 /**
  *
  * @param <B> Final Object Class Builder interface
@@ -102,5 +105,14 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @return this instance
      */
     B self();
+
+
+    /**
+     * Returns a collection of attributes that match the specified predicate.
+     *
+     * @param predicate the predicate used to filter attributes
+     * @return a collection of attributes matching the given predicate
+     */
+    Collection<A> findAttributes(Predicate<A> predicate);
 
 }

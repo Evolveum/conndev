@@ -19,8 +19,8 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * Base implementation of the object class definition builder.
@@ -405,6 +405,19 @@ public class BaseObjectClassDefinitionBuilder<
             }
         }
         return true;
+    }
+
+    @Override
+    public Collection<A> findAttributes(Predicate<A> predicate) {
+        var ret = new ArrayList<A>();
+        for (var attr: nativeAttributes.values()) {
+            @SuppressWarnings("unchecked")
+            var casted = (A) attr;
+            if (predicate.test(casted)) {
+                ret.add(casted);
+            }
+        }
+        return ret;
     }
 
     /**

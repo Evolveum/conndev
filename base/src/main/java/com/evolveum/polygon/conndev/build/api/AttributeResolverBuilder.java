@@ -85,7 +85,12 @@ public interface AttributeResolverBuilder {
     AttributeResolverBuilder attribute(String attributeName);
 
 
-    AttributeResolverBuilder attributes(String... attributeNames);
+    default AttributeResolverBuilder attributes(String... attributeNames) {
+        for (String attributeName : attributeNames) {
+            attribute(attributeName);
+        }
+        return this;
+    }
 
     interface SearchBased {
 
