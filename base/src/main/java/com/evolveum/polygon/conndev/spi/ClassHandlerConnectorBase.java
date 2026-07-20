@@ -33,7 +33,7 @@ import java.util.Set;
 public abstract class ClassHandlerConnectorBase implements Connector,
         AuthenticateOp, CreateOp, DeleteOp, ResolveUsernameOp,
         SchemaOp, SearchOp<Filter>, TestOp,
-        UpdateDeltaOp {
+        UpdateDeltaOp, SyncOp {
 
     public abstract ContextLookup context();
 
@@ -89,5 +89,18 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     @Override
     public Set<AttributeDelta> updateDelta(ObjectClass objclass, Uid uid, Set<AttributeDelta> modifications, OperationOptions options) {
         return handlerFor(objclass).checkSupported(ObjectUpdateOperation.class).updateDelta(uid, modifications, options);
+    }
+
+    @Override
+    public void sync(ObjectClass objectClass, SyncToken token,
+                     SyncResultsHandler handler, OperationOptions options) {
+        handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
+                .sync(objectClass, token, handler, options, context());
+    }
+
+    @Override
+    public SyncToken getLatestSyncToken(ObjectClass objectClass) {
+        return handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
+                .getLatestSyncToken(objectClass);
     }
 }

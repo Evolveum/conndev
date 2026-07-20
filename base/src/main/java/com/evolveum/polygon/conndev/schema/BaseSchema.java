@@ -53,6 +53,10 @@ public class BaseSchema<O extends BaseObjectClassDefinition<?>> {
         return objectClasses.get(new ObjectClass(name));
     }
 
+    public O objectClass(ObjectClass objectClass) {
+        return objectClasses.get(objectClass);
+    }
+
     /**
      * Returns all defined object class definitions.
      *
