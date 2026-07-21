@@ -8,6 +8,8 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 
+import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -76,9 +78,17 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
             return new ValueTypeOverrideMapping<>(String.class, cast(Long.class, valueMapping),
                     Long::parseLong, Object::toString);
         }
+        if (BigDecimal.class.equals(original)) {
+            return new ValueTypeOverrideMapping<>(String.class, cast(BigDecimal.class, valueMapping),
+                    BigDecimal::new, Object::toString);
+        }
         if (Number.class.equals(original)) {
             return new ValueTypeOverrideMapping<>(String.class, cast(Number.class, valueMapping),
                     Long::parseLong, Object::toString);
+        }
+        if (ZonedDateTime.class.equals(original)) {
+            return new ValueTypeOverrideMapping<>(String.class, cast(ZonedDateTime.class, valueMapping),
+                    ZonedDateTime::parse,Object::toString);
         }
         throw new IllegalArgumentException("Unsupported override type combination: " + valueMapping.connIdType());
     }
