@@ -95,12 +95,12 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     public void sync(ObjectClass objectClass, SyncToken token,
                      SyncResultsHandler handler, OperationOptions options) {
         handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
-                .sync(objectClass, token, handler, options, context());
+                .sync(token, handler, options, context());
     }
 
     @Override
     public SyncToken getLatestSyncToken(ObjectClass objectClass) {
         return handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
-                .getLatestSyncToken(objectClass);
+                .getLatestSyncToken();
     }
 }

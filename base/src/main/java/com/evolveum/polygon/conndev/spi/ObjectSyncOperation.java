@@ -25,13 +25,12 @@ public interface ObjectSyncOperation extends ObjectClassOperation {
     /**
      * Execute a sync poll, emitting SyncDelta objects via the handler.
      *
-     * @param objectClass the object class to sync
      * @param token the token from the previous sync (null for full sync)
      * @param handler called for each change found
      * @param options operation options
      * @param context runtime context providing connection pool and query engine
      */
-    void sync(ObjectClass objectClass, SyncToken token, SyncResultsHandler handler,
+    void sync(SyncToken token, SyncResultsHandler handler,
               OperationOptions options, ContextLookup context);
 
     /**
@@ -40,5 +39,5 @@ public interface ObjectSyncOperation extends ObjectClassOperation {
      * @param objectClass the object class
      * @return latest sync token, or null if no changes exist
      */
-    SyncToken getLatestSyncToken(ObjectClass objectClass);
+    SyncToken getLatestSyncToken();
 }
