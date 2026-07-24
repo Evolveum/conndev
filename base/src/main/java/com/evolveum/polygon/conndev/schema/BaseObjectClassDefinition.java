@@ -20,8 +20,7 @@ import java.util.Map;
  *
  * <p>This class encapsulates all metadata needed to describe an object class within a connector
  * schema. It holds the ConnId {@link ObjectClassInfo}, the ConnId {@link ObjectClass} for runtime
- * use, native-side identifier maps, and the remote-system locator and namespace (e.g. SCIM schema
- * URN, SQL table name).</p>
+ * use, and native-side identifier maps.</p>
  *
  * <p>Implements {@link ConnDevObjectClassSource} to expose a read-only view of the object class
  * to the ConnDev development-mode export pipeline.</p>
@@ -39,15 +38,6 @@ public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implem
 
     /** The ConnId {@link ObjectClassInfo} describing this object class. */
     ObjectClassInfo connId;
-
-    /**
-     * Where the object class lives in the remote system: the resource endpoint for REST/SCIM,
-     * the table for SQL. Set after construction by {@link #locator(String)}.
-     */
-    private String locator;
-
-    /** Namespace of the object class (SCIM schema URN, SQL schema name); set by {@link #namespace(String)}. */
-    private String namespace;
 
     /** Full attribute map keyed by attribute name, combining both native and ConnId attributes. */
     Map<String, A> attributes = new HashMap<>();
@@ -103,24 +93,6 @@ public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implem
     @Override
     public ObjectClassInfo connId() {
         return connId;
-    }
-
-    @Override
-    public String locator() {
-        return locator;
-    }
-
-    void locator(String locator) {
-        this.locator = locator;
-    }
-
-    @Override
-    public String namespace() {
-        return namespace;
-    }
-
-    void namespace(String namespace) {
-        this.namespace = namespace;
     }
 
     /**

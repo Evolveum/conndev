@@ -111,8 +111,6 @@ public class YamlSchemaLoadingTest {
         var schema = loadTestSchema();
 
         var group = schema.objectClass("Group");
-        assertEquals(group.locator(), "/Groups");
-        assertEquals(group.namespace(), "urn:ietf:params:scim:schemas:core:2.0:Group");
         assertEquals(group.connId().getDescription(), "SCIM group");
 
         assertTrue(schema.objectClass("Address").connId().isEmbedded());

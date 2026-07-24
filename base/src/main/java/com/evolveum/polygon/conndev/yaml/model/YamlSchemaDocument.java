@@ -23,11 +23,6 @@ public class YamlSchemaDocument {
     public String description;
     public Boolean embedded;
 
-    /** Where the object class lives in the remote system (endpoint for REST/SCIM, table for SQL). */
-    public String locator;
-    /** Namespace of the object class (SCIM schema URN, SQL schema name). */
-    public String namespace;
-
     /**
      * ConnId built-in attribute mapping, e.g. {@code UID: id}, {@code NAME: login} — the counterpart
      * of {@code connIdAttribute("UID", "id")}.

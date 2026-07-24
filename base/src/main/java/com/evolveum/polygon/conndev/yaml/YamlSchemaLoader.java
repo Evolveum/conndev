@@ -89,7 +89,7 @@ public class YamlSchemaLoader {
             throw new IllegalArgumentException("YAML schema document is missing the objectClass name");
         }
 
-        // The generic schema builder returns the build.api interface; locator/namespace live on the
+        // The generic schema builder returns the build.api interface; connIdAttribute lives on the
         // concrete builder, so we work with the concrete type the runtime actually produces.
         BaseObjectClassDefinitionBuilder objectClass =
                 (BaseObjectClassDefinitionBuilder) schemaBuilder.objectClass(document.objectClass);
@@ -98,12 +98,6 @@ public class YamlSchemaLoader {
         }
         if (Boolean.TRUE.equals(document.embedded)) {
             objectClass.embedded(true);
-        }
-        if (document.locator != null) {
-            objectClass.locator(document.locator);
-        }
-        if (document.namespace != null) {
-            objectClass.namespace(document.namespace);
         }
 
         document.attributes.forEach((name, attribute) -> apply(objectClass.attribute(name), name, attribute));

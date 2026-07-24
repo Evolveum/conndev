@@ -31,8 +31,6 @@ public final class ConnDevSchema {
     private static ObjectClassInfo objectClass() {
         var builder = new ObjectClassInfoBuilder();
         builder.setType(OBJECT_CLASS_NAME);
-        builder.addAttributeInfo(string(F_LOCATOR));
-        builder.addAttributeInfo(string(F_NAMESPACE));
         builder.addAttributeInfo(embedded("attributes", ATTRIBUTE_NAME));
         return builder.build();
     }
@@ -42,29 +40,11 @@ public final class ConnDevSchema {
         builder.setType(ATTRIBUTE_NAME);
         builder.setEmbedded(true);
         builder.addAttributeInfo(string(F_NAME));
-        builder.addAttributeInfo(string(F_TYPE));
-        builder.addAttributeInfo(string(F_NAMESPACE));
-        // A reference (SCIM reference attribute / SQL foreign key) is expressed on the attribute itself.
-        builder.addAttributeInfo(string(F_REFERENCED_OBJECT_CLASS));
-        builder.addAttributeInfo(string(F_REFERENCED_ATTRIBUTE));
-        builder.addAttributeInfo(string(F_REFERENCE));
-        builder.addAttributeInfo(string(F_ROLE));
-        builder.addAttributeInfo(bool(F_REQUIRED));
-        builder.addAttributeInfo(bool(F_MULTI_VALUED));
-        builder.addAttributeInfo(bool(F_CREATABLE));
-        builder.addAttributeInfo(bool("updateable"));
-        builder.addAttributeInfo(bool(F_READABLE));
-        builder.addAttributeInfo(bool(F_RETURNED_BY_DEFAULT));
-        builder.addAttributeInfo(embedded(F_SUB_ATTRIBUTES, ATTRIBUTE_NAME));
         return builder.build();
     }
 
     private static AttributeInfo string(String name) {
         return AttributeInfoBuilder.build(name, String.class);
-    }
-
-    private static AttributeInfo bool(String name) {
-        return AttributeInfoBuilder.build(name, Boolean.class);
     }
 
     private static AttributeInfo embedded(String name, String objectClass) {

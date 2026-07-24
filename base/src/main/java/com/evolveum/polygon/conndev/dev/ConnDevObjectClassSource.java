@@ -21,19 +21,16 @@ public interface ConnDevObjectClassSource {
     /** The ConnId side of the object class. */
     ObjectClassInfo connId();
 
-    /**
-     * Where the object class lives in the remote system: the resource endpoint for REST/SCIM, the
-     * table for SQL. {@code null} when unknown.
-     */
-    default String locator() {
-        return null;
-    }
-
-    /** Namespace of the object class (SCIM schema URN, SQL schema name); {@code null} when unknown. */
-    default String namespace() {
-        return null;
-    }
-
     /** The framework attribute definitions of this object class. */
     Collection<? extends ConnDevAttributeSource> attributes();
+
+    /**
+     * Extension point for protocol-specific export blocks (e.g. {@code scim}, {@code sql}) - called by
+     * {@link ConnDevObjectClassSerializer} right before {@link ConnDevObjectClass#build()}. The default
+     * is a no-op; implementations call
+     * {@link ConnDevObjectClass#protocolSpecific(String, java.util.Collection)} to add their own named
+     * block(s). This interface and the serializer stay protocol-agnostic.
+     */
+    default void contribute(ConnDevObjectClass target) {
+    }
 }

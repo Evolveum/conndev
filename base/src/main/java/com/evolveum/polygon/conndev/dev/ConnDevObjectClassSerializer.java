@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.dev;
 
+import org.identityconnectors.framework.common.objects.Attribute;
+import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
@@ -24,6 +26,19 @@ import java.util.List;
  * Connectors must not map their raw protocol schema to {@code conndev_ObjectClass} directly.
  */
 public final class ConnDevObjectClassSerializer {
+
+    private static final String CONN_ID_BLOCK = "connId";
+    private static final String F_TYPE = "type";
+    private static final String F_REQUIRED = "required";
+    private static final String F_MULTI_VALUED = "multiValued";
+    private static final String F_CREATABLE = "creatable";
+    private static final String F_UPDATEABLE = "updateable";
+    private static final String F_READABLE = "readable";
+    private static final String F_RETURNED_BY_DEFAULT = "returnedByDefault";
+    private static final String F_REFERENCED_OBJECT_CLASS = "referencedObjectClass";
+    private static final String F_REFERENCED_ATTRIBUTE = "referencedAttribute";
+    private static final String F_REFERENCE = "reference";
+    private static final String F_ROLE = "role";
 
     private ConnDevObjectClassSerializer() {
     }
@@ -46,56 +61,54 @@ public final class ConnDevObjectClassSerializer {
     public static ConnectorObject serialize(ConnDevObjectClassSource source) {
         var name = source.connId().getType();
         var objectClass = ConnDevObjectClass.objectClass(name).uid(name);
-        if (source.locator() != null) {
-            objectClass.locator(source.locator());
-        }
-        if (source.namespace() != null) {
-            objectClass.namespace(source.namespace());
-        }
         for (var attribute : source.attributes()) {
             serialize(attribute, objectClass.attribute(attribute.remoteName()));
         }
+        source.contribute(objectClass);
         return objectClass.build();
     }
 
     private static void serialize(ConnDevAttributeSource source, ConnDevAttribute target) {
         var info = source.connId();
+        var connId = new ArrayList<Attribute>();
         var type = source.nativeType() != null ? source.nativeType() : typeName(info.getType());
         if (type != null) {
-            target.type(type);
+            connId.add(AttributeBuilder.build(F_TYPE, type));
         }
         // Sparse emission: ConnId flag defaults (readable, creatable, updateable, returned by default,
         // single-valued, optional) are left implicit; only deviations are emitted.
         if (info.isRequired()) {
-            target.required(true);
+            connId.add(AttributeBuilder.build(F_REQUIRED, true));
         }
         if (info.isMultiValued()) {
-            target.multiValued(true);
+            connId.add(AttributeBuilder.build(F_MULTI_VALUED, true));
         }
         if (!info.isCreateable()) {
-            target.creatable(false);
+            connId.add(AttributeBuilder.build(F_CREATABLE, false));
         }
         if (!info.isUpdateable()) {
-            target.updateable(false);
+            connId.add(AttributeBuilder.build(F_UPDATEABLE, false));
         }
         if (!info.isReadable()) {
-            target.readable(false);
+            connId.add(AttributeBuilder.build(F_READABLE, false));
         }
         if (!info.isReturnedByDefault()) {
-            target.returnedByDefault(false);
+            connId.add(AttributeBuilder.build(F_RETURNED_BY_DEFAULT, false));
         }
         if (info.getReferencedObjectClassName() != null) {
-            target.referencedObjectClass(info.getReferencedObjectClassName());
+            connId.add(AttributeBuilder.build(F_REFERENCED_OBJECT_CLASS, info.getReferencedObjectClassName()));
             if (info.getRoleInReference() != null) {
-                target.role(role(info.getRoleInReference()));
+                connId.add(AttributeBuilder.build(F_ROLE, role(info.getRoleInReference())));
             }
             if (info.isReference() && info.getSubtype() != null) {
-                target.reference(info.getSubtype());
+                connId.add(AttributeBuilder.build(F_REFERENCE, info.getSubtype()));
             }
             if (source.referencedAttribute() != null) {
-                target.referencedAttribute(source.referencedAttribute());
+                connId.add(AttributeBuilder.build(F_REFERENCED_ATTRIBUTE, source.referencedAttribute()));
             }
         }
+        target.protocolSpecific(CONN_ID_BLOCK, connId);
+        source.contribute(target);
     }
 
     /** ConnId stores the role as a special name ({@code __SUBJECT__}); export it as plain {@code subject}. */

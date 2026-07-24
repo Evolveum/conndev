@@ -27,8 +27,7 @@ import java.util.function.Predicate;
  *
  * <p>Provides the common building blocks for defining ConnId object classes
  * in connector development scripts: attributes, references, embedded/standalone
- * flag, descriptions, locator and namespace metadata, and ConnId built-in attribute
- * mappings (UID, NAME).
+ * flag, descriptions, and ConnId built-in attribute mappings (UID, NAME).
  *
  * <p>Subclasses may override {@link #newAttribute(DefinitionValue)} to supply
  * custom attribute builder implementations while reusing the common attribute
@@ -113,17 +112,6 @@ public class BaseObjectClassDefinitionBuilder<
      * @see ObjectClassSchemaBuilder#embedded(boolean)
      */
     private DefinitionValue<Boolean> embedded = DefinitionValue.DEFAULT_FALSE;
-
-    /**
-     * Locator identifying where this object class lives in the remote system,
-     * such as a resource endpoint for REST/SCIM or a table name for SQL.
-     */
-    private String locator;
-
-    /**
-     * Namespace for the object class, such as a SCIM schema URN or SQL schema name.
-     */
-    private String namespace;
 
     /**
      * Constructs a new object class definition builder.
@@ -255,35 +243,6 @@ public class BaseObjectClassDefinitionBuilder<
     }
 
     /**
-     * Sets the locator for this object class — where it lives in the remote system.
-     *
-     * <p>Semantically the same concept across connector types: the resource endpoint
-     * for REST/SCIM connectors, the table name for SQL connectors, etc.
-     *
-     * @param locator the locator string (e.g. a URL endpoint or table name)
-     * @return this builder for chaining
-     */
-    public BaseObjectClassDefinitionBuilder locator(String locator) {
-        this.locator = locator;
-        return this;
-    }
-
-    /**
-     * Sets the namespace for this object class.
-     *
-     * <p>For SCIM connectors this is typically a SCIM schema URN; for SQL connectors
-     * this is typically a database schema name.
-     *
-     * @param namespace the namespace string
-     * @return this builder for chaining
-     */
-    public BaseObjectClassDefinitionBuilder namespace(String namespace) {
-        this.namespace = namespace;
-        return this;
-    }
-
-
-    /**
      * Returns the display name value of this object class.
      *
      * @return the name as a String
@@ -330,7 +289,6 @@ public class BaseObjectClassDefinitionBuilder<
      *   <li>Sets the ConnId object class type to the builder's name</li>
      *   <li>Builds each attribute and adds ConnId attribute info</li>
      *   <li>Sets the description if one was provided</li>
-     *   <li>Applies the locator and namespace to the resulting definition</li>
      * </ol>
      *
      * @return the fully built object class definition
@@ -350,10 +308,7 @@ public class BaseObjectClassDefinitionBuilder<
             connIdBuilder.setDescription(description.value());
         }
 
-        var definition = buildImpl(connIdBuilder.build(), nativeAttrs, connIdAttrs);
-        definition.locator(locator);
-        definition.namespace(namespace);
-        return definition;
+        return buildImpl(connIdBuilder.build(), nativeAttrs, connIdAttrs);
     }
 
     protected O buildImpl(ObjectClassInfo build, Map<String, AP> nativeAttrs, Map<String, AP> connIdAttrs) {

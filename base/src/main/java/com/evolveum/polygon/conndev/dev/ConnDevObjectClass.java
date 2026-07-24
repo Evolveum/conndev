@@ -9,7 +9,11 @@ package com.evolveum.polygon.conndev.dev;
 import org.identityconnectors.framework.common.objects.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Fluent builder for the normalized development-mode schema representation.
@@ -30,26 +34,11 @@ public final class ConnDevObjectClass {
 
     static final String F_ATTRIBUTES = "attributes";
     static final String F_NAME = "name";
-    static final String F_TYPE = "type";
-    static final String F_REQUIRED = "required";
-    static final String F_MULTI_VALUED = "multiValued";
-    static final String F_CREATABLE = "creatable";
-    static final String F_UPDATEABLE = "updateable";
-    static final String F_READABLE = "readable";
-    static final String F_RETURNED_BY_DEFAULT = "returnedByDefault";
-    static final String F_SUB_ATTRIBUTES = "subAttributes";
-    static final String F_REFERENCED_OBJECT_CLASS = "referencedObjectClass";
-    static final String F_REFERENCED_ATTRIBUTE = "referencedAttribute";
-    static final String F_REFERENCE = "reference";
-    static final String F_ROLE = "role";
-    static final String F_LOCATOR = "locator";
-    static final String F_NAMESPACE = "namespace";
 
     private final String name;
     private String uid;
-    private String locator;
-    private String namespace;
     private final List<ConnDevAttribute> attributes = new ArrayList<>();
+    private final Map<String, Collection<Attribute>> protocolSpecifics = new LinkedHashMap<>();
 
     private ConnDevObjectClass(String name) {
         this.name = name;
@@ -64,24 +53,20 @@ public final class ConnDevObjectClass {
         return this;
     }
 
-    /**
-     * Where the object class lives in the remote system: the resource endpoint path for REST/SCIM,
-     * the table for SQL. Semantically the same concept, hence one generic property.
-     */
-    public ConnDevObjectClass locator(String locator) {
-        this.locator = locator;
-        return this;
-    }
-
-    public ConnDevObjectClass namespace(String namespace) {
-        this.namespace = namespace;
-        return this;
-    }
-
     public ConnDevAttribute attribute(String name) {
         var attribute = new ConnDevAttribute(name);
         attributes.add(attribute);
         return attribute;
+    }
+
+    /**
+     * Adds a named, protocol-specific block (e.g. {@code "scim"}, {@code "sql"}), exported as its own
+     * nested {@link EmbeddedObject}. This builder and {@link ConnDevObjectClassSerializer} stay
+     * protocol-agnostic - the caller decides the protocol name and the attributes it carries.
+     */
+    public ConnDevObjectClass protocolSpecific(String protocolName, Collection<Attribute> attributes) {
+        protocolSpecifics.put(protocolName, attributes);
+        return this;
     }
 
     public ConnectorObject build() {
@@ -89,11 +74,9 @@ public final class ConnDevObjectClass {
         builder.setObjectClass(OBJECT_CLASS);
         builder.setUid(uid);
         builder.setName(name);
-        if (locator != null) {
-            builder.addAttribute(AttributeBuilder.build(F_LOCATOR, locator));
-        }
-        if (namespace != null) {
-            builder.addAttribute(AttributeBuilder.build(F_NAMESPACE, namespace));
+        for (var entry : protocolSpecifics.entrySet()) {
+            var block = new EmbeddedObject(new ObjectClass(entry.getKey()), Set.copyOf(entry.getValue()));
+            builder.addAttribute(AttributeBuilder.build(entry.getKey(), block));
         }
         var attributeObjects = new ArrayList<EmbeddedObject>();
         for (var attribute : attributes) {

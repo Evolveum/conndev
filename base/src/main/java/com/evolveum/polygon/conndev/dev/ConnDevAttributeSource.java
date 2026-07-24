@@ -35,4 +35,14 @@ public interface ConnDevAttributeSource {
     default String referencedAttribute() {
         return null;
     }
+
+    /**
+     * Extension point for protocol-specific export blocks (e.g. the exact SCIM path, a SQL column
+     * type) - called by {@link ConnDevObjectClassSerializer} right before {@link ConnDevAttribute#build()}.
+     * The default is a no-op; implementations call
+     * {@link ConnDevAttribute#protocolSpecific(String, java.util.Collection)} to add their own named
+     * block(s). This interface and the serializer stay protocol-agnostic.
+     */
+    default void contribute(ConnDevAttribute target) {
+    }
 }

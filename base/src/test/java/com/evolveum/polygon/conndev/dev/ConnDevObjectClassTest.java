@@ -23,35 +23,37 @@ public class ConnDevObjectClassTest {
 
     @Test
     public void buildsNormalizedConnectorObject() {
-        var objectClass = ConnDevObjectClass.objectClass("User")
-                .uid("urn:User").locator("/Users").namespace("urn:User");
-        objectClass.attribute("userName").type("string").required(true);
-        objectClass.attribute("name").type("complex").subAttribute("familyName").type("string");
-        objectClass.attribute("groups").type("reference").referencedObjectClass("Group")
-                .referencedAttribute("id").reference("memberOf").role("subject").multiValued(true);
+        var objectClass = ConnDevObjectClass.objectClass("User").uid("urn:User");
+        objectClass.protocolSpecific("scim", List.of(
+                AttributeBuilder.build("name", "User"), AttributeBuilder.build("schemaUri", "urn:User")));
+        objectClass.attribute("userName").protocolSpecific("connId", List.of(
+                AttributeBuilder.build("type", "string"), AttributeBuilder.build("required", true)));
+        objectClass.attribute("groups").protocolSpecific("connId", List.of(
+                AttributeBuilder.build("type", "reference"),
+                AttributeBuilder.build("referencedObjectClass", "Group"),
+                AttributeBuilder.build("referencedAttribute", "id"),
+                AttributeBuilder.build("reference", "memberOf"),
+                AttributeBuilder.build("role", "subject"),
+                AttributeBuilder.build("multiValued", true)));
 
         ConnectorObject result = objectClass.build();
 
         assertEquals(result.getObjectClass().getObjectClassValue(), "conndev_ObjectClass");
         assertEquals(result.getUid().getUidValue(), "urn:User");
         assertEquals(result.getName().getNameValue(), "User");
-        assertEquals(value(result, "locator"), "/Users");
-        assertEquals(value(result, "namespace"), "urn:User");
+        var scim = protocolBlock(result, "scim");
+        assertEquals(string(scim, "name"), "User");
+        assertEquals(string(scim, "schemaUri"), "urn:User");
 
         var attributes = result.getAttributeByName("attributes").getValue();
         var names = attributes.stream().map(e -> string((EmbeddedObject) e, "name")).collect(Collectors.toSet());
-        assertEquals(names, Set.of("userName", "name", "groups"));
+        assertEquals(names, Set.of("userName", "groups"));
 
-        var userName = embedded(attributes, "userName");
+        var userName = protocolBlock(embedded(attributes, "userName"), "connId");
         assertEquals(string(userName, "type"), "string");
         assertEquals(single(userName, "required"), Boolean.TRUE);
 
-        var name = embedded(attributes, "name");
-        var subAttributes = AttributeUtil.find("subAttributes", name.getAttributes()).getValue();
-        assertEquals(subAttributes.size(), 1);
-        assertEquals(string((EmbeddedObject) subAttributes.getFirst(), "name"), "familyName");
-
-        var groups = embedded(attributes, "groups");
+        var groups = protocolBlock(embedded(attributes, "groups"), "connId");
         assertEquals(string(groups, "referencedObjectClass"), "Group");
         assertEquals(string(groups, "referencedAttribute"), "id");
         assertEquals(string(groups, "reference"), "memberOf");
@@ -62,36 +64,37 @@ public class ConnDevObjectClassTest {
     @Test
     public void emitsOnlyExplicitlySetProperties() {
         var objectClass = ConnDevObjectClass.objectClass("Bare").uid("Bare");
-        objectClass.attribute("plain").type("string");
+        objectClass.attribute("plain").protocolSpecific("connId", List.of(AttributeBuilder.build("type", "string")));
 
         var result = objectClass.build();
 
-        // object-class level: locator/namespace were never set, so they are not emitted
-        assertNull(result.getAttributeByName("locator"));
-        assertNull(result.getAttributeByName("namespace"));
+        // object-class level: no protocol-specific block was ever added, so none is emitted
+        assertNull(result.getAttributeByName("scim"));
+        assertNull(result.getAttributeByName("sql"));
 
-        // attribute level: only name + type were set, nothing else leaks in
+        // attribute level: only the explicitly given connId fields are set, nothing else leaks in
         var plain = embedded(result.getAttributeByName("attributes").getValue(), "plain");
-        assertEquals(string(plain, "type"), "string");
-        assertNull(AttributeUtil.find("required", plain.getAttributes()));
-        assertNull(AttributeUtil.find("multiValued", plain.getAttributes()));
-        assertNull(AttributeUtil.find("creatable", plain.getAttributes()));
-        assertNull(AttributeUtil.find("referencedObjectClass", plain.getAttributes()));
-        assertNull(AttributeUtil.find("role", plain.getAttributes()));
-        assertNull(AttributeUtil.find("subAttributes", plain.getAttributes()));
+        var connId = protocolBlock(plain, "connId");
+        assertEquals(string(connId, "type"), "string");
+        assertNull(AttributeUtil.find("required", connId.getAttributes()));
+        assertNull(AttributeUtil.find("multiValued", connId.getAttributes()));
+        assertNull(AttributeUtil.find("creatable", connId.getAttributes()));
+        assertNull(AttributeUtil.find("referencedObjectClass", connId.getAttributes()));
+        assertNull(AttributeUtil.find("role", connId.getAttributes()));
     }
 
     @Test
     public void buildsTableBackedObjectClass() {
-        var objectClass = ConnDevObjectClass.objectClass("users")
-                .uid("users").locator("users").namespace("public");
-        objectClass.attribute("id").type("integer");
+        var objectClass = ConnDevObjectClass.objectClass("users").uid("users");
+        objectClass.protocolSpecific("sql", List.of(
+                AttributeBuilder.build("table", "users"), AttributeBuilder.build("schema", "public")));
+        objectClass.attribute("id").protocolSpecific("connId", List.of(AttributeBuilder.build("type", "integer")));
 
         var result = objectClass.build();
 
-        // for SQL the locator is the table; the property is the same as for REST endpoints
-        assertEquals(value(result, "locator"), "users");
-        assertEquals(value(result, "namespace"), "public");
+        var sql = protocolBlock(result, "sql");
+        assertEquals(string(sql, "table"), "users");
+        assertEquals(string(sql, "schema"), "public");
     }
 
     @Test
@@ -125,15 +128,19 @@ public class ConnDevObjectClassTest {
                 .findFirst().orElseThrow();
     }
 
-    private static String value(ConnectorObject object, String name) {
-        var attribute = object.getAttributeByName(name);
-        return attribute == null ? null : AttributeUtil.getStringValue(attribute);
-    }
-
     private static EmbeddedObject embedded(List<Object> values, String name) {
         return values.stream().map(EmbeddedObject.class::cast)
                 .filter(e -> name.equals(string(e, "name")))
                 .findFirst().orElseThrow();
+    }
+
+    private static EmbeddedObject protocolBlock(ConnectorObject object, String protocolName) {
+        return (EmbeddedObject) AttributeUtil.getSingleValue(object.getAttributeByName(protocolName));
+    }
+
+    private static EmbeddedObject protocolBlock(EmbeddedObject attribute, String protocolName) {
+        var block = AttributeUtil.find(protocolName, attribute.getAttributes());
+        return (EmbeddedObject) AttributeUtil.getSingleValue(block);
     }
 
     private static String string(EmbeddedObject object, String name) {

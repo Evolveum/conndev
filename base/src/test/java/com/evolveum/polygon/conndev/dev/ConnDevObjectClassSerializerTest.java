@@ -26,7 +26,7 @@ import static org.testng.Assert.assertNull;
 
 /**
  * Verifies that the development-mode export is derived from the one framework schema model
- * ({@link BaseSchema}): the serializer reads only the model (native names, locator, ConnId flags,
+ * ({@link BaseSchema}): the serializer reads only the model (native names, ConnId flags,
  * reference info) and emits the uniform {@code conndev_ObjectClass} objects.
  */
 public class ConnDevObjectClassSerializerTest {
@@ -43,7 +43,6 @@ public class ConnDevObjectClassSerializerTest {
         var builder = new BaseSchemaBuilder<>(StubConnector.class, NOOP_CONTEXT);
 
         var user = builder.objectClass("user");
-        //user.locator("users").namespace("public");
         var id = user.attribute("id");
         id.connId().name(Uid.NAME).type(String.class);
         id.required(true).updatable(false).creatable(false);
@@ -68,8 +67,6 @@ public class ConnDevObjectClassSerializerTest {
         assertEquals(user.getObjectClass().getObjectClassValue(), "conndev_ObjectClass");
         assertEquals(user.getName().getNameValue(), "user");
         assertEquals(user.getUid().getUidValue(), "user");
-        //assertEquals(value(user, "locator"), "users");
-        //assertEquals(value(user, "namespace"), "public");
 
         var names = user.getAttributeByName("attributes").getValue().stream()
                 .map(e -> string((EmbeddedObject) e, "name"))
@@ -82,14 +79,14 @@ public class ConnDevObjectClassSerializerTest {
         var user = ConnDevObjectClassSerializer.serializeAll(schema().objectClasses()).getFirst();
 
         // the model maps "id" to __UID__, but the export keeps the original framework view
-        var id = attribute(user, "id");
+        var id = protocolBlock(attribute(user, "id"), "connId");
         assertEquals(single(id, "required"), Boolean.TRUE);
         assertEquals(single(id, "creatable"), Boolean.FALSE);
         assertEquals(single(id, "updateable"), Boolean.FALSE);
 
 
         // plain attribute with defaults: type from ConnId, no flags emitted
-        var name = attribute(user, "name");
+        var name = protocolBlock(attribute(user, "name"), "connId");
         assertEquals(string(name, "type"), "string");
         assertNull(AttributeUtil.find("required", name.getAttributes()));
         assertNull(AttributeUtil.find("creatable", name.getAttributes()));
@@ -100,7 +97,7 @@ public class ConnDevObjectClassSerializerTest {
     public void serializesReferencesFromTheModel() {
         var user = ConnDevObjectClassSerializer.serializeAll(schema().objectClasses()).getFirst();
 
-        var manager = attribute(user, "manager_id");
+        var manager = protocolBlock(attribute(user, "manager_id"), "connId");
         assertEquals(string(manager, "type"), "reference");
         assertEquals(string(manager, "referencedObjectClass"), "user");
         assertEquals(string(manager, "reference"), "fk_user_manager");
@@ -114,9 +111,9 @@ public class ConnDevObjectClassSerializerTest {
                 .findFirst().orElseThrow(() -> new AssertionError("No attribute named " + name));
     }
 
-    private static String value(ConnectorObject object, String name) {
-        var attribute = object.getAttributeByName(name);
-        return attribute == null ? null : AttributeUtil.getStringValue(attribute);
+    private static EmbeddedObject protocolBlock(EmbeddedObject attribute, String protocolName) {
+        var block = AttributeUtil.find(protocolName, attribute.getAttributes());
+        return (EmbeddedObject) AttributeUtil.getSingleValue(block);
     }
 
     private static String string(EmbeddedObject object, String name) {
