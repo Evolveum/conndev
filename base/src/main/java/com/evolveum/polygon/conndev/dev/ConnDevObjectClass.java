@@ -69,13 +69,24 @@ public final class ConnDevObjectClass {
         return this;
     }
 
+    /**
+     * The ConnId object class type used for an object-class-level protocol block. Prefixed like
+     * {@code conndev_ObjectClass}/{@code conndev_Attribute} so it is recognized as a development-mode
+     * schema type (see {@link ConnDevObjectClassSerializer#serializeAll}) rather than an application
+     * object class, and distinguished from the attribute-level block of the same protocol name (see
+     * {@link ConnDevAttribute#attributeProtocolBlockType}).
+     */
+    public static String protocolBlockType(String protocolName) {
+        return "conndev_" + protocolName;
+    }
+
     public ConnectorObject build() {
         var builder = new ConnectorObjectBuilder();
         builder.setObjectClass(OBJECT_CLASS);
         builder.setUid(uid);
         builder.setName(name);
         for (var entry : protocolSpecifics.entrySet()) {
-            var block = new EmbeddedObject(new ObjectClass(entry.getKey()), Set.copyOf(entry.getValue()));
+            var block = new EmbeddedObject(new ObjectClass(protocolBlockType(entry.getKey())), Set.copyOf(entry.getValue()));
             builder.addAttribute(AttributeBuilder.build(entry.getKey(), block));
         }
         var attributeObjects = new ArrayList<EmbeddedObject>();

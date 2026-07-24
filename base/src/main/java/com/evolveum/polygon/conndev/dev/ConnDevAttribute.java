@@ -45,11 +45,24 @@ public final class ConnDevAttribute {
         return this;
     }
 
+    /**
+     * The ConnId object class type used for a protocol block nested under {@code conndev_Attribute}.
+     * Distinct from the object-class-level block of the same protocol name (see
+     * {@link ConnDevObjectClass}) since a block with the same name can carry different fields at each
+     * level (e.g. SCIM's object-class-level block has {@code name}/{@code schemaUri}, its
+     * attribute-level block has {@code path}), and ConnId's {@code Schema} keys object classes
+     * globally by type name - it cannot hold two different shapes under the same name.
+     */
+    public static String attributeProtocolBlockType(String protocolName) {
+        return ConnDevObjectClass.protocolBlockType(protocolName) + "Attribute";
+    }
+
     EmbeddedObject build() {
         Set<Attribute> properties = new HashSet<>();
         properties.add(AttributeBuilder.build(F_NAME, name));
         for (var entry : protocolSpecifics.entrySet()) {
-            var block = new EmbeddedObject(new ObjectClass(entry.getKey()), Set.copyOf(entry.getValue()));
+            var block = new EmbeddedObject(
+                    new ObjectClass(attributeProtocolBlockType(entry.getKey())), Set.copyOf(entry.getValue()));
             properties.add(AttributeBuilder.build(entry.getKey(), block));
         }
         return new EmbeddedObject(ATTRIBUTE, properties);

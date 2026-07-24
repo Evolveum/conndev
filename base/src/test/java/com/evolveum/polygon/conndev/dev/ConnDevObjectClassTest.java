@@ -101,7 +101,7 @@ public class ConnDevObjectClassTest {
     public void declaresDevObjectClassesForSchema() {
         var names = ConnDevSchema.objectClassInfos().stream()
                 .map(ObjectClassInfo::getType).collect(Collectors.toSet());
-        assertEquals(names, Set.of("conndev_ObjectClass", "conndev_Attribute"));
+        assertEquals(names, Set.of("conndev_ObjectClass", "conndev_Attribute", "conndev_connIdAttribute"));
     }
 
     @Test

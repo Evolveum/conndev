@@ -27,18 +27,18 @@ import java.util.List;
  */
 public final class ConnDevObjectClassSerializer {
 
-    private static final String CONN_ID_BLOCK = "connId";
-    private static final String F_TYPE = "type";
-    private static final String F_REQUIRED = "required";
-    private static final String F_MULTI_VALUED = "multiValued";
-    private static final String F_CREATABLE = "creatable";
-    private static final String F_UPDATEABLE = "updateable";
-    private static final String F_READABLE = "readable";
-    private static final String F_RETURNED_BY_DEFAULT = "returnedByDefault";
-    private static final String F_REFERENCED_OBJECT_CLASS = "referencedObjectClass";
-    private static final String F_REFERENCED_ATTRIBUTE = "referencedAttribute";
-    private static final String F_REFERENCE = "reference";
-    private static final String F_ROLE = "role";
+    public static final String CONN_ID_BLOCK = "connId";
+    public static final String F_TYPE = "type";
+    public static final String F_REQUIRED = "required";
+    public static final String F_MULTI_VALUED = "multiValued";
+    public static final String F_CREATABLE = "creatable";
+    public static final String F_UPDATEABLE = "updateable";
+    public static final String F_READABLE = "readable";
+    public static final String F_RETURNED_BY_DEFAULT = "returnedByDefault";
+    public static final String F_REFERENCED_OBJECT_CLASS = "referencedObjectClass";
+    public static final String F_REFERENCED_ATTRIBUTE = "referencedAttribute";
+    public static final String F_REFERENCE = "reference";
+    public static final String F_ROLE = "role";
 
     private ConnDevObjectClassSerializer() {
     }
