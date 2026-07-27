@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.concepts;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 public record DefinitionValue<T>(T value, Origin origin, SourceLocation location) {
 
@@ -87,6 +88,14 @@ public record DefinitionValue<T>(T value, Origin origin, SourceLocation location
 
     public <X> DefinitionValue<X> derived(X value) {
         return of(value, origin, location);
+    }
+
+    public boolean isDetected() {
+        return origin == Origin.DETECTED;
+    }
+
+    public <O> DefinitionValue<O> transform(Function<T,O> mapping) {
+        return derived(Objects.requireNonNull(mapping).apply(value));
     }
 
     public enum Origin {
