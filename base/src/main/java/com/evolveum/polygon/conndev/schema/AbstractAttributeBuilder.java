@@ -70,7 +70,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     /**
      * Registry of protocol-specific mappings keyed by mapping class (e.g., {@link JsonAttributeMapping}).
      */
-    Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMappingBuilder> protocolMappings = new HashMap<>();
+    protected Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMappingBuilder> protocolMappings = new HashMap<>();
 
 
     /**
