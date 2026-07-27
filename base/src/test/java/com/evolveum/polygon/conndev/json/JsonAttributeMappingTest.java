@@ -7,8 +7,8 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.*;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.testng.annotations.Test;
@@ -37,7 +37,7 @@ public class JsonAttributeMappingTest {
         var result = mapping.attributeFromObject(root);
 
         assertThat(result).isNotNull();
-        assertThat((result instanceof TextNode)).isTrue();
+        assertThat((result instanceof StringNode)).isTrue();
         assertThat(result.asText()).isEqualTo("test@example.com");
     }
 
@@ -56,7 +56,7 @@ public class JsonAttributeMappingTest {
         var result = mapping.attributeFromObject(root);
 
         assertThat(result).isNotNull();
-        assertThat((result instanceof TextNode)).isTrue();
+        assertThat((result instanceof StringNode)).isTrue();
         assertThat(result.asText()).isEqualTo("John");
     }
 
@@ -80,7 +80,7 @@ public class JsonAttributeMappingTest {
     @Test
     public void testSingleValueFromAttribute_scalar() {
         var mapper = new ObjectMapper();
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("x", "hello")
                 .get("x");
 
@@ -121,7 +121,7 @@ public class JsonAttributeMappingTest {
     @Test
     public void testValuesFromAttribute_scalarNode() {
         var mapper = new ObjectMapper();
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("x", "single")
                 .get("x");
 
@@ -168,7 +168,7 @@ public class JsonAttributeMappingTest {
 
         assertThat(parent.size()).isEqualTo(1);
         assertThat(parent.has("name")).isTrue();
-        assertThat((parent.get("name") instanceof TextNode)).isTrue();
+        assertThat((parent.get("name") instanceof StringNode)).isTrue();
         assertThat(parent.get("name").asText()).isEqualTo("John");
     }
 

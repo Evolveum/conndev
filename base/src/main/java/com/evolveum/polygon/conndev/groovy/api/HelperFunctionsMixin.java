@@ -1,7 +1,7 @@
 package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
-import com.fasterxml.jackson.databind.node.ValueNode;
+import tools.jackson.databind.node.ValueNode;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;

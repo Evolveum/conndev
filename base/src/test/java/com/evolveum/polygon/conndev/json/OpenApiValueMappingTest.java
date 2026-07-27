@@ -6,8 +6,8 @@
  */
 package com.evolveum.polygon.conndev.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.*;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
@@ -36,7 +36,7 @@ public class OpenApiValueMappingTest {
         var mapper = new ObjectMapper();
         ZonedDateTime original = ZonedDateTime.of(2025, 1, 15, 10, 30, 0, 0, ZoneId.of("UTC"));
         var formatted = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(original);
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("x", formatted)
                 .get("x");
 
@@ -56,7 +56,7 @@ public class OpenApiValueMappingTest {
         byte[] data = new byte[]{(byte) 0x01, (byte) 0x02, (byte) 0x03};
         var result = OpenApiValueMapping.Byte.toWireValue(data);
 
-        assertThat(result).isNotNull().isInstanceOf(TextNode.class);
+        assertThat(result).isNotNull().isInstanceOf(StringNode.class);
         var expected = Base64.getEncoder().encodeToString(data);
         assertThat(result.asText()).isEqualTo(expected);
     }
@@ -66,7 +66,7 @@ public class OpenApiValueMappingTest {
         var mapper = new ObjectMapper();
         byte[] original = new byte[]{(byte) 0xAB, (byte) 0xCD};
         var encoded = Base64.getEncoder().encodeToString(original);
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("x", encoded)
                 .get("x");
 
@@ -128,7 +128,7 @@ public class OpenApiValueMappingTest {
         var uuidMapping = OpenApiValueMapping.Uuid;
 
         assertThat(uuidMapping.connIdType()).isEqualTo(String.class);
-        assertThat(uuidMapping.primaryWireType()).isEqualTo(TextNode.class);
+        assertThat(uuidMapping.primaryWireType()).isEqualTo(StringNode.class);
         assertThat(uuidMapping.baseMapping).isEqualTo(JsonSchemaValueMapping.STRING);
 
         var mapper = new ObjectMapper();
@@ -146,7 +146,7 @@ public class OpenApiValueMappingTest {
         var emailMapping = OpenApiValueMapping.Email;
 
         assertThat(emailMapping.connIdType()).isEqualTo(String.class);
-        assertThat(emailMapping.primaryWireType()).isEqualTo(TextNode.class);
+        assertThat(emailMapping.primaryWireType()).isEqualTo(StringNode.class);
         assertThat(emailMapping.baseMapping).isEqualTo(JsonSchemaValueMapping.STRING);
 
         var mapper = new ObjectMapper();
@@ -253,7 +253,7 @@ public class OpenApiValueMappingTest {
         var binaryMapping = OpenApiValueMapping.Binary;
 
         assertThat(binaryMapping.baseMapping).isEqualTo(JsonSchemaValueMapping.BINARY);
-        assertThat(binaryMapping.primaryWireType()).isEqualTo(TextNode.class);
+        assertThat(binaryMapping.primaryWireType()).isEqualTo(StringNode.class);
         assertThat(binaryMapping.connIdType()).isEqualTo(byte[].class);
     }
 
@@ -262,7 +262,7 @@ public class OpenApiValueMappingTest {
     @Test
     public void test_canConvert_toConnId() {
         var mapper = new ObjectMapper();
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("x", "2025-01-01T00:00:00Z")
                 .get("x");
         var result = OpenApiValueMapping.DateTime.toConnIdValue(textNode);
@@ -299,6 +299,6 @@ public class OpenApiValueMappingTest {
     public void testSfToken() {
         var sfToken = OpenApiValueMapping.SfToken;
         assertThat(sfToken.connIdType()).isEqualTo(String.class);
-        assertThat(sfToken.primaryWireType()).isEqualTo(TextNode.class);
+        assertThat(sfToken.primaryWireType()).isEqualTo(StringNode.class);
     }
 }

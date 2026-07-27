@@ -6,9 +6,11 @@
  */
 package com.evolveum.polygon.conndev.yaml;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +29,9 @@ import java.util.List;
  */
 public final class YamlDocuments {
 
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper YAML = YAMLMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .build();
 
     private YamlDocuments() {
     }
@@ -62,7 +66,7 @@ public final class YamlDocuments {
                         + documents.size() + " documents (" + sourceName + ")");
             }
             return documents.get(0);
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             throw new IllegalArgumentException("Could not parse YAML (" + sourceName + "): " + e.getMessage(), e);
         }
     }

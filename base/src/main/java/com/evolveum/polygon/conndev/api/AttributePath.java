@@ -6,8 +6,8 @@
  */
 package com.evolveum.polygon.conndev.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -149,7 +149,7 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
             if (node instanceof ObjectNode objectNode) {
                 for (var keyValue : keyValues.entrySet()) {
                     var maybeVal = objectNode.get(keyValue.getKey());
-                    if (maybeVal instanceof TextNode) {
+                    if (maybeVal instanceof StringNode) {
                         return keyValue.getValue().equals(maybeVal.asText());
                     }
                     if (maybeVal instanceof NumericNode) {

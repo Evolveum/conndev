@@ -7,8 +7,8 @@
 package com.evolveum.polygon.conndev.json;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.*;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -23,7 +23,7 @@ public class JsonSchemaValueMappingTest {
     @Test
     public void testSTRING_toConnIdValue_fromText() {
         var mapper = new ObjectMapper();
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("field", "hello world")
                 .get("field");
 
@@ -36,7 +36,7 @@ public class JsonSchemaValueMappingTest {
     public void testSTRING_toWireValue() {
         var result = JsonSchemaValueMapping.STRING.toWireValue("test value");
 
-        assertThat(result).isNotNull().isInstanceOf(TextNode.class);
+        assertThat(result).isNotNull().isInstanceOf(StringNode.class);
         assertThat(result.asText()).isEqualTo("test value");
     }
 
@@ -127,7 +127,7 @@ public class JsonSchemaValueMappingTest {
         byte[] data = {(byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF};
         // Just use text node base64 decoding to test BINARY.toConnIdValue
         var encoded = Base64.getEncoder().encodeToString(data);
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("field", encoded)
                 .get("field");
 
@@ -142,7 +142,7 @@ public class JsonSchemaValueMappingTest {
         var mapper = new ObjectMapper();
         byte[] original = {(byte)0x01, (byte)0x02, (byte)0x03};
         var encoded = Base64.getEncoder().encodeToString(original);
-        var textNode = (TextNode) mapper.createObjectNode()
+        var textNode = (StringNode) mapper.createObjectNode()
                 .put("field", encoded)
                 .get("field");
 

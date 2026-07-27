@@ -16,8 +16,8 @@ import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import com.evolveum.polygon.conndev.yaml.model.YamlAttributeResolver;
 import com.evolveum.polygon.conndev.yaml.model.YamlCustom;
 import com.evolveum.polygon.conndev.yaml.model.YamlNormalize;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.testng.annotations.Test;
@@ -36,7 +36,7 @@ import static org.testng.Assert.assertTrue;
  */
 public class YamlSearchSectionsTest {
 
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper YAML = new YAMLMapper();
 
     private final GroovyScriptCompiler compiler = new GroovyScriptCompiler(new GroovyContext());
 

@@ -1,12 +1,12 @@
 package com.evolveum.polygon.conndev.spi;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public class ConnectorManifest {
             } else {
                 json = new ObjectMapper().readTree(resource);
             }
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new ConfigurationException("Failed to read connector manifest", e);
         } finally {
             //resource.close();

@@ -6,17 +6,17 @@
  */
 package com.evolveum.polygon.conndev.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.*;
 
 import java.util.Base64;
 import java.util.Set;
 
 public enum JsonSchemaValueMapping implements JsonValueMapping {
-    STRING("string", "A string value", String.class, TextNode.class) {
+    STRING("string", "A string value", String.class, StringNode.class) {
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
-            if (value instanceof TextNode textNode) {
+            if (value instanceof StringNode textNode) {
                 return textNode.asText();
             }
             return super.toConnIdValue(value);
@@ -24,7 +24,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
 
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
-            return NODE_FACTORY.textNode((String) value);
+            return NODE_FACTORY.stringNode((String) value);
         }
     },
     INTEGER("integer", "A signed integer value", Integer.class, IntNode.class) {
@@ -82,7 +82,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             return super.toConnIdValue(value);
         }
     },
-    BINARY("binary", "A binary value", BinaryNode.class, TextNode.class) {
+    BINARY("binary", "A binary value", BinaryNode.class, StringNode.class) {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof byte[] byteArrayVal) {
@@ -96,7 +96,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             if (value instanceof BinaryNode textNode) {
                 return textNode.binaryValue();
             }
-            if (value instanceof TextNode textNode) {
+            if (value instanceof StringNode textNode) {
                 return Base64.getDecoder().decode(textNode.asText());
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());

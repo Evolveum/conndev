@@ -6,8 +6,8 @@
  */
 package com.evolveum.polygon.conndev.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,7 +35,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof byte[] byteArrayVal) {
-                return JsonNodeFactory.instance.textNode(Base64.getUrlEncoder().encodeToString(byteArrayVal));
+                return JsonNodeFactory.instance.stringNode(Base64.getUrlEncoder().encodeToString(byteArrayVal));
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
@@ -45,7 +45,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof BinaryNode binaryVal) {
                 return binaryVal.binaryValue();
             }
-            if (value instanceof TextNode stringVal) {
+            if (value instanceof StringNode stringVal) {
                 return Base64.getUrlDecoder().decode(stringVal.asText());
             }
             throw cannotConvertToConnId(value);
@@ -56,7 +56,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof byte[] byteArrayVal) {
-                return JsonNodeFactory.instance.textNode(Base64.getEncoder().encodeToString(byteArrayVal));
+                return JsonNodeFactory.instance.stringNode(Base64.getEncoder().encodeToString(byteArrayVal));
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
@@ -74,7 +74,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof String stringVal && stringVal.length() == 1) {
-                return JsonNodeFactory.instance.textNode(stringVal.substring(0, 1));
+                return JsonNodeFactory.instance.stringNode(stringVal.substring(0, 1));
             }
 
             return null;
@@ -82,7 +82,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
 
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
-            if (value instanceof TextNode characterVal) {
+            if (value instanceof StringNode characterVal) {
                 return characterVal.toString();
             }
 
@@ -94,14 +94,14 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof ZonedDateTime zonedDateTimeVal) {
-                return JsonNodeFactory.instance.textNode(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(zonedDateTimeVal));
+                return JsonNodeFactory.instance.stringNode(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(zonedDateTimeVal));
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
 
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
-            if (value instanceof TextNode stringVal) {
+            if (value instanceof StringNode stringVal) {
                 return ZonedDateTime.parse(stringVal.asText());
             }
             return null;
@@ -117,7 +117,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
 
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
-            if (value instanceof TextNode stringVal) {
+            if (value instanceof StringNode stringVal) {
                 return ZonedDateTime.parse(stringVal.asText());
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
