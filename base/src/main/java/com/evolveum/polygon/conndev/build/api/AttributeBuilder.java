@@ -361,6 +361,10 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
             return name(DefinitionValue.from(name, SourceLocation.capture()));
         }
 
+        default ConnIdMapping name(ConnIdBuiltInAttribute builtIn) {
+            return name(builtIn.name());
+        }
+
         /**
          * Sets the ConnId Java type (convenience for {@code type(DefinitionValue)}).
          *
