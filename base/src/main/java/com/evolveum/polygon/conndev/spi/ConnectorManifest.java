@@ -5,13 +5,19 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ConnectorManifest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper YAML = new YAMLMapper();
+
     private final JsonNode json;
 
     public ConnectorManifest(InputStream resource) {
@@ -19,12 +25,43 @@ public class ConnectorManifest {
             if (resource == null) {
                 json = JsonNodeFactory.instance.objectNode();
             } else {
-                json = new ObjectMapper().readTree(resource);
+                json = JSON.readTree(resource);
             }
         } catch (JacksonException e) {
             throw new ConfigurationException("Failed to read connector manifest", e);
         } finally {
             //resource.close();
+        }
+    }
+
+    private ConnectorManifest(JsonNode json) {
+        this.json = json;
+    }
+
+    /**
+     * Loads the manifest bundled under {@code baseName} — written either in YAML
+     * ({@code .yaml}/{@code .yml}) or JSON ({@code .json}), with the same structure. Exactly one
+     * format may be bundled (two formats are two sources of truth — a packaging error); a missing
+     * manifest yields the empty one, as before.
+     */
+    public static ConnectorManifest load(Class<?> anchor, String baseName) {
+        var present = List.of(baseName + ".yaml", baseName + ".yml", baseName + ".json").stream()
+                .filter(candidate -> anchor.getResource(candidate) != null)
+                .toList();
+        if (present.size() > 1) {
+            throw new ConfigurationException(
+                    "Multiple connector manifests found: " + String.join(", ", present) + " — bundle exactly one");
+        }
+        if (present.isEmpty()) {
+            return new ConnectorManifest((InputStream) null);
+        }
+
+        var resource = present.get(0);
+        try (var stream = anchor.getResourceAsStream(resource)) {
+            var mapper = resource.endsWith(".json") ? JSON : YAML;
+            return new ConnectorManifest(mapper.readTree(stream));
+        } catch (IOException e) {
+            throw new ConfigurationException("Failed to read connector manifest " + resource, e);
         }
     }
 

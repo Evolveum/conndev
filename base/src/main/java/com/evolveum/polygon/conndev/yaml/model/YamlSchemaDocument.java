@@ -6,6 +6,10 @@
  */
 package com.evolveum.polygon.conndev.yaml.model;
 
+import com.evolveum.polygon.conndev.yaml.YamlProtocolBlockConsumer;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import tools.jackson.databind.JsonNode;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,4 +38,12 @@ public class YamlSchemaDocument {
 
     /** Reference attributes (memberships, foreign keys) keyed by attribute name. */
     public Map<String, YamlReference> references = new LinkedHashMap<>();
+
+    /**
+     * Top-level keys this document model doesn't itself recognize (e.g. {@code sql}, {@code scim})
+     * — protocol-specific blocks handed to {@link YamlProtocolBlockConsumer}, keeping this shared
+     * document model protocol-agnostic while still failing fast on genuine typos.
+     */
+    @JsonAnySetter
+    public final Map<String, JsonNode> protocolBlocks = new LinkedHashMap<>();
 }

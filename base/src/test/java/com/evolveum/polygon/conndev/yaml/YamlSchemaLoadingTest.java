@@ -7,10 +7,13 @@
 package com.evolveum.polygon.conndev.yaml;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
+import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
+import tools.jackson.databind.JsonNode;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.Name;
@@ -200,5 +203,67 @@ public class YamlSchemaLoadingTest {
                 """));
 
         assertTrue(exception.getMessage().contains("uuid"), exception.getMessage());
+    }
+
+    /**
+     * A protocol-specific object class builder (e.g. a connector's {@code sql}/{@code scim} block)
+     * opts in to receiving unrecognized top-level YAML keys by implementing this.
+     */
+    @SuppressWarnings("unchecked")
+    private static final class StubProtocolAwareObjectClass extends BaseObjectClassDefinitionBuilder
+            implements YamlProtocolBlockConsumer {
+
+        String capturedName;
+        JsonNode capturedBlock;
+
+        StubProtocolAwareObjectClass(BaseSchemaBuilder schemaBuilder, DefinitionValue<String> name) {
+            super(schemaBuilder, name);
+        }
+
+        @Override
+        public void applyProtocolBlock(String name, JsonNode block) {
+            this.capturedName = name;
+            this.capturedBlock = block;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static final class StubProtocolAwareSchemaBuilder extends BaseSchemaBuilder {
+        StubProtocolAwareSchemaBuilder() {
+            super(StubConnector.class, NOOP_CONTEXT);
+        }
+
+        @Override
+        protected StubProtocolAwareObjectClass newObjectClass(DefinitionValue name) {
+            return new StubProtocolAwareObjectClass(this, name);
+        }
+    }
+
+    @Test
+    public void unknownTopLevelBlockIsDispatchedToProtocolBlockConsumer() {
+        var schemaBuilder = new StubProtocolAwareSchemaBuilder();
+        new YamlSchemaLoader(schemaBuilder).load("""
+                objectClass: Widget
+                sql:
+                  table: widgets
+                  schema: public
+                """);
+
+        var widget = (StubProtocolAwareObjectClass) schemaBuilder.objectClass("Widget");
+        assertEquals(widget.capturedName, "sql");
+        assertEquals(widget.capturedBlock.get("table").asString(), "widgets");
+        assertEquals(widget.capturedBlock.get("schema").asString(), "public");
+    }
+
+    /** Without a consumer, an unrecognized top-level block fails fast exactly like a typo'd key. */
+    @Test
+    public void unknownTopLevelBlockWithoutConsumerFailsFast() {
+        var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
+                objectClass: Widget
+                sql:
+                  table: widgets
+                """));
+
+        assertTrue(exception.getMessage().contains("sql"), exception.getMessage());
     }
 }

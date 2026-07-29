@@ -106,6 +106,14 @@ public class YamlSchemaLoader {
         // connIdAttribute validates the built-in alias (UID/NAME) and requires the attribute to exist,
         // so the mapping is applied after the attributes are declared.
         document.connId.forEach(objectClass::connIdAttribute);
+
+        document.protocolBlocks.forEach((name, block) -> {
+            if (!(objectClass instanceof YamlProtocolBlockConsumer consumer)) {
+                throw new IllegalArgumentException("Unknown key '" + name + "' in YAML schema document for object class '"
+                        + document.objectClass + "'");
+            }
+            consumer.applyProtocolBlock(name, block);
+        });
     }
 
     private void apply(AttributeBuilder builder, String name, YamlAttribute attribute) {

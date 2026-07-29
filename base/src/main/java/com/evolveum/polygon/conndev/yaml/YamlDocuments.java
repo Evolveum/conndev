@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.yaml;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
@@ -34,6 +35,19 @@ public final class YamlDocuments {
             .build();
 
     private YamlDocuments() {
+    }
+
+    /**
+     * Converts an already-parsed node (e.g. a protocol-specific block captured by
+     * {@link YamlProtocolBlockConsumer}) into a typed value, using the same fail-fast
+     * (unknown-key-rejecting) mapper as the rest of the YAML schema DSL.
+     */
+    public static <T> T convert(JsonNode node, Class<T> type) {
+        try {
+            return YAML.treeToValue(node, type);
+        } catch (JacksonException e) {
+            throw new IllegalArgumentException("Could not parse protocol block: " + e.getMessage(), e);
+        }
     }
 
     /** Reads exactly one document of {@code type} from an inline YAML string. */
