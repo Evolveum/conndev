@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.function.Function;
@@ -77,6 +78,10 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
         if (Long.class.equals(original)) {
             return new ValueTypeOverrideMapping<>(String.class, cast(Long.class, valueMapping),
                     Long::parseLong, Object::toString);
+        }
+        if (BigInteger.class.equals(original)) {
+            return new ValueTypeOverrideMapping<>(String.class, cast(BigInteger.class, valueMapping),
+                    BigInteger::new, Object::toString);
         }
         if (BigDecimal.class.equals(original)) {
             return new ValueTypeOverrideMapping<>(String.class, cast(BigDecimal.class, valueMapping),
