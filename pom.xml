@@ -192,6 +192,9 @@
                             <recipe>org.openrewrite.xml.RemoveTrailingWhitespace</recipe>
                             <recipe>org.openrewrite.java.ShortenFullyQualifiedTypeReferences</recipe>
                         </activeRecipes>
+                        <exclusions>
+                            <exclusion>**/*.groovy</exclusion>
+                        </exclusions>
                     </configuration>
                     <dependencies>
                         <dependency>
