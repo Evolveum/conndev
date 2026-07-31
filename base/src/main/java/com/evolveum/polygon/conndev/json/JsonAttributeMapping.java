@@ -9,10 +9,10 @@ package com.evolveum.polygon.conndev.json;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
+import org.identityconnectors.framework.common.objects.Attribute;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
-import org.identityconnectors.framework.common.objects.Attribute;
 
 import java.util.ArrayList;
 import java.util.List;

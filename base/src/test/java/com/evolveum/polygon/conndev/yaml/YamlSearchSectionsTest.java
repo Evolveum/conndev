@@ -16,18 +16,16 @@ import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import com.evolveum.polygon.conndev.yaml.model.YamlAttributeResolver;
 import com.evolveum.polygon.conndev.yaml.model.YamlCustom;
 import com.evolveum.polygon.conndev.yaml.model.YamlNormalize;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLMapper;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.testng.annotations.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * The generic search sections of the operations YAML (ported from the scimrest YAML front-end):
@@ -72,7 +70,7 @@ public class YamlSearchSectionsTest {
         new YamlAttributeResolverHandler(compiler).load(searchBuilder, resolvers);
 
         assertEquals(searchBuilder.resolvers.size(), 1);
-        var resolver = searchBuilder.resolvers.get(0);
+        var resolver = searchBuilder.resolvers.getFirst();
         assertEquals(resolver.attribute, "members");
         assertEquals(resolver.resolutionType, AttributeResolverBuilder.ResolutionType.PER_OBJECT);
         assertNotNull(resolver.implementation);
@@ -95,7 +93,7 @@ public class YamlSearchSectionsTest {
         var script = searchBuilder.script;
         assertTrue(script.emptyFilterSupported);
         assertEquals(script.supportedFilters.size(), 1);
-        assertNotNull(script.supportedFilters.get(0));
+        assertNotNull(script.supportedFilters.getFirst());
         assertNotNull(script.implementation);
     }
 

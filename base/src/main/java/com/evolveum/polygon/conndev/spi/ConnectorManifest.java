@@ -1,12 +1,18 @@
+/*
+ * Copyright (c) 2026 Evolveum and contributors
+ * 
+ * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
+ * 
+ */
 package com.evolveum.polygon.conndev.spi;
 
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
-import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +62,7 @@ public class ConnectorManifest {
             return new ConnectorManifest((InputStream) null);
         }
 
-        var resource = present.get(0);
+        var resource = present.getFirst();
         try (var stream = anchor.getResourceAsStream(resource)) {
             var mapper = resource.endsWith(".json") ? JSON : YAML;
             return new ConnectorManifest(mapper.readTree(stream));

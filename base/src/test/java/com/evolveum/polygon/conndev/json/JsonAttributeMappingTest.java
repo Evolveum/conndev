@@ -7,11 +7,11 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.*;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.testng.annotations.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.*;
 
 import java.util.Arrays;
 import java.util.Collections;

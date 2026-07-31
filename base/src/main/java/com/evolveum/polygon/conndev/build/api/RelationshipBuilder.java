@@ -6,7 +6,6 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
-import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 

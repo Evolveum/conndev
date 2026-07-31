@@ -16,11 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Set;
 
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.BINARY;
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.BOOLEAN;
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.INTEGER;
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.NUMBER;
-import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.STRING;
+import static com.evolveum.polygon.conndev.json.JsonSchemaValueMapping.*;
 
 /**
  * Provides a mapping between OpenAPI data formats, their corresponding JSON

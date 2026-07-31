@@ -6,9 +6,9 @@
  */
 package com.evolveum.polygon.conndev.json;
 
+import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
-import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;

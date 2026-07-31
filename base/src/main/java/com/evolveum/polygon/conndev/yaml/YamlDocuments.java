@@ -79,7 +79,7 @@ public final class YamlDocuments {
                 throw new IllegalArgumentException("Expected exactly one " + documentLabel + " per file, found "
                         + documents.size() + " documents (" + sourceName + ")");
             }
-            return documents.get(0);
+            return documents.getFirst();
         } catch (IOException | JacksonException e) {
             throw new IllegalArgumentException("Could not parse YAML (" + sourceName + "): " + e.getMessage(), e);
         }

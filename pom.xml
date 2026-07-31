@@ -188,6 +188,8 @@
                             <recipe>org.openrewrite.java.OrderImports</recipe>
                             <recipe>org.openrewrite.java.RemoveUnusedImports</recipe>
                             <recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
+                            <recipe>com.evolveum.rewrite.AddLicenseHeaderEUPL</recipe>
+                            <recipe>org.openrewrite.xml.RemoveTrailingWhitespace</recipe>
                         </activeRecipes>
                     </configuration>
                     <dependencies>

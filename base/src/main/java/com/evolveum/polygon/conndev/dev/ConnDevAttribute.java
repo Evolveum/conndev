@@ -11,11 +11,7 @@ import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.ATTRIBUTE;
 import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAME;

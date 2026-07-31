@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.build.spi;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
-import com.evolveum.polygon.conndev.concepts.Fluent;
 
 /**
  * SPI-level reference attribute builder base interface.

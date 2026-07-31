@@ -10,7 +10,6 @@ import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
 
 /**
  * SPI-level attribute resolver builder base interface.

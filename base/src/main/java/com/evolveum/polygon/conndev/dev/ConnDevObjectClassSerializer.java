@@ -6,11 +6,7 @@
  */
 package com.evolveum.polygon.conndev.dev;
 
-import org.identityconnectors.framework.common.objects.Attribute;
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
-import org.identityconnectors.framework.common.objects.EmbeddedObject;
+import org.identityconnectors.framework.common.objects.*;
 
 import java.util.ArrayList;
 import java.util.Collection;

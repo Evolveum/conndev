@@ -7,8 +7,6 @@
 package com.evolveum.polygon.conndev.build.spi;
 
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
-import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;

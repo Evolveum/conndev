@@ -10,11 +10,7 @@ import com.evolveum.polygon.conndev.build.api.NormalizationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchOperationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchScriptBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
-import com.evolveum.polygon.conndev.spi.AttributeResolver;
-import com.evolveum.polygon.conndev.spi.AttributeResolvingSearchHandler;
-import com.evolveum.polygon.conndev.spi.FilterAwareExecuteQueryProcessor;
-import com.evolveum.polygon.conndev.spi.FilterBasedSearchDispatcher;
-import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
+import com.evolveum.polygon.conndev.spi.*;
 
 import java.util.HashSet;
 import java.util.Set;

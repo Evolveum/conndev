@@ -8,8 +8,6 @@ package com.evolveum.polygon.conndev.build.spi;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
 
 /**
  * SPI-level object class schema builder base interface.

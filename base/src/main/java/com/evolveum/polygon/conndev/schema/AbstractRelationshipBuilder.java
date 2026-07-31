@@ -6,10 +6,8 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
-import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
 /**
