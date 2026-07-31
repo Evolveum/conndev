@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.concepts;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyShell;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +33,7 @@ public class GroovyClosuresTest {
      */
     @SuppressWarnings({"GroovyAssignabilityCheck", "unchecked"})
     private static <T> Closure<T> groovyShellEval(String groovyCode) {
-        return (Closure<T>) new groovy.lang.GroovyShell().evaluate("return { " + groovyCode + " }");
+        return (Closure<T>) new GroovyShell().evaluate("return { " + groovyCode + " }");
     }
 
     @Test

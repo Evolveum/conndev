@@ -11,8 +11,10 @@ import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
+import org.codehaus.groovy.runtime.MethodClosure;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
+import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
 
@@ -40,8 +42,8 @@ public class SchemaLoadingTest {
      * No actual connector operations are performed during parsing tests.
      */
     private static final class StubConnector implements Connector {
-        @Override public org.identityconnectors.framework.spi.Configuration getConfiguration() { return null; }
-        @Override public void init(org.identityconnectors.framework.spi.Configuration c) {}
+        @Override public Configuration getConfiguration() { return null; }
+        @Override public void init(Configuration c) {}
         @Override public void dispose() {}
     }
 
@@ -61,8 +63,8 @@ public class SchemaLoadingTest {
         var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
         var context = new GroovyContext();
         var shell = context.createShell();
-        shell.setVariable("objectClass", new org.codehaus.groovy.runtime.MethodClosure(builder, "objectClass"));
-        shell.setVariable("relationship", new org.codehaus.groovy.runtime.MethodClosure(builder, "relationship"));
+        shell.setVariable("objectClass", new MethodClosure(builder, "objectClass"));
+        shell.setVariable("relationship", new MethodClosure(builder, "relationship"));
         return new SchemaHarness(builder, shell);
     }
 

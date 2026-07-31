@@ -94,17 +94,17 @@ public interface ValueMapping<C,P> {
      */
     record Identity<C>(Class<C> connIdType) implements ValueMapping<C,C> {
 
-        @java.lang.Override
+        @Override
         public Class<? extends C> primaryWireType() {
             return connIdType;
         }
 
-        @java.lang.Override
+        @Override
         public C toConnIdValue(C value) throws IllegalArgumentException {
             return checkValueInstanceOf(connIdType, value);
         }
 
-        @java.lang.Override
+        @Override
         public C toWireValue(C value) throws IllegalArgumentException {
             return checkValueInstanceOf(connIdType, value);
         }
@@ -112,27 +112,27 @@ public interface ValueMapping<C,P> {
 
     record Chain<C,I,P>(ValueMapping<C,I> override, ValueMapping<I,P> protocol) implements ValueMapping<C,P> {
 
-        @java.lang.Override
+        @Override
         public Class<? extends C> connIdType() {
             return override.connIdType();
         }
 
-        @java.lang.Override
+        @Override
         public Class<? extends P> primaryWireType() {
             return protocol.primaryWireType();
         }
 
-        @java.lang.Override
+        @Override
         public Set<Class<? extends P>> supportedWireTypes() {
             return protocol.supportedWireTypes();
         }
 
-        @java.lang.Override
+        @Override
         public P toWireValue(C value) throws IllegalArgumentException {
             return protocol.toWireValue(override.toWireValue(value));
         }
 
-        @java.lang.Override
+        @Override
         public C toConnIdValue(P value) throws IllegalArgumentException {
             return override.toConnIdValue(protocol.toConnIdValue(value));
         }
@@ -140,17 +140,17 @@ public interface ValueMapping<C,P> {
 
     record FromFunctions<C,P>(Class<C> connIdType, Class<P> protocolType, Function<P,C> toConnId, Function<C,P> toProtocol) implements ValueMapping<C,P> {
 
-        @java.lang.Override
+        @Override
         public Class<P> primaryWireType() {
             return protocolType;
         }
 
-        @java.lang.Override
+        @Override
         public P toWireValue(C value) throws IllegalArgumentException {
             return value != null ? toProtocol.apply(checkValueInstanceOf(connIdType(), value)) : null;
         }
 
-        @java.lang.Override
+        @Override
         public C toConnIdValue(P value) throws IllegalArgumentException {
             return value != null ? toConnId.apply(checkValueInstanceOf(primaryWireType(), value)) : null;
         }

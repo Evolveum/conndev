@@ -14,6 +14,7 @@ import groovy.lang.GroovyShell;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
 
 /**
  * Harness for schema parsing tests, providing fluent access to builders and
@@ -24,7 +25,7 @@ final class SchemaHarness {
 
     private final BaseSchemaBuilder builder;
     private final GroovyShell shell;
-    private final java.util.function.Function<String, String> resourceLoader;
+    private final Function<String, String> resourceLoader;
     private BaseSchema cachedSchema;
 
     SchemaHarness(BaseSchemaBuilder builder, GroovyShell shell) {

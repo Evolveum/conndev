@@ -174,7 +174,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
     },
-    Double("double","double precision floating point number", java.lang.Double.class, NUMBER, DoubleNode.class) {
+    Double("double","double precision floating point number", Double.class, NUMBER, DoubleNode.class) {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof Double numberVal) {
@@ -193,7 +193,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
     },
     Duration("duration","duration as defined by duration - RFC3339", String.class,STRING),
     Email("email","An email address as defined as Mailbox in RFC5321", String.class,STRING),
-    Float("float","single precision floating point number", java.lang.Float.class, NUMBER) {
+    Float("float","single precision floating point number", Float.class, NUMBER) {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof Float numberVal) {

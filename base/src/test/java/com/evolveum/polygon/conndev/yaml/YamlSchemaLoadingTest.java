@@ -13,6 +13,7 @@ import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
+import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.Name;
@@ -21,6 +22,8 @@ import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
 import tools.jackson.databind.JsonNode;
+
+import java.time.ZonedDateTime;
 
 import static org.testng.Assert.*;
 
@@ -72,7 +75,7 @@ public class YamlSchemaLoadingTest {
         assertEquals(user.attributeFromProtocolName("admin").connId().getType(), Boolean.class);
         assertEquals(user.attributeFromProtocolName("email").connId().getType(), String.class);
         // the OpenAPI format drives the ConnId type, exactly like in the Groovy DSL
-        assertEquals(user.attributeFromProtocolName("createdAt").connId().getType(), java.time.ZonedDateTime.class);
+        assertEquals(user.attributeFromProtocolName("createdAt").connId().getType(), ZonedDateTime.class);
     }
 
     @Test
@@ -183,7 +186,7 @@ public class YamlSchemaLoadingTest {
 
         var password = loader.build().objectClass("Secure").attributeFromProtocolName("password").connId();
 
-        assertEquals(password.getType(), org.identityconnectors.common.security.GuardedString.class);
+        assertEquals(password.getType(), GuardedString.class);
         assertFalse(password.isReadable());
     }
 
