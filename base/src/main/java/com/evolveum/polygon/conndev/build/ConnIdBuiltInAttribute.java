@@ -21,6 +21,10 @@ public enum ConnIdBuiltInAttribute {
         this.connIdName = name;
     }
 
+    public String getConnIdName() {
+        return connIdName;
+    }
+
     @Groovy.Convenience
     public interface Mixin {
         ConnIdBuiltInAttribute UID = ConnIdBuiltInAttribute.UID;

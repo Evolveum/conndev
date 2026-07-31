@@ -362,7 +362,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         }
 
         default ConnIdMapping name(ConnIdBuiltInAttribute builtIn) {
-            return name(builtIn.name());
+            return name(builtIn.getConnIdName());
         }
 
         /**
