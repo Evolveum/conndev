@@ -357,10 +357,12 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param name the ConnId attribute name
          * @return this ConnId mapping instance
          */
+        @SuppressWarnings("java:S1845")
         default ConnIdMapping name(String name) {
             return name(DefinitionValue.from(name, SourceLocation.capture()));
         }
 
+        @SuppressWarnings("java:S1845")
         default ConnIdMapping name(ConnIdBuiltInAttribute builtIn) {
             return name(builtIn.getConnIdName());
         }
