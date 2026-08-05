@@ -18,7 +18,8 @@ public abstract class BaseObjectOperationSupportBuilder<
         S extends AbstractSearchOperationBuilder,
         C extends AbstractCreateOperationBuilder,
         U extends AbstractUpdateOperationBuilder,
-        D extends AbstractDeleteOperationBuilder> implements ObjectOperationSupportBuilder {
+        D extends AbstractDeleteOperationBuilder>
+    implements ObjectOperationSupportBuilder {
 
     private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
     final ConnectorContext context;
@@ -79,7 +80,8 @@ public abstract class BaseObjectOperationSupportBuilder<
         return new CompositeObjectClassHandler(objectClass.objectClass(), buildedOperations);
     }
 
-    private <T extends ObjectClassOperation, X extends ObjectOperationBuilder<T>> void buildOperationIfEmpty(Class<T> type, ObjectClassOperationBuilder<T> builder) {
+    private <T extends ObjectClassOperation, X extends ObjectOperationBuilder<T>>
+        void buildOperationIfEmpty(Class<T> type, ObjectClassOperationBuilder<T> builder) {
         if (builder == null || buildedOperations.containsKey(type)) {
             // Skip building for now
             return;

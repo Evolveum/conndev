@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.groovy.api.SearchScriptContext;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -22,7 +23,7 @@ import groovy.lang.DelegatesTo;
  *
  * @see SearchScriptContext
  */
-public interface SearchScriptBuilder {
+public interface SearchScriptBuilder extends Fluent<SearchScriptBuilder> {
 
     /**
      * Specifies whether searches without filter criteria are supported.
@@ -41,7 +42,10 @@ public interface SearchScriptBuilder {
      * @param implementation a closure that executes the custom search logic
      * @return this builder for chaining
      */
-    SearchScriptBuilder implementation(@DelegatesTo(SearchScriptContext.class) @Script.Runtime Closure<?> implementation);
+    SearchScriptBuilder implementation(
+            @DelegatesTo(value = SearchScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> implementation);
 
     /**
      * Registers a filter specification that this search supports.

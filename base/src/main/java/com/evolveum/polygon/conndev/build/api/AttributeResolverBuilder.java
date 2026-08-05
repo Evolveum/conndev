@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.groovy.api.AttributeResolutionScriptContext;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -14,14 +16,14 @@ import org.identityconnectors.framework.common.objects.filter.Filter;
 /**
  * Interface for building attribute resolvers.
  *
- * Attribute resolvers are used to resolve attributes from a data source into ConnID object.
+ * Attribute resolvers are used to resolve attributes from a data source into ConnId object.
  *
  * This interface provides methods to configure which attributes are supported by resolver,
  * the method of resolution and implementation of resolution.
  *
  * @param <HC> The type of the context in which the attribute resolver operates.
  */
-public interface AttributeResolverBuilder {
+public interface AttributeResolverBuilder extends Fluent<AttributeResolverBuilder> {
 
 
     ResolutionType PER_OBJECT = ResolutionType.PER_OBJECT;
@@ -50,7 +52,10 @@ public interface AttributeResolverBuilder {
      * @param closure Closure which builds filter.
      * @return
      */
-    AttributeResolverBuilder search(@DelegatesTo(value = AttributeResolutionScriptContext.class,strategy = Closure.DELEGATE_FIRST) Closure<Filter> closure);
+    AttributeResolverBuilder search(
+            @Script.Initialization
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<Filter> closure);
 
     /**
      * Groovy implementation of attribute resolution.
@@ -61,7 +66,9 @@ public interface AttributeResolverBuilder {
      * @param closure The closure defining custom behavior for attribute resolution.
      * @return This builder instance for method chaining.
      */
-    AttributeResolverBuilder implementation(@DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_FIRST) Closure<?> closure);
+    AttributeResolverBuilder implementation(
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure);
 
     enum ResolutionType {
         /**
@@ -69,7 +76,8 @@ public interface AttributeResolverBuilder {
          */
         PER_OBJECT,
         /**
-         * Objects will be handled in batches, use this if backing implementation supports handling multiple objects per request.
+         * Objects will be handled in batches; use this if backing implementation supports
+         * handling multiple objects per request.
          */
         BATCH
     }
@@ -89,7 +97,7 @@ public interface AttributeResolverBuilder {
         for (String attributeName : attributeNames) {
             attribute(attributeName);
         }
-        return this;
+        return self();
     }
 
     interface SearchBased {

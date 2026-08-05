@@ -79,11 +79,17 @@ public interface ObjectOperationSupportBuilder {
      * @param closure a closure that configures the {@link SearchOperationBuilder} instance
      * @return the configured search operation builder
      */
-    default SearchOperationBuilder search(@DelegatesTo(value = SearchOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default SearchOperationBuilder search(
+            @DelegatesTo(value = SearchOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, search());
     }
 
-    default ListOperationBuilder list(@DelegatesTo(value = ListOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default ListOperationBuilder list(
+            @DelegatesTo(value = ListOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, list());
     }
 
@@ -93,11 +99,17 @@ public interface ObjectOperationSupportBuilder {
      * @param closure a closure that configures the {@link ReadOperationBuilder} instance
      * @return the configured read operation builder
      */
-    default ReadOperationBuilder read(@DelegatesTo(value = ReadOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default ReadOperationBuilder read(
+            @DelegatesTo(value = ReadOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, read());
     }
 
-    default CreateOperationBuilder create(@DelegatesTo(value = CreateOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default CreateOperationBuilder create(
+            @DelegatesTo(value = CreateOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, create());
     }
 
@@ -107,11 +119,17 @@ public interface ObjectOperationSupportBuilder {
      * @param closure a closure that configures the {@link UpdateOperationBuilder} instance
      * @return the configured update operation builder
      */
-    default UpdateOperationBuilder update(@DelegatesTo(value = UpdateOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default UpdateOperationBuilder update(
+            @DelegatesTo(value = UpdateOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, update());
     }
 
-    default DeleteOperationBuilder delete(@DelegatesTo(value = DeleteOperationBuilder.class, strategy = Closure.DELEGATE_ONLY) @Script.Initialization Closure<?> closure) {
+    default DeleteOperationBuilder delete(
+            @DelegatesTo(value = DeleteOperationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, delete());
     }
 

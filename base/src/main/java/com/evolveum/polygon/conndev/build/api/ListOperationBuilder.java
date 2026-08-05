@@ -14,5 +14,5 @@ package com.evolveum.polygon.conndev.build.api;
  *
  * @see ObjectClassOperationBuilder
  */
-public interface ListOperationBuilder {
+public interface ListOperationBuilder extends ObjectClassOperationBuilder<Object> {
 }

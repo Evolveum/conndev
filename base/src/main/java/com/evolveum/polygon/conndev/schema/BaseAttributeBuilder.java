@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
@@ -142,7 +143,7 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
      * @param closure the Groovy closure defining the resolver logic
      * @return the scripted resolver builder for further configuration
      */
-    public AttributeResolverBuilder resolver(Closure<?> closure) {
+    public AttributeResolverBuilder resolver(@Script.Initialization Closure<?> closure) {
         this.emulated = DefinitionValue.detected(true);
         this.resolverBuilder = new ScriptedSingleAttributeResolverBuilder(objectClass.name(), deffered);
         GroovyClosures.callAndReturnDelegate(closure, resolverBuilder);

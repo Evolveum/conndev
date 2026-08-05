@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.concepts.FluentBuilder;
+
 /**
  * Base interface for all ConnId operation builders.
  *
@@ -15,12 +17,6 @@ package com.evolveum.polygon.conndev.build.api;
  *
  * @param <T> The operation type produced by {@code build()}
  */
-public interface ObjectClassOperationBuilder<T> {
+public interface ObjectClassOperationBuilder<T> extends FluentBuilder<ObjectClassOperationBuilder<T>, T> {
 
-    /**
-     * Builds the operation instance.
-     *
-     * @return the built operation
-     */
-    T build();
 }

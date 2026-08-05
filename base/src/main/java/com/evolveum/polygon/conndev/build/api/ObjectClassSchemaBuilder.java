@@ -22,7 +22,11 @@ import java.util.function.Predicate;
  * @param <A> Final Attribute Builder interface
  * @param <R> Final Reference Attribute Builder interface
  */
-public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, A, R> , A extends AttributeBuilder<? super R,?>, R extends ReferenceAttributeBuilder<R, A, ?>> extends Fluent<B> {
+public interface ObjectClassSchemaBuilder<
+        B extends ObjectClassSchemaBuilder<B, A, R>,
+        A extends AttributeBuilder<? super R, ?>,
+        R extends ReferenceAttributeBuilder<R, A, ?>>
+    extends Fluent<B> {
 
     /**
      * Sets a description for this object class definition.
@@ -87,7 +91,11 @@ public interface ObjectClassSchemaBuilder<B extends ObjectClassSchemaBuilder<B, 
      * @param closure a closure that configures the {@link ReferenceAttributeBuilder} instance for the specified reference attribute
      * @return an instance of {@link ReferenceAttributeBuilder} for further configuration of the reference attribute
      */
-    R reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure);
+    R reference(
+            String name,
+            @DelegatesTo(value = ReferenceAttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure);
 
     /**
      * Maps a ConnId builtin attribute name (like "UID", "NAME") to a protocol attribute.

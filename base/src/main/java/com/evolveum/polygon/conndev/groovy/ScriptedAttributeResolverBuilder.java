@@ -35,14 +35,17 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
     private ResolutionType resolutionType = ResolutionType.PER_OBJECT;
     private Implementation implementation;
 
-    public ScriptedAttributeResolverBuilder(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> objectClass) {
+    public ScriptedAttributeResolverBuilder(
+            ConnectorContext context,
+            BaseObjectClassDefinition<BaseAttributeDefinition> objectClass) {
         this.objectClass = objectClass;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ScriptedAttributeResolverBuilder attribute(String attributeName) {
         attributes.add(objectClass.attributeFromProtocolName(attributeName));
-        return this;
+        return (ScriptedAttributeResolverBuilder) self();
     }
 
     @Override
@@ -50,26 +53,34 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
         for (var attributeName : attributeNames) {
             attributes.add(objectClass.attributeFromProtocolName(attributeName));
         }
-        return this;
+        return self();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ScriptedAttributeResolverBuilder resolutionType(ResolutionType type) {
         this.resolutionType = type;
-        return this;
+        return (ScriptedAttributeResolverBuilder) self();
     }
 
     @Override
-    public AttributeResolverBuilder search(@DelegatesTo(AttributeResolutionScriptContext.class) @Script.Runtime Closure<Filter> closure) {
+    public AttributeResolverBuilder search(
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<Filter> closure) {
         // FIXME: rewrite that implementation will wrap logic already.
         this.implementation = new SearchBased(closure);
-        return this;
+        return self();
     }
 
     @Override
-    public ScriptedAttributeResolverBuilder implementation(@DelegatesTo(AttributeResolutionScriptContext.class) @Script.Runtime Closure<?> closure) {
+    @SuppressWarnings("unchecked")
+    public ScriptedAttributeResolverBuilder implementation(
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> closure) {
         this.implementation = new ClosureBased(closure);
-        return this;
+        return (ScriptedAttributeResolverBuilder) self();
     }
 
     abstract class Implementation {
@@ -179,7 +190,11 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
         }
     }
 
-    private record SingleResolverContext(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> definition, ConnectorObjectBuilder value) implements AttributeResolutionScriptContext {
+    private record SingleResolverContext(
+            ConnectorContext context,
+            BaseObjectClassDefinition<BaseAttributeDefinition> definition,
+            ConnectorObjectBuilder value)
+        implements AttributeResolutionScriptContext {
 
         @Override
         public ObjectClassScripting objectClass(String name) {

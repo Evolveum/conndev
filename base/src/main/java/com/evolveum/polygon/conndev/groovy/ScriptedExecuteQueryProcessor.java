@@ -35,8 +35,13 @@ public class ScriptedExecuteQueryProcessor implements FilterAwareExecuteQueryPro
     }
 
     @Override
-    public void executeQuery(ContextLookup context, Filter filter, ResultsHandler resultsHandler, OperationOptions operationOptions) {
-        var scriptContext = new SearchScriptContext.Default(this.context, objectClass,filter, resultsHandler, operationOptions);
+    public void executeQuery(
+            ContextLookup context,
+            Filter filter,
+            ResultsHandler resultsHandler,
+            OperationOptions operationOptions) {
+        var scriptContext = new SearchScriptContext.Default(
+                this.context, objectClass, filter, resultsHandler, operationOptions);
         GroovyClosures.copyAndCall(implementation, scriptContext);
     }
 

@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
@@ -209,7 +210,11 @@ public class BaseObjectClassDefinitionBuilder<
      * @see ObjectClassSchemaBuilder#attribute(String, Closure)
      */
     @Override
-    public A attribute(String name, @DelegatesTo(AttributeBuilder.class) Closure<?> closure) {
+    public A attribute(
+            String name,
+            @DelegatesTo(value = AttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         var attr = attribute(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }
@@ -225,7 +230,11 @@ public class BaseObjectClassDefinitionBuilder<
      * @see ObjectClassSchemaBuilder#reference(String, Closure)
      */
     @Override
-    public R reference(String name, @DelegatesTo(ReferenceAttributeBuilder.class) Closure<?> closure) {
+    public R reference(
+            String name,
+            @DelegatesTo(value = ReferenceAttributeBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         var attr = reference(name);
         return GroovyClosures.callAndReturnDelegate(closure, attr);
     }

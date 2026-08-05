@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import groovy.lang.Closure;
@@ -38,7 +39,9 @@ public interface SearchOperationBuilder extends ObjectClassOperationBuilder<Obje
      * @return the configured attribute resolver builder
      */
     default AttributeResolverBuilder attributeResolver(
-            @DelegatesTo(value = AttributeResolverBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> definition) {
+            @DelegatesTo(value = AttributeResolverBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> definition) {
         return GroovyClosures.callAndReturnDelegate(definition, attributeResolver());
     }
 
@@ -55,7 +58,10 @@ public interface SearchOperationBuilder extends ObjectClassOperationBuilder<Obje
      * @param definition a closure that configures the {@link NormalizationBuilder}
      * @return the configured normalization builder
      */
-    default NormalizationBuilder normalize(@DelegatesTo(value = NormalizationBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> definition) {
+    default NormalizationBuilder normalize(
+            @DelegatesTo(value = NormalizationBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> definition) {
         return GroovyClosures.callAndReturnDelegate(definition, normalize());
     }
 
@@ -72,7 +78,10 @@ public interface SearchOperationBuilder extends ObjectClassOperationBuilder<Obje
      * @param definition a closure that configures the {@link SearchScriptBuilder}
      * @return the configured search script builder
      */
-    default SearchScriptBuilder custom(Closure<?> definition) {
+    default SearchScriptBuilder custom(
+            @DelegatesTo(value = SearchScriptBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> definition) {
         return GroovyClosures.callAndReturnDelegate(definition, custom());
     }
 

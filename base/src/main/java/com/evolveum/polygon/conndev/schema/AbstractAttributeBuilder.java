@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
@@ -192,8 +193,11 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
      * @return the JSON mapping builder
      */
     @Override
-    public JsonMapping json(@DelegatesTo(value = JsonMapping.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure) {
-        return GroovyClosures.callAndReturnDelegate(closure,json());
+    public JsonMapping json(
+            @DelegatesTo(value = JsonMapping.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
+        return GroovyClosures.callAndReturnDelegate(closure, json());
     }
 
     /**
@@ -444,9 +448,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         @Override
-        public JsonMapping implementation(@DelegatesTo(ValueMappingBuilder.class) Closure<?> closure) {
+        public JsonMapping implementation(
+                @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                @Script.Initialization
+                Closure<?> closure) {
             Class<?> typeClass = connIdType != null ? connIdType : Object.class;
-            var builder = new BaseValueMappingBuilder<>(typeClass,JsonNode.class);
+            var builder = new BaseValueMappingBuilder<>(typeClass, JsonNode.class);
             GroovyClosures.callAndReturnDelegate(closure, builder);
             this.implementation = (ValueMapping) builder.build();
             return this;

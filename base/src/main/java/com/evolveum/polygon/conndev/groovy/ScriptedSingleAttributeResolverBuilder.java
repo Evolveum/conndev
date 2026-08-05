@@ -32,32 +32,40 @@ public class ScriptedSingleAttributeResolverBuilder implements AttributeResolver
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ScriptedSingleAttributeResolverBuilder attribute(String attributeName) {
        // Declaring multiple attributes is not suppported.
-        return this;
+        return (ScriptedSingleAttributeResolverBuilder) self();
     }
 
     @Override
     public AttributeResolverBuilder attributes(String... attributeNames) {
-        return this;
+        return self();
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ScriptedSingleAttributeResolverBuilder resolutionType(ResolutionType type) {
         this.resolutionType = type;
-        return this;
+        return (ScriptedSingleAttributeResolverBuilder) self();
     }
 
     @Override
-    public AttributeResolverBuilder search(@DelegatesTo(AttributeResolutionScriptContext.class) Closure<Filter> closure) {
+    public AttributeResolverBuilder search(
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<Filter> closure) {
         this.implementation = new SearchBased(closure);
-        return this;
+        return self();
     }
 
     @Override
-    public ScriptedSingleAttributeResolverBuilder implementation(@DelegatesTo(AttributeResolutionScriptContext.class) @Script.Runtime Closure<?> closure) {
+    @SuppressWarnings("unchecked")
+    public ScriptedSingleAttributeResolverBuilder implementation(
+            @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> closure) {
         this.implementation = new ClosureBased(closure);
-        return this;
+        return (ScriptedSingleAttributeResolverBuilder) self();
     }
 
     abstract class Implementation {
@@ -77,7 +85,8 @@ public class ScriptedSingleAttributeResolverBuilder implements AttributeResolver
            var attrDef = attribute.get();
             if (ConnectorObjectReference.class.equals(attrDef.connId().getType())) {
                 var targetObjectClass = attrDef.connId().getReferencedObjectClassName();
-                return new ScriptedAttributeResolverBuilder.GroovySearchBasedReference(attrDef, targetObjectClass,closure);
+                return new ScriptedAttributeResolverBuilder.GroovySearchBasedReference(
+                        attrDef, targetObjectClass, closure);
             }
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -92,7 +101,8 @@ public class ScriptedSingleAttributeResolverBuilder implements AttributeResolver
 
         @Override
         AttributeResolver build() {
-            return new ScriptedAttributeResolverBuilder.GroovySingleResolver(objectClass, Set.of(attribute.get()), closure);
+            return new ScriptedAttributeResolverBuilder.GroovySingleResolver(
+                    objectClass, Set.of(attribute.get()), closure);
         }
     }
 

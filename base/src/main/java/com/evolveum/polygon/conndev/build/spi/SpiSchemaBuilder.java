@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.build.spi;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
@@ -45,8 +46,11 @@ public interface SpiSchemaBuilder<SB extends SpiSchemaBuilder<SB, OB>, OB extend
      * @param closure a closure that configures the {@link SpiObjectClassSchemaBuilder} instance
      * @return the configured object class schema builder
      */
-    default OB objectClass(DefinitionValue<String> name,
-                          @DelegatesTo(SpiObjectClassSchemaBuilder.class) Closure<?> closure) {
+    default OB objectClass(
+            DefinitionValue<String> name,
+            @DelegatesTo(value = SpiObjectClassSchemaBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         OB builder = objectClass(name);
         GroovyClosures.callAndReturnDelegate(closure, builder);
         return builder;

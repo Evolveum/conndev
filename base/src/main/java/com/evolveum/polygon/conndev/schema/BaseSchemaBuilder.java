@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
@@ -102,7 +103,11 @@ public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
      * @return the object class builder for further configuration
      */
     @Override
-    public OA objectClass(String name, @DelegatesTo(BaseObjectClassDefinitionBuilder.class) Closure<?> closure) {
+    public OA objectClass(
+            String name,
+            @DelegatesTo(value = BaseObjectClassDefinitionBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));
     }
 
@@ -117,7 +122,10 @@ public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
      * @return TODO - relationship builder implementation
      */
     @Override
-    public RelationshipBuilder relationship(String name, @DelegatesTo(RelationshipBuilder.class) Closure<?> closure) {
+    public RelationshipBuilder relationship(
+            String name,
+            @DelegatesTo(value = RelationshipBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure) {
         // FIXME: Instantiate AbstractRelationshipBuilder once subject/object methods are implemented
         return null;
     }

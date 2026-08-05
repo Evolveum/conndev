@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.groovy.api.HelperFunctionsMixin;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -19,7 +21,7 @@ import groovy.lang.DelegatesTo;
  * @param <C> ConnId (Java) value type
  * @param <P> Protocol (wire) value type (typically JsonNode for REST/SCIM)
  */
-public interface ValueMappingBuilder<C,P> {
+public interface ValueMappingBuilder<C,P> extends Fluent<ValueMappingBuilder<C,P>> {
 
     /**
      * Defines the deserialization closure (protocol value to ConnId value).
@@ -27,7 +29,10 @@ public interface ValueMappingBuilder<C,P> {
      * @param closure a closure that transforms the protocol value into a ConnId value
      * @return this builder for chaining
      */
-    ValueMappingBuilder<C,P> deserialize(@DelegatesTo(value = DeserializationContext.class, strategy = Closure.DELEGATE_ONLY) Closure<C> closure);
+    ValueMappingBuilder<C, P> deserialize(
+            @Script.Runtime
+            @DelegatesTo(value = DeserializationContext.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<C> closure);
 
     /**
      * Defines the serialization closure (ConnId value to protocol value).
@@ -35,7 +40,10 @@ public interface ValueMappingBuilder<C,P> {
      * @param closure a closure that transforms the ConnId value into a protocol value
      * @return this builder for chaining
      */
-    ValueMappingBuilder<C,P> serialize(Closure<P> closure);
+    ValueMappingBuilder<C, P> serialize(
+            @Script.Runtime
+            @DelegatesTo(value = SerializationContext.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<P> closure);
 
     /**
      * Provides access to the protocol value within a deserialization closure.
@@ -55,6 +63,29 @@ public interface ValueMappingBuilder<C,P> {
          * @return the protocol value
          */
         public P getValue() {
+            return value;
+        }
+
+    }
+
+    /**
+     * Provides access to the ConnId value within a serialization closure.
+     *
+     * <p>This record implements {@link HelperFunctionsMixin} to expose Groovy helper functions
+     * (such as {@code getJsonString()}, {@code getJsonInt()}, etc.) within the closure body.</p>
+     *
+     * @param value the ConnId value to serialize
+     *
+     * @param <C> the ConnId value type
+     */
+    record SerializationContext<C>(C value) implements HelperFunctionsMixin {
+
+        /**
+         * Returns the ConnId value being serialized.
+         *
+         * @return the ConnId value
+         */
+        public C getValue() {
             return value;
         }
 

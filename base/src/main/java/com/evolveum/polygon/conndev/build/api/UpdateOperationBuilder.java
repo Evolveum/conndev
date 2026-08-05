@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.spi.ObjectUpdateOperation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -32,7 +33,8 @@ public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<Obje
      * <p>Attributes can be filtered based on name, value, or value transition (before/after).
      * This is useful for selective updates where only certain attributes should trigger changes.</p>
      */
-    interface AttributeSpecific<A extends AttributeValueFilter, T extends AttributeSpecific<A,T>> {
+    interface AttributeSpecific<A extends AttributeValueFilter, T extends AttributeSpecific<A,T>>
+        extends Fluent<T> {
 
         /**
          * Marks an attribute as supported for filtering in update operations.
@@ -65,8 +67,7 @@ public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<Obje
                 supportedAttribute(attribute);
             }
 
-            //noinspection unchecked
-            return (T) this;
+            return self();
         }
     }
 
@@ -105,7 +106,11 @@ public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<Obje
      * @param attributeDeltaSet the set of attribute deltas
      * @param before the object state before the update
      */
-    record UpdateRequest(ObjectClass clazz, Uid uid, Collection<AttributeDelta> attributeDeltaSet, ConnectorObject before) {
+    record UpdateRequest(
+            ObjectClass clazz,
+            Uid uid,
+            Collection<AttributeDelta> attributeDeltaSet,
+            ConnectorObject before) {
     }
 
     /**

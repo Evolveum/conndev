@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.api.FilterSpecification;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -19,7 +20,7 @@ import groovy.lang.DelegatesTo;
  *
  * @param <R> The concrete builder type (self-type for CRTP)
  */
-public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> {
+public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> extends Fluent<R> {
 
     /**
      * Sets whether the search endpoint supports filtering with empty filter criteria.
@@ -54,7 +55,10 @@ public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> {
      * @param closure a closure for configuring the filter's capabilities
      * @return this builder for chaining
      */
-    R supportedFilter(FilterSpecification filterSpec, @DelegatesTo(value = FilterSupportImplementation.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    R supportedFilter(
+            FilterSpecification filterSpec,
+            @DelegatesTo(value = FilterSupportImplementation.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure);
 
     /**
      * A marker interface for filter support closures.

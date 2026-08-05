@@ -6,11 +6,13 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 
 /**
  * Abstract base implementation of {@link RelationshipBuilder.Participant} for building
@@ -88,7 +90,11 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
      * @return this participant builder for chaining
      */
     @Override
-    public B attribute(String name, Closure<?> closure) {
+    public B attribute(
+            String name,
+            @Script.Initialization
+            @DelegatesTo(value = RelationshipBuilder.Reference.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, attribute(name));
     }
 

@@ -30,31 +30,31 @@ public class NormalizationBuilderImpl implements NormalizationBuilder {
     @Override
     public NormalizationBuilder toSingleValue(String attribute) {
         attributeToNormalize = attribute;
-        return this;
+        return self();
     }
 
     @Override
     public NormalizationBuilder rewriteUid(@Script.Runtime Closure<?> implementation) {
         uidTransformer = new GroovyRewrite(implementation);
-        return this;
+        return self();
     }
 
     @Override
     public NormalizationBuilder rewriteName(@Script.Runtime Closure<?> implementation) {
         nameTransformer = new GroovyRewrite(implementation);
-        return this;
+        return self();
     }
 
     @Override
     public NormalizationBuilder restoreUid(@Script.Runtime Closure<?> implementation) {
         uidRestorer = new GroovyRestore(implementation);
-        return this;
+        return self();
     }
 
     @Override
     public NormalizationBuilder restoreName(@Script.Runtime Closure<?> implementation) {
         nameRestorer = new GroovyRestore(implementation);
-        return this;
+        return self();
     }
 
     ObjectSearchOperation build(ObjectSearchOperation executeQueryProcessor) {

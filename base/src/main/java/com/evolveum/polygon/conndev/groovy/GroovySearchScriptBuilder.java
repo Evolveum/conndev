@@ -35,13 +35,13 @@ public class GroovySearchScriptBuilder implements SearchScriptBuilder, FilterAwa
     @Override
     public SearchScriptBuilder emptyFilterSupported(boolean emptyFilterSupported) {
         this.emptyFilterSupported = emptyFilterSupported;
-        return this;
+        return self();
     }
 
     @Override
     public SearchScriptBuilder implementation(@Script.Runtime Closure<?> implementation) {
         this.implementationPrototype = implementation;
-        return this;
+        return self();
     }
 
     @Override
@@ -52,7 +52,7 @@ public class GroovySearchScriptBuilder implements SearchScriptBuilder, FilterAwa
             // when adding explicit filtering
             emptyFilterSupported = false;
         }
-        return this;
+        return self();
     }
 
     @Override

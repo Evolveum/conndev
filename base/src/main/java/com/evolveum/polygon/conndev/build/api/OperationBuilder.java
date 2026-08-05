@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -29,11 +31,15 @@ import groovy.lang.DelegatesTo;
  * }
  * }</pre>
  */
-public interface OperationBuilder {
+public interface OperationBuilder extends Fluent<OperationBuilder> {
 
     ObjectOperationSupportBuilder objectClass(String className);
 
-    default ObjectOperationSupportBuilder objectClass(String className, @DelegatesTo(value = ObjectOperationSupportBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure) {
+    default ObjectOperationSupportBuilder objectClass(
+            String className,
+            @DelegatesTo(value = ObjectOperationSupportBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, objectClass(className));
     }
 

@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.spi.SpiAttributeBuilder;
@@ -166,7 +167,10 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param closure a closure that configures the {@link ConnIdMapping} instance
      * @return the configured ConnId mapping instance
      */
-    default ConnIdMapping connId(@DelegatesTo(ConnIdMapping.class) Closure<?> closure) {
+    default ConnIdMapping connId(
+            @DelegatesTo(value = ConnIdMapping.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Initialization
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, connId());
     }
 
@@ -260,7 +264,10 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param closure a closure that configures the value mapping
          * @return this mapping builder
          */
-        T implementation(@DelegatesTo(ValueMappingBuilder.class) Closure<?> closure);
+        T implementation(
+                @Script.Initialization
+                @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure);
 
         /**
          * Creates a mapping table for discrete value translations.
@@ -275,7 +282,10 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param closure a closure that configures the mapping table
          * @return the mapping table builder
          */
-        MappingTableBuilder mappingTable(@DelegatesTo(value = MappingTableBuilder.class) Closure<?> closure);
+        MappingTableBuilder mappingTable(
+                @Script.Initialization
+                @DelegatesTo(value = MappingTableBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure);
     }
 
     interface MappingTableBuilder {

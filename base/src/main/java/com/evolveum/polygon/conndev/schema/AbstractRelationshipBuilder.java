@@ -59,19 +59,21 @@ public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.
     }
 
     @Override
-    public Participant<B,P> subject(String objectClass, Closure<?> closure) {
+    public Participant<B,P> subject(
+            String objectClass, @Script.Initialization Closure<?> closure) {
         if (subject == null) {
             subject = participant(objectClass);
         }
-        return GroovyClosures.callAndReturnDelegate(closure,subject);
+        return GroovyClosures.callAndReturnDelegate(closure, subject);
     }
 
     @Override
-    public Participant<B,P> object(String objectClass, Closure<?> closure) {
+    public Participant<B,P> object(
+            String objectClass, @Script.Initialization Closure<?> closure) {
         if (object == null) {
             object = participant(objectClass);
         }
-        return GroovyClosures.callAndReturnDelegate(closure,object);
+        return GroovyClosures.callAndReturnDelegate(closure, object);
     }
     */
 

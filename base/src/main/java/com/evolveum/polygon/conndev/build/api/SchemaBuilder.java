@@ -22,7 +22,10 @@ import groovy.lang.DelegatesTo;
  * @param <SB> The concrete schema builder type (self-type for CRTP)
  * @param <OB> The object class schema builder type
  */
-public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends ObjectClassSchemaBuilder<OB,?,?>> extends SpiSchemaBuilder<SB, OB> {
+public interface SchemaBuilder<
+        SB extends SchemaBuilder<SB, OB>,
+        OB extends ObjectClassSchemaBuilder<OB, ?, ?>>
+    extends SpiSchemaBuilder<SB, OB> {
 
     /**
      * Creates or gets an object class schema builder by name.
@@ -39,9 +42,11 @@ public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends Obje
      * @param closure a closure that configures the {@link ObjectClassSchemaBuilder} instance
      * @return the configured object class schema builder
      */
-    default OB objectClass(String name,
-                                         @Script.Initialization
-                                         @DelegatesTo(ObjectClassSchemaBuilder.class)  Closure<?> closure) {
+    default OB objectClass(
+            String name,
+            @Script.Initialization
+            @DelegatesTo(value = ObjectClassSchemaBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure) {
         return GroovyClosures.callAndReturnDelegate(closure, objectClass(name));
     }
 
@@ -52,8 +57,10 @@ public interface SchemaBuilder<SB extends SchemaBuilder<SB, OB>, OB extends Obje
      * @param closure a closure that configures the {@link RelationshipBuilder} instance
      * @return the configured relationship builder
      */
-    RelationshipBuilder relationship(String name,
-                                     @Script.Initialization
-                                     @DelegatesTo(RelationshipBuilder.class) Closure<?> closure);
+    RelationshipBuilder relationship(
+            String name,
+            @Script.Initialization
+            @DelegatesTo(value = RelationshipBuilder.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure);
 
 }

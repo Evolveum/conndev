@@ -8,6 +8,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -20,7 +21,7 @@ import groovy.lang.DelegatesTo;
  *
  * @see RewriteContext
  */
-public interface NormalizationBuilder {
+public interface NormalizationBuilder extends Fluent<NormalizationBuilder> {
 
     /**
      * Configures normalization to split a single-value attribute into multiple values.
@@ -42,7 +43,10 @@ public interface NormalizationBuilder {
      * @param implementation a closure that computes new UID values from normalized data
      * @return this normalizer for chaining
      */
-    NormalizationBuilder rewriteUid(@DelegatesTo(value = RewriteContext.class) @Script.Runtime Closure<?> implementation);
+    NormalizationBuilder rewriteUid(
+            @DelegatesTo(value = RewriteContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> implementation);
 
     /**
      * Configures a closure to rewrite names based on normalized values.
@@ -50,7 +54,10 @@ public interface NormalizationBuilder {
      * @param implementation a closure that computes new name values from normalized data
      * @return this normalizer for chaining
      */
-    NormalizationBuilder rewriteName(@DelegatesTo(value = RewriteContext.class) @Script.Runtime Closure<?> implementation);
+    NormalizationBuilder rewriteName(
+            @DelegatesTo(value = RewriteContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> implementation);
 
     /**
      * Configures a closure to restore UIDs to their original values before normalization.
@@ -58,7 +65,10 @@ public interface NormalizationBuilder {
      * @param implementation a closure that restores UID values from the context
      * @return this normalizer for chaining
      */
-    NormalizationBuilder restoreUid(@DelegatesTo(value = RewriteContext.class) @Script.Runtime Closure<?> implementation);
+    NormalizationBuilder restoreUid(
+            @DelegatesTo(value = RewriteContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> implementation);
 
     /**
      * Configures a closure to restore names to their original values before normalization.
@@ -66,7 +76,10 @@ public interface NormalizationBuilder {
      * @param implementation a closure that restores name values from the context
      * @return this normalizer for chaining
      */
-    NormalizationBuilder restoreName(@DelegatesTo(value = RewriteContext.class) @Script.Runtime Closure<?> implementation);
+    NormalizationBuilder restoreName(
+            @DelegatesTo(value = RewriteContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
+            Closure<?> implementation);
 
     /**
      * Context object passed to normalization closures.

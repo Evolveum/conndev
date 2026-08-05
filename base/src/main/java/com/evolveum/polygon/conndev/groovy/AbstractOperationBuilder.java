@@ -14,7 +14,7 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractOperationBuilder<O extends BaseObjectOperationSupportBuilder<?,?,?,?>> implements OperationBuilder {
+public abstract class AbstractOperationBuilder<O extends BaseObjectOperationSupportBuilder<?, ?, ?, ?>> implements OperationBuilder {
 
     private final ConnectorContext context;
     private final Map<String, O> handlers = new HashMap<>();

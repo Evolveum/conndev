@@ -21,7 +21,11 @@ import org.identityconnectors.framework.common.objects.AttributeInfo;
  * @param <A> The parent attribute builder type
  * @param <P> The protocol type (e.g. JsonNode for REST/SCIM)
  */
-public interface ReferenceAttributeBuilder<B extends ReferenceAttributeBuilder<B, A, P>, A extends AttributeBuilder<? super B, P>, P> extends AttributeBuilder<B, P> {
+public interface ReferenceAttributeBuilder<
+        B extends ReferenceAttributeBuilder<B, A, P>,
+        A extends AttributeBuilder<? super B, P>,
+        P>
+    extends AttributeBuilder<B, P> {
 
     AttributeInfo.RoleInReference SUBJECT = AttributeInfo.RoleInReference.SUBJECT;
     AttributeInfo.RoleInReference OBJECT = AttributeInfo.RoleInReference.OBJECT;
@@ -63,7 +67,11 @@ B role(AttributeInfo.RoleInReference role);
      *
      * Useful for building reference attributes in a deferred or wrapped manner.
      */
-    interface Delegator<B extends ReferenceAttributeBuilder<B, A,  P>,  A extends AttributeBuilder<? super B, P>, P> extends ReferenceAttributeBuilder<B, A,  P>  {
+    interface Delegator<
+            B extends ReferenceAttributeBuilder<B, A, P>,
+            A extends AttributeBuilder<? super B, P>,
+            P>
+        extends ReferenceAttributeBuilder<B, A, P> {
         /**
          * Returns the underlying delegate reference builder.
          *

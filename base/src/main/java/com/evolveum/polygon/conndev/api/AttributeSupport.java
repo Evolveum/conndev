@@ -6,10 +6,12 @@
  */
 package com.evolveum.polygon.conndev.api;
 
+import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeDelta;
 
@@ -87,7 +89,10 @@ public record AttributeSupport(BaseAttributeDefinition attributeInfo, Collection
         }
 
         @Override
-        public AttributeSupport.Builder supportedAttribute(String attributeName, Closure<?> closure) {
+        public AttributeSupport.Builder supportedAttribute(
+                String attributeName, @Script.Initialization
+                @DelegatesTo(value = AttributeSupport.Builder.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure) {
             var attr = supportedAttribute(attributeName);
             return GroovyClosures.callAndReturnDelegate(closure, attr);
         }
