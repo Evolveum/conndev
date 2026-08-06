@@ -22,7 +22,7 @@ import java.util.Set;
 
 public class ScriptedExecuteQueryProcessor implements FilterAwareExecuteQueryProcessor {
 
-    private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
+    private final BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass;
     private final Closure<?> implementation;
     private final Set<FilterSpecification> supportedFilters;
     private final ConnectorContext context;

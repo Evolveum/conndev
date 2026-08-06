@@ -9,8 +9,7 @@ package com.evolveum.polygon.conndev.build.api;
 import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
 
-public interface ObjectOperationBuilder<
-        T extends ObjectClassOperation>
-    extends FluentBuilder<ObjectOperationBuilder<T>, T> {
+public interface ObjectOperationBuilder<T extends ObjectClassOperation> extends FluentBuilder<ObjectOperationBuilder<T>, T> {
 
+    T build();
 }

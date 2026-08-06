@@ -24,7 +24,7 @@ public interface SearchScriptContext extends BaseScriptContext {
      * 
      * @return the object class definition
      */
-    BaseObjectClassDefinition<BaseAttributeDefinition> definition();
+    BaseObjectClassDefinition<? extends BaseAttributeDefinition> definition();
 
     /**
      * Returns the result handler for the current search operation.
@@ -49,11 +49,11 @@ public interface SearchScriptContext extends BaseScriptContext {
     OperationOptions operationOptions();
 
 
-    record Default(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> definition, Filter filter,
+    record Default(ConnectorContext context, BaseObjectClassDefinition<? extends BaseAttributeDefinition> definition, Filter filter,
                    ResultsHandler resultHandler, OperationOptions operationOptions) implements SearchScriptContext {
 
         @Override
-        public BaseObjectClassDefinition<BaseAttributeDefinition> definition() {
+        public BaseObjectClassDefinition<? extends BaseAttributeDefinition> definition() {
             return definition;
         }
 

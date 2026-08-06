@@ -16,5 +16,5 @@ import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
  *
  * @see ObjectClassOperationBuilder
  */
-public interface CreateOperationBuilder extends ObjectClassOperationBuilder<ObjectCreateOperation> {
+public interface CreateOperationBuilder extends ObjectClassOperationBuilder<CreateOperationBuilder, ObjectCreateOperation> {
 }

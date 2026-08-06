@@ -11,6 +11,7 @@ import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.build.api.NormalizationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchOperationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchScriptBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
 import com.evolveum.polygon.conndev.yaml.model.YamlAttributeResolver;
@@ -122,6 +123,16 @@ public class YamlSearchSectionsTest {
 
         @Override public ObjectSearchOperation build() {
             return null;
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return true;
+        }
+
+        @Override
+        public SearchOperationBuilder enabled(DefinitionValue<Boolean> value) {
+            return this;
         }
     }
 

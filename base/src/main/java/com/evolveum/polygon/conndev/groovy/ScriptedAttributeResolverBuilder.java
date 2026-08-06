@@ -31,13 +31,13 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
 
     private final Set<BaseAttributeDefinition> attributes = new HashSet<>();
 
-    private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
+    private final BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass;
     private ResolutionType resolutionType = ResolutionType.PER_OBJECT;
     private Implementation implementation;
 
     public ScriptedAttributeResolverBuilder(
             ConnectorContext context,
-            BaseObjectClassDefinition<BaseAttributeDefinition> objectClass) {
+            BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass) {
         this.objectClass = objectClass;
     }
 

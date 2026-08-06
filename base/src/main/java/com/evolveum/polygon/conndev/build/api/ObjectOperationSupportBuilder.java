@@ -7,7 +7,10 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
+import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -29,7 +32,7 @@ import groovy.lang.DelegatesTo;
  * @see UpdateOperationBuilder
  * @see DeleteOperationBuilder
  */
-public interface ObjectOperationSupportBuilder {
+public interface ObjectOperationSupportBuilder extends FluentBuilder<ObjectOperationSupportBuilder, CompositeObjectClassHandler> {
 
     /**
      * Returns the builder for the search operation.

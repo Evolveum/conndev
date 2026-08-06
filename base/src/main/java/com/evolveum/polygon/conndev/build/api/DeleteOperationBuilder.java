@@ -16,5 +16,5 @@ import com.evolveum.polygon.conndev.spi.ObjectDeleteOperation;
  *
  * @see ObjectClassOperationBuilder
  */
-public interface DeleteOperationBuilder extends ObjectClassOperationBuilder<ObjectDeleteOperation> {
+public interface DeleteOperationBuilder extends ObjectClassOperationBuilder<DeleteOperationBuilder, ObjectDeleteOperation> {
 }

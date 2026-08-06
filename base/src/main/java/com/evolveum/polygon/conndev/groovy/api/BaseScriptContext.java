@@ -20,7 +20,7 @@ public interface BaseScriptContext {
      * @return the object class definition
      */
     @Groovy.Convenience
-    BaseObjectClassDefinition<BaseAttributeDefinition> definition();
+    BaseObjectClassDefinition<? extends BaseAttributeDefinition> definition();
 
 
     /**

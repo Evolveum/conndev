@@ -144,4 +144,12 @@ public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implem
     public A attributeFromConnIdName(String name) {
         return connIdAttributes.get(name);
     }
+
+
+    public <T extends BaseObjectClassDefinition<?>>T as(Class<T> clazz) {
+        if (clazz.isInstance(this)) {
+            return clazz.cast(this);
+        }
+        throw new IllegalStateException("Definition " + this + "is not of type " + clazz);
+    }
 }

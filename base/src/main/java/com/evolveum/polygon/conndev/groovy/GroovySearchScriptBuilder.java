@@ -20,14 +20,14 @@ import java.util.Set;
 public class GroovySearchScriptBuilder implements SearchScriptBuilder, FilterAwareSearchProcessorBuilder {
 
     final ConnectorContext context;
-    public BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
+    public BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass;
     public final Set<FilterSpecification> supportedFilters = new HashSet<>();
     private Boolean emptyFilterSupported;
 //    Set<FilterToRequestMapper> filterMappers = new HashSet<>();
     Closure<?> implementationPrototype;
     private boolean enabled = true;
 
-    public GroovySearchScriptBuilder(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> objectClass) {
+    public GroovySearchScriptBuilder(ConnectorContext context, BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass) {
         this.context = context;
         this.objectClass = objectClass;
     }

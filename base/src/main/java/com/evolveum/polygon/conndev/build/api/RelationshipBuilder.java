@@ -42,7 +42,10 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
      * @param closure a closure that configures the subject part of the relationship
      * @return a builder for customizing the subject participant
      */
-    Participant<B, P> subject(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    Participant<B, P> subject(
+            String objectClass,
+            @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure);
 
     /**
      * Declares an object class as an object participant of this relationship.
@@ -51,7 +54,10 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
      * @param closure a closure that configures the object participant
      * @return a builder for customizing the object participant
      */
-    Participant<B, P> object(String objectClass, @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+    Participant<B, P> object(
+            String objectClass,
+            @DelegatesTo(value = Participant.class, strategy = Closure.DELEGATE_ONLY)
+            Closure<?> closure);
 
     /**
      * Participant side of a relationship (either subject or object).
@@ -76,7 +82,10 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
          * @param closure a closure that configures the {@link Reference}
          * @return the reference builder
          */
-        B attribute(String name, @DelegatesTo(value = Reference.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+        B attribute(
+                String name,
+                @DelegatesTo(value = Reference.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure);
 
         /**
          * Checks if this participant is the relationship owner.
@@ -88,9 +97,10 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
         /**
          * Sets the relationship owner status for the participant.
          *
-         * Usually relationships may have owner irrespective of subject - object relation.
-         * The owner is the actual participant which stores relations, and is used to modify relations:
-         * in case of LDAP it could be group. In case of midPoint it is user, even if in both user is subject and group is object.
+         * <p>Usually relationships may have owner irrespective of subject - object relation.
+         * The owner is the actual participant which stores relations, and is used to modify
+         * relations: in case of LDAP it could be group. In case of midPoint it is user,
+         * even if in both user is subject and group is object.</p>
          *
          * @param owner true if the participant is the owner of relationship, false otherwise
          * @return this participant instance to allow chained invocations
@@ -105,7 +115,11 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
      * via {@link AttributeResolverBuilder}. The reference is automatically marked as
      * emulated.</p>
      */
-    interface Reference<B extends ReferenceAttributeBuilder<B,A,P>, A extends AttributeBuilder<? super B, P>, P> extends ReferenceAttributeBuilder<B, A, P> {
+    interface Reference<
+            B extends ReferenceAttributeBuilder<B, A, P>,
+            A extends AttributeBuilder<? super B, P>,
+            P>
+        extends ReferenceAttributeBuilder<B, A, P> {
 
         /**
          * Adds an attribute resolver with custom behavior.
@@ -116,6 +130,8 @@ public interface RelationshipBuilder<B extends RelationshipBuilder.Reference<B,?
          * @param closure the closure defining custom resolution behavior
          * @return an {@link AttributeResolverBuilder} for configuring the resolver
          */
-        AttributeResolverBuilder resolver(@DelegatesTo(value = AttributeResolverBuilder.class, strategy = Closure.DELEGATE_ONLY) Closure<?> closure);
+        AttributeResolverBuilder resolver(
+                @DelegatesTo(value = AttributeResolverBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure);
     }
 }

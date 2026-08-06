@@ -7,10 +7,14 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
-import com.evolveum.polygon.conndev.concepts.Fluent;
+import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.identityconnectors.framework.common.objects.ObjectClass;
+
+import java.util.Map;
 
 /**
  * Root entry point for defining connector operations (create, read, update, delete, list, search).
@@ -31,11 +35,11 @@ import groovy.lang.DelegatesTo;
  * }
  * }</pre>
  */
-public interface OperationBuilder extends Fluent<OperationBuilder> {
+public interface OperationSupportBuilder<F extends OperationSupportBuilder<F,B>, B extends ObjectOperationSupportBuilder> extends FluentBuilder<F, Map<ObjectClass, CompositeObjectClassHandler>> {
 
-    ObjectOperationSupportBuilder objectClass(String className);
+    B objectClass(String className);
 
-    default ObjectOperationSupportBuilder objectClass(
+    default B objectClass(
             String className,
             @DelegatesTo(value = ObjectOperationSupportBuilder.class, strategy = Closure.DELEGATE_ONLY)
             @Script.Initialization

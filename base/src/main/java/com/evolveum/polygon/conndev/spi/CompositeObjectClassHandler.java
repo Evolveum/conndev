@@ -21,6 +21,10 @@ public class CompositeObjectClassHandler implements ObjectClassHandler {
         this.handlers.putAll(handlers);
     }
 
+    public static <T extends ObjectClassOperation> CompositeObjectClassHandler of(ObjectClass objectClass, Class<T> type, T handler) {
+        return new CompositeObjectClassHandler(objectClass, Map.of(type, handler));
+    }
+
     @Override
     public ObjectClass objectClass() {
         return objectClass;

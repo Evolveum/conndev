@@ -23,7 +23,7 @@ import groovy.lang.DelegatesTo;
  * @see SearchOperationBuilder#normalize()
  * @see SearchOperationBuilder#custom()
  */
-public interface SearchOperationBuilder extends ObjectClassOperationBuilder<ObjectSearchOperation> {
+public interface SearchOperationBuilder extends ObjectClassOperationBuilder<SearchOperationBuilder,ObjectSearchOperation> {
 
     /**
      * Returns the attribute resolver builder for configuring reference attribute resolution.

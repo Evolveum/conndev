@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
+
 /**
  * Builder for the list operation.
  *
@@ -14,5 +16,5 @@ package com.evolveum.polygon.conndev.build.api;
  *
  * @see ObjectClassOperationBuilder
  */
-public interface ListOperationBuilder extends ObjectClassOperationBuilder<Object> {
+public interface ListOperationBuilder extends ObjectClassOperationBuilder<ListOperationBuilder, ObjectClassOperation> {
 }

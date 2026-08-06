@@ -21,14 +21,14 @@ public abstract class BaseObjectOperationSupportBuilder<
         D extends AbstractDeleteOperationBuilder>
     implements ObjectOperationSupportBuilder {
 
-    private final BaseObjectClassDefinition<BaseAttributeDefinition> objectClass;
-    final ConnectorContext context;
+    private final BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass;
+    public final ConnectorContext context;
 
     ObjectClassHandler product;
     Map<Class<? extends ObjectClassOperation>, ObjectClassOperation> buildedOperations = new HashMap<>();
 
 
-    public BaseObjectOperationSupportBuilder(ConnectorContext context, BaseObjectClassDefinition<BaseAttributeDefinition> restObjectClass) {
+    public BaseObjectOperationSupportBuilder(ConnectorContext context, BaseObjectClassDefinition<? extends BaseAttributeDefinition> restObjectClass) {
         this.objectClass = restObjectClass;
         this.context = context;
     }
@@ -57,11 +57,6 @@ public abstract class BaseObjectOperationSupportBuilder<
     @Override
     public abstract D delete();
 
-    public BaseObjectClassDefinition<BaseAttributeDefinition> getObjectClass() {
-        return objectClass;
-    }
-
-
     public BaseObjectOperationSupportBuilder<S, C, U, D> search(ObjectSearchOperation processor) {
         registerOperation(ObjectSearchOperation.class, processor);
         return this;
@@ -71,7 +66,7 @@ public abstract class BaseObjectOperationSupportBuilder<
         buildedOperations.put(operationType, operation);
     }
 
-    public ObjectClassHandler build() {
+    public CompositeObjectClassHandler  build() {
         buildOperationIfEmpty(ObjectSearchOperation.class, search());
         buildOperationIfEmpty(ObjectCreateOperation.class, create());
         buildOperationIfEmpty(ObjectUpdateOperation.class, update());
@@ -80,13 +75,17 @@ public abstract class BaseObjectOperationSupportBuilder<
         return new CompositeObjectClassHandler(objectClass.objectClass(), buildedOperations);
     }
 
-    private <T extends ObjectClassOperation, X extends ObjectOperationBuilder<T>>
-        void buildOperationIfEmpty(Class<T> type, ObjectClassOperationBuilder<T> builder) {
-        if (builder == null || buildedOperations.containsKey(type)) {
+    private <T extends ObjectClassOperation>
+        void buildOperationIfEmpty(Class<T> type, ObjectClassOperationBuilder<?,? extends T> builder) {
+        if (builder == null || buildedOperations.containsKey(type) || builder.isDisabled()) {
             // Skip building for now
             return;
 
         }
         buildedOperations.put(type, builder.build());
+    }
+
+    public BaseObjectClassDefinition<? extends BaseAttributeDefinition> getObjectClass() {
+        return objectClass;
     }
 }

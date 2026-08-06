@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.concepts.Fluent;
+import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
 import com.evolveum.polygon.conndev.spi.ObjectUpdateOperation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -25,7 +26,7 @@ import java.util.Set;
  * <p>Update operation configuration includes per-attribute and per-value filtering
  * via {@link AttributeSpecific} and {@link AttributeValueFilter} interfaces.</p>
  */
-public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<ObjectUpdateOperation> {
+public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<UpdateOperationBuilder, ObjectUpdateOperation> {
 
     /**
      * Supports attribute-specific filtering for update operations.

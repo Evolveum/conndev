@@ -17,7 +17,7 @@ import java.util.Set;
 
 public abstract class AbstractSearchOperationBuilder implements SearchOperationBuilder {
 
-    private final BaseObjectOperationSupportBuilder<?,?,?,?> parent;
+    protected final BaseObjectOperationSupportBuilder<?,?,?,?> parent;
     protected Set<FilterAwareSearchProcessorBuilder> builders = new HashSet<>();
     protected Set<ScriptedAttributeResolverBuilder> resolvers = new HashSet<>();
     private NormalizationBuilderImpl normalizationBuilder;
