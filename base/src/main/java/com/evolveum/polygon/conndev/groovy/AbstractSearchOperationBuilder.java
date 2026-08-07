@@ -81,8 +81,14 @@ public abstract class AbstractSearchOperationBuilder implements SearchOperationB
                     if (emptyFilterHandler == null) {
                         emptyFilterHandler = handler;
                     } else {
-                        // FIXME: Throw better exception
-                        throw new IllegalStateException("Multiple default endpoints are not supported");
+                        throw new IllegalStateException("Multiple emptyFilter handlers are not supported");
+                    }
+                }
+                if (builder.anyFilterSupported()) {
+                    if (anyFilterHandler == null) {
+                        anyFilterHandler = handler;
+                    } else {
+                        throw new IllegalStateException("Multiple anyFilterSupported handlers are not supported");
                     }
                 }
             }
