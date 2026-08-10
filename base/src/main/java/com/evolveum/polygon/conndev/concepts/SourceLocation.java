@@ -147,6 +147,59 @@ public interface SourceLocation {
         return UNKNOWN;
     }
 
+    /**
+     * Finds the source location of the first matching frame in the given exception's stack
+     * trace, walking its cause chain if the exception itself has no matching frame. Returns
+     * {@link #UNKNOWN} when {@link DevelopmentMode} is disabled.
+     *
+     * <p>Unlike {@link #capture()}, this does not read the live call stack — by the time an
+     * exception reaches a {@code catch} block the live stack has already unwound past where it
+     * was thrown, so the only place the original location survives is the stack trace the JVM
+     * captured on the exception itself at throw time. It is still gated behind
+     * {@link DevelopmentMode}, same as {@link #capture()}: not for performance, but because
+     * production error messages should not reveal internal script file paths/line numbers unless
+     * a developer has explicitly opted into development mode.</p>
+     *
+     * @param exception the exception to inspect; if {@code null}, returns {@link #UNKNOWN}
+     * @param sourceExtension the file extensions to match against source file names
+     * @return a SourceLocation instance containing the matched file name and line number, or
+     *         {@link #UNKNOWN} if development mode is disabled or no match is found anywhere in
+     *         the exception's cause chain
+     */
+    static SourceLocation fromException(Throwable exception, String... sourceExtension) {
+        if (!DevelopmentMode.isEnabled()) {
+            return UNKNOWN;
+        }
+        for (Throwable current = exception; current != null; current = current.getCause()) {
+            for (StackTraceElement element : current.getStackTrace()) {
+                String fileName = element.getFileName();
+                if (fileName != null) {
+                    for (String ext : sourceExtension) {
+                        if (fileName.endsWith(ext)) {
+                            return SourceLocation.from(fileName, element.getLineNumber(), 0);
+                        }
+                    }
+                }
+            }
+            if (current.getCause() == current) {
+                break;
+            }
+        }
+        return UNKNOWN;
+    }
+
+    /**
+     * Shorthand for {@link #fromException(Throwable, String...)} matching {@code .groovy} frames.
+     *
+     * @param exception the exception to inspect; if {@code null}, returns {@link #UNKNOWN}
+     * @return a SourceLocation instance containing the matched file name and line number, or
+     *         {@link #UNKNOWN} if development mode is disabled or no {@code .groovy} frame is
+     *         found in the exception's cause chain
+     */
+    static SourceLocation fromException(Throwable exception) {
+        return fromException(exception, "groovy");
+    }
+
     record Impl(String name, int line, int column) implements SourceLocation {
 
         @Override
