@@ -123,10 +123,24 @@ public abstract class AbstractSearchOperationBuilder implements SearchOperationB
             }
         }
 
+        // Allow subclasses to add additional resolvers (SQL join resolvers, etc.)
+        Set<AttributeResolver> additionalPerObject = new HashSet<>();
+        Set<AttributeResolver> additionalBatched = new HashSet<>();
+        applyAdditionalAttributeResolvers(additionalPerObject, additionalBatched);
+        perObjectResolvers.addAll(additionalPerObject);
+        batchedResolvers.addAll(additionalBatched);
+
         if (!perObjectResolvers.isEmpty() || !batchedResolvers.isEmpty()) {
             dispatcher = new AttributeResolvingSearchHandler(dispatcher, perObjectResolvers, batchedResolvers);
         }
 
         return dispatcher;
+    }
+
+    /** Hook for SQL connector to add join resolvers. Default: no-op. */
+    protected void applyAdditionalAttributeResolvers(
+            Set<AttributeResolver> perObjectResolvers,
+            Set<AttributeResolver> batchedResolvers) {
+        // Default: no-op. Override in SqlSearchOperationBuilderImpl.
     }
 }
