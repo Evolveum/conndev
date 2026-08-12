@@ -101,8 +101,8 @@ public abstract class Deferred<T> {
         @SuppressWarnings("unchecked")
         @Override
         public T get() throws IllegalStateException {
-            if (value instanceof Searchable) {
-                value = ((Searchable<T>) value).get();
+            if (value instanceof Search) {
+                value = ((Search<T>) value).find();
             }
             return (T) value;
         }
