@@ -40,6 +40,34 @@ public class ConnectorManifestTest {
         assertEquals(List.of("/User.search.all.op.yaml"), manifest.operationScripts());
     }
 
+    /**
+     * Used while validating a not-yet-saved replacement for one script: every other deployed
+     * script is reloaded, but not the one being replaced (its candidate content stands in for it
+     * instead).
+     */
+    @Test
+    public void excludedSchemaScriptIsOmitted() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/json/connector.manifest");
+
+        assertEquals(List.of("/User.connid.schema.groovy"), manifest.schemaScripts("/User.native.schema.groovy"));
+    }
+
+    /** An excluded resource that isn't actually present changes nothing — e.g. a brand new, not-yet-saved script. */
+    @Test
+    public void excludingAnUnknownResourceChangesNothing() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/json/connector.manifest");
+
+        assertEquals(List.of("/User.native.schema.groovy", "/User.connid.schema.groovy"),
+                manifest.schemaScripts("/NotDeployed.schema.groovy"));
+    }
+
+    @Test
+    public void excludedOperationScriptIsOmitted() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/json/connector.manifest");
+
+        assertEquals(List.of(), manifest.operationScripts("/User.search.all.op.yaml"));
+    }
+
     /** A missing manifest loads as the empty one; reading scripts from it keeps failing like before. */
     @Test
     public void missingManifestYieldsEmptyManifest() {

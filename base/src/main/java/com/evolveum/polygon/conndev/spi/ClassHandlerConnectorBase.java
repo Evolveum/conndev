@@ -7,6 +7,11 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.groovy.BaseGroovyConnectorConfiguration;
+import com.evolveum.polygon.conndev.groovy.GroovyScriptValidator;
+import com.evolveum.polygon.conndev.groovy.ScriptError;
+import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
+import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
@@ -33,7 +38,7 @@ import java.util.Set;
 public abstract class ClassHandlerConnectorBase implements Connector,
         AuthenticateOp, CreateOp, DeleteOp, ResolveUsernameOp,
         SchemaOp, SearchOp<Filter>, TestOp,
-        UpdateDeltaOp, SyncOp {
+        UpdateDeltaOp, SyncOp, ScriptOnResourceOp {
 
     public abstract ContextLookup context();
 
@@ -102,5 +107,55 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     public SyncToken getLatestSyncToken(ObjectClass objectClass) {
         return handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
                 .getLatestSyncToken();
+    }
+
+    @Override
+    public Object runScriptOnResource(ScriptContext request, OperationOptions options) {
+        if (!(getConfiguration() instanceof BaseGroovyConnectorConfiguration groovyConf)
+                || !Boolean.TRUE.equals(groovyConf.getDevelopmentMode())) {
+            throw new UnsupportedOperationException("Script execution is supported only in development mode");
+        }
+        if (!"groovy".equalsIgnoreCase(request.getScriptLanguage())) {
+            throw new IllegalArgumentException("Unsupported script language: " + request.getScriptLanguage());
+        }
+        var validationRequest = ScriptValidationRequest.from(request);
+        if (!ScriptValidationRequest.SCRIPT_OPERATION_BUILD.equals(validationRequest.operation())
+                && !ScriptValidationRequest.SCRIPT_OPERATION_COMPILE.equals(validationRequest.operation())) {
+            throw new UnsupportedOperationException(
+                    "Unsupported script operation, only '" + ScriptValidationRequest.SCRIPT_OPERATION_BUILD + "' or '"
+                            + ScriptValidationRequest.SCRIPT_OPERATION_COMPILE + "' is supported");
+        }
+        try {
+            return validateScript(validationRequest).toMap();
+        } catch (Exception e) {
+            return GroovyScriptValidator.error(ScriptError.Phase.INITIALIZATION, e).toMap();
+        }
+    }
+
+    /**
+     * Validates the candidate script described by {@code request} via {@link
+     * GroovyScriptValidator#validate}. {@link ScriptValidationRequest#filename} identifies the
+     * artifact's already-deployed resource, if any, so implementations can reload every other
+     * deployed script while excluding this one, evaluating the candidate in place of its old
+     * content. May throw if the connector cannot be initialized enough to construct a throwaway
+     * validation target; such exceptions are reported as an {@code initialization}-phase
+     * validation error.
+     */
+    protected abstract ScriptValidationResult validateScript(ScriptValidationRequest request) throws Exception;
+
+    /**
+     * Resource names of the currently deployed schema scripts, minus {@code excludedResource} —
+     * used by {@link #validateScript} implementations to reload siblings while validating a
+     * not-yet-saved replacement for one of them. Connectors with no such concept of named
+     * resources (e.g. hardcoding their scripts) don't need to override this; validation then
+     * simply won't have sibling schema scripts loaded.
+     */
+    protected List<String> schemaResources(String excludedResource) {
+        return List.of();
+    }
+
+    /** Same as {@link #schemaResources}, for operation/handler scripts. */
+    protected List<String> operationResources(String excludedResource) {
+        return List.of();
     }
 }

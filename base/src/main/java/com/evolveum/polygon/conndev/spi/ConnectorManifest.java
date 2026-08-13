@@ -75,21 +75,39 @@ public class ConnectorManifest {
         return require(ObjectNode.class, json.get("connector"), "connector object not present");
     }
 
-    List<String> scripts(String type) {
+    /**
+     * Resource names for the given manifest section, skipping {@code excludedResource} if given
+     * — used to reload every other already-deployed script while validating a not-yet-saved
+     * replacement for one of them, so the replacement is evaluated in place of its old content
+     * rather than alongside it.
+     */
+    List<String> scripts(String type, String excludedResource) {
 
         var schemaScripts = connector().get(type);
         if (schemaScripts == null || schemaScripts.isEmpty()) {
             return new ArrayList<>();
         }
         var ret = new ArrayList<String>(schemaScripts.size());
-        for  (JsonNode schema : schemaScripts) {
-            ret.add(schema.get("script").asText());
+        for (JsonNode schema : schemaScripts) {
+            var script = schema.get("script").asText();
+            if (!script.equals(excludedResource)) {
+                ret.add(script);
+            }
         }
         return ret;
     }
 
+    List<String> scripts(String type) {
+        return scripts(type, null);
+    }
+
     public List<String> schemaScripts() {
         return scripts("schema");
+    }
+
+    /** {@link #schemaScripts()}, additionally skipping {@code excludedResource}. */
+    public List<String> schemaScripts(String excludedResource) {
+        return scripts("schema", excludedResource);
     }
 
     public List<String> authorizationScripts() {
@@ -98,6 +116,11 @@ public class ConnectorManifest {
 
     public List<String> operationScripts() {
         return scripts("operation");
+    }
+
+    /** {@link #operationScripts()}, additionally skipping {@code excludedResource}. */
+    public List<String> operationScripts(String excludedResource) {
+        return scripts("operation", excludedResource);
     }
 
 
