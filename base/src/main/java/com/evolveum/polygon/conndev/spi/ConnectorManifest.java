@@ -79,7 +79,9 @@ public class ConnectorManifest {
      * Resource names for the given manifest section, skipping {@code excludedResource} if given
      * — used to reload every other already-deployed script while validating a not-yet-saved
      * replacement for one of them, so the replacement is evaluated in place of its old content
-     * rather than alongside it.
+     * rather than alongside it. Entries marked {@code disabled: true} are skipped entirely, in
+     * both real connector loading and validation — a disabled script is treated as if it weren't
+     * bundled at all.
      */
     List<String> scripts(String type, String excludedResource) {
 
@@ -89,6 +91,9 @@ public class ConnectorManifest {
         }
         var ret = new ArrayList<String>(schemaScripts.size());
         for (JsonNode schema : schemaScripts) {
+            if (schema.path("disabled").asBoolean(false)) {
+                continue;
+            }
             var script = schema.get("script").asText();
             if (!script.equals(excludedResource)) {
                 ret.add(script);
