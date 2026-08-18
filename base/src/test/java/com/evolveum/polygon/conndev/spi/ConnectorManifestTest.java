@@ -85,4 +85,38 @@ public class ConnectorManifestTest {
         assertTrue(exception.getMessage().contains("connector.manifest.yaml"));
         assertTrue(exception.getMessage().contains("connector.manifest.json"));
     }
+
+    /**
+     * A script marked {@code disabled: true} is skipped entirely — treated as if it weren't
+     * bundled at all — across every section (schema, authorization, operation), since all three
+     * resolve through the same underlying lookup.
+     */
+    @Test
+    public void disabledScriptsAreOmittedFromEverySection() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/disabled/connector.manifest");
+
+        assertEquals(List.of("/User.native.schema.groovy"), manifest.schemaScripts());
+        assertEquals(List.of(), manifest.authorizationScripts());
+        assertEquals(List.of("/User.search.all.op.yaml"), manifest.operationScripts());
+    }
+
+    /**
+     * A disabled script is skipped whether or not it's also the {@code excludedResource} - it was
+     * never going to be reloaded as a sibling either way, since it's disabled.
+     */
+    @Test
+    public void disabledScriptStaysOmittedWhenAlsoExcluded() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/disabled/connector.manifest");
+
+        assertEquals(List.of("/User.native.schema.groovy"),
+                manifest.schemaScripts("/User.connid.schema.groovy"));
+    }
+
+    /** Excluding the one script that's still enabled leaves only the (already-omitted) disabled one out too. */
+    @Test
+    public void excludingTheEnabledScriptLeavesOnlyDisabledOnesOut() {
+        var manifest = ConnectorManifest.load(getClass(), "/manifests/disabled/connector.manifest");
+
+        assertEquals(List.of(), manifest.schemaScripts("/User.native.schema.groovy"));
+    }
 }
