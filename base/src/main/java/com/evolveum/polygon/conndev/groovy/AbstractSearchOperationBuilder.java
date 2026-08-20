@@ -62,14 +62,14 @@ public abstract class AbstractSearchOperationBuilder implements SearchOperationB
         return builders.isEmpty();
     }
 
-    private ObjectSearchOperation buildNormalizationHandler(ObjectSearchOperation executeQueryProcessor) {
+    protected ObjectSearchOperation buildNormalizationHandler(ObjectSearchOperation executeQueryProcessor) {
         if (normalizationBuilder == null) {
             return executeQueryProcessor;
         }
         return normalizationBuilder.build(executeQueryProcessor);
     }
 
-    private ObjectSearchOperation buildFilterDispatcher() {
+    protected ObjectSearchOperation buildFilterDispatcher() {
         var handlers = new HashSet<FilterAwareExecuteQueryProcessor>();
         ObjectSearchOperation emptyFilterHandler = null;
         ObjectSearchOperation anyFilterHandler = null;
