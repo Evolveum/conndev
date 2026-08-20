@@ -80,6 +80,6 @@ public interface ObjectClassScripting {
         return FilterBuilder.forAttribute(attribute.connId().getName());
     }
 
-    BaseObjectClassDefinition<BaseAttributeDefinition> definition();
+    BaseObjectClassDefinition<? extends BaseAttributeDefinition> definition();
 
 }
