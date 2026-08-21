@@ -18,10 +18,14 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.ObjectClassInfo;
+import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Connector;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -36,16 +40,24 @@ import java.util.function.Predicate;
  * @param <T> the concrete builder type extending this class
  * @param <OB> the object class definition builder type
  * @param <OA> the attribute/object attribute builder type
+ * @param <OC> the object class definition type produced by {@code OB.build()}
+ * @param <S> the concrete schema type produced by {@link #build()}
  */
-public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
-        OB extends BaseObjectClassDefinitionBuilder<OA,?,?,?,?,?>,
+public class BaseSchemaBuilder<
+        T extends BaseSchemaBuilder<T, OB, SB, OA, OC, S>,
+        OB extends BaseObjectClassDefinitionBuilder<OA,OC,?,?,?,?>,
         SB extends SchemaBuilder<SB, OA>,
-        OA extends ObjectClassSchemaBuilder<OA,?,?>> implements SchemaBuilder<SB, OA> {
+        OA extends ObjectClassSchemaBuilder<OA,?,?>,
+        OC extends BaseObjectClassDefinition<?>,
+        S extends BaseSchema<OC>
+    > implements SchemaBuilder<SB, OA> {
 
     /** The connector class for which this schema is being built. */
     protected final Class<? extends Connector> connectorClass;
     /** The registered object class builders, keyed by name. */
     protected final Map<String, OB> objectClasses = new HashMap<>();
+    /** Ready-made ConnId object classes added via {@link #defineObjectClass(ObjectClassInfo)}. */
+    protected final List<ObjectClassInfo> additionalObjectClasses = new ArrayList<>();
     /** The context lookup for resolving values during schema initialization. */
     private ContextLookup contextLookup;
 
@@ -131,24 +143,60 @@ public class BaseSchemaBuilder<T extends BaseSchemaBuilder<T, OB, SB, OA>,
     }
 
     /**
-     * Builds the {@link BaseSchema} from all registered object classes or creates a dummy schema
+     * Adds a ready-made ConnId object class (e.g. the shared conndev dev object classes) to the
+     * schema, alongside the ones built from registered object class builders.
+     *
+     * @param objectClass the ConnId object class info to add
+     * @return this builder for fluent chaining
+     */
+    @SuppressWarnings("unchecked")
+    public T defineObjectClass(ObjectClassInfo objectClass) {
+        additionalObjectClasses.add(objectClass);
+        return (T) this;
+    }
+
+    /**
+     * Builds the schema from all registered object classes or creates a dummy schema
      * if none have been defined.
      *
-     * @return the fully constructed BaseSchema
+     * @return the fully constructed schema
      */
-    public BaseSchema build() {
+    public S build() {
         if (objectClasses.isEmpty()) {
             initializeDummySchema();
         }
 
         var freshSchemaBuilder = new org.identityconnectors.framework.common.objects.SchemaBuilder(connectorClass);
-        Map<ObjectClass, BaseObjectClassDefinition<BaseAttributeDefinition>> objectClassMap = new HashMap<>();
+        Map<ObjectClass, OC> objectClassMap = new HashMap<>();
         for (var ocBuilder : objectClasses.values()) {
             var objectClassDef = ocBuilder.build();
             freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
-            objectClassMap.put(objectClassDef.objectClass(), (BaseObjectClassDefinition) objectClassDef);
+            objectClassMap.put(objectClassDef.objectClass(), objectClassDef);
         }
-        return new BaseSchema(freshSchemaBuilder.build(), objectClassMap);
+        for (var info : additionalObjectClasses) {
+            freshSchemaBuilder.defineObjectClass(info);
+            contributeAdditionalObjectClass(info, objectClassMap);
+        }
+        return newSchema(freshSchemaBuilder.build(), objectClassMap);
+    }
+
+    /**
+     * Creates the schema instance from the built ConnId schema and object-class map. Default
+     * produces a protocol-agnostic {@link BaseSchema}; override to return a connector-specific
+     * schema subtype.
+     */
+    @SuppressWarnings("unchecked")
+    protected S newSchema(Schema connIdSchema, Map<ObjectClass, OC> objectClassMap) {
+        return (S) new BaseSchema<>(connIdSchema, objectClassMap);
+    }
+
+    /**
+     * Hook called for each {@link #defineObjectClass(ObjectClassInfo)} entry once it's been added
+     * to the ConnId schema, letting a connector represent it in the object-class map too (e.g.
+     * wrapped in a mapping-less object class definition). Default: no-op.
+     */
+    protected void contributeAdditionalObjectClass(ObjectClassInfo info, Map<ObjectClass, OC> objectClassMap) {
+        // Default: no-op.
     }
 
     /**

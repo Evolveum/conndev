@@ -39,7 +39,7 @@ public class ConnDevObjectClassSerializerTest {
     private static final ContextLookup NOOP_CONTEXT = ContextLookup.none();
 
     private BaseSchema<BaseObjectClassDefinition<BaseAttributeDefinition>> schema() {
-        var builder = new BaseSchemaBuilder<>(StubConnector.class, NOOP_CONTEXT);
+        var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
 
         var user = builder.objectClass("user");
         var id = user.attribute("id");
