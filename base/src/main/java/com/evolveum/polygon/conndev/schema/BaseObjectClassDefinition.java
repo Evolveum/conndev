@@ -114,9 +114,9 @@ public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implem
      * (e.g. JSON property name for REST, column name for SQL).</p>
      *
      * @param protocolName the native/remote attribute name
-     * @return the matching {@link BaseAttributeDefinition}, or {@code null} if not found
+     * @return the matching attribute definition, or {@code null} if not found
      */
-    public BaseAttributeDefinition attributeFromProtocolName(String protocolName) {
+    public A attributeFromProtocolName(String protocolName) {
         return nativeAttributes.get(protocolName);
     }
 
