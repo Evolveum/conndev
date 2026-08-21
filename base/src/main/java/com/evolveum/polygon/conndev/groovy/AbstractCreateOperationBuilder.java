@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.build.api.CreateOperationBuilder;
-import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.CreateOperationHandler;
@@ -16,33 +15,15 @@ import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
 
 import java.util.Collection;
 
-public abstract class AbstractCreateOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>> implements CreateOperationBuilder {
+public abstract class AbstractCreateOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>>
+        extends AbstractOperationBuilder<OC, CreateOperationBuilder> implements CreateOperationBuilder {
 
-    protected final BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent;
-    protected DefinitionValue<Boolean> enabled = DefinitionValue.DEFAULT_TRUE;
-
-    /**
-     * Only for subclasses that override {@link #build()} entirely and never use the
-     * {@code parent}-dependent template (currently connector-sql). Remove once that
-     * connector is migrated to the shared {@link #build()}/{@link #collectHandlers()} template.
-     */
     protected AbstractCreateOperationBuilder() {
-        this.parent = null;
+        super();
     }
 
     protected AbstractCreateOperationBuilder(BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled.value();
-    }
-
-    @Override
-    public CreateOperationBuilder enabled(DefinitionValue<Boolean> value) {
-        enabled = enabled.moreSpecific(value);
-        return this;
+        super(parent);
     }
 
     @Override

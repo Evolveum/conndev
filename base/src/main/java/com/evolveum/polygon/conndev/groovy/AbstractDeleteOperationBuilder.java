@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.build.api.DeleteOperationBuilder;
-import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.DeleteOperationHandler;
@@ -16,33 +15,15 @@ import com.evolveum.polygon.conndev.spi.ObjectDeleteOperation;
 
 import java.util.Collection;
 
-public abstract class AbstractDeleteOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>> implements DeleteOperationBuilder {
+public abstract class AbstractDeleteOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>>
+        extends AbstractOperationBuilder<OC, DeleteOperationBuilder> implements DeleteOperationBuilder {
 
-    protected final BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent;
-    protected DefinitionValue<Boolean> enabled = DefinitionValue.DEFAULT_TRUE;
-
-    /**
-     * Only for subclasses that override {@link #build()} entirely and never use the
-     * {@code parent}-dependent template (currently connector-sql). Remove once that
-     * connector is migrated to the shared {@link #build()}/{@link #collectHandlers()} template.
-     */
     protected AbstractDeleteOperationBuilder() {
-        this.parent = null;
+        super();
     }
 
     protected AbstractDeleteOperationBuilder(BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled.value();
-    }
-
-    @Override
-    public DeleteOperationBuilder enabled(DefinitionValue<Boolean> value) {
-        enabled = enabled.moreSpecific(value);
-        return this;
+        super(parent);
     }
 
     @Override

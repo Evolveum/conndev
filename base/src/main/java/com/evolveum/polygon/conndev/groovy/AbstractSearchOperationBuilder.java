@@ -9,7 +9,6 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.build.api.NormalizationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchOperationBuilder;
 import com.evolveum.polygon.conndev.build.api.SearchScriptBuilder;
-import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.*;
@@ -17,27 +16,15 @@ import com.evolveum.polygon.conndev.spi.*;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class AbstractSearchOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>> implements SearchOperationBuilder {
+public abstract class AbstractSearchOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>>
+        extends AbstractOperationBuilder<OC, SearchOperationBuilder> implements SearchOperationBuilder {
 
-    protected final BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent;
     protected Set<FilterAwareSearchProcessorBuilder> builders = new HashSet<>();
     protected Set<ScriptedAttributeResolverBuilder> resolvers = new HashSet<>();
-    protected DefinitionValue<Boolean> enabled = DefinitionValue.DEFAULT_TRUE;
     private NormalizationBuilderImpl normalizationBuilder;
 
     protected AbstractSearchOperationBuilder(BaseObjectOperationSupportBuilder<?,?,?,?,OC> parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled.value();
-    }
-
-    @Override
-    public SearchOperationBuilder enabled(DefinitionValue<Boolean> value) {
-        enabled = enabled.moreSpecific(value);
-        return this;
+        super(parent);
     }
 
     @Override
