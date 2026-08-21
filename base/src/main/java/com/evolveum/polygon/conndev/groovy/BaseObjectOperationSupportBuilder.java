@@ -15,20 +15,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class BaseObjectOperationSupportBuilder<
-        S extends AbstractSearchOperationBuilder,
-        C extends AbstractCreateOperationBuilder,
-        U extends AbstractUpdateOperationBuilder,
-        D extends AbstractDeleteOperationBuilder>
+        S extends AbstractSearchOperationBuilder<OC>,
+        C extends AbstractCreateOperationBuilder<OC>,
+        U extends AbstractUpdateOperationBuilder<OC>,
+        D extends AbstractDeleteOperationBuilder<OC>,
+        OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>>
     implements ObjectOperationSupportBuilder {
 
-    private final BaseObjectClassDefinition<? extends BaseAttributeDefinition> objectClass;
+    private final OC objectClass;
     public final ConnectorContext context;
 
     ObjectClassHandler product;
     Map<Class<? extends ObjectClassOperation>, ObjectClassOperation> buildedOperations = new HashMap<>();
 
 
-    public BaseObjectOperationSupportBuilder(ConnectorContext context, BaseObjectClassDefinition<? extends BaseAttributeDefinition> restObjectClass) {
+    public BaseObjectOperationSupportBuilder(ConnectorContext context, OC restObjectClass) {
         this.objectClass = restObjectClass;
         this.context = context;
     }
@@ -57,7 +58,7 @@ public abstract class BaseObjectOperationSupportBuilder<
     @Override
     public abstract D delete();
 
-    public BaseObjectOperationSupportBuilder<S, C, U, D> search(ObjectSearchOperation processor) {
+    public BaseObjectOperationSupportBuilder<S, C, U, D, OC> search(ObjectSearchOperation processor) {
         registerOperation(ObjectSearchOperation.class, processor);
         return this;
     }
@@ -85,7 +86,7 @@ public abstract class BaseObjectOperationSupportBuilder<
         buildedOperations.put(type, builder.build());
     }
 
-    public BaseObjectClassDefinition<? extends BaseAttributeDefinition> getObjectClass() {
+    public OC getObjectClass() {
         return objectClass;
     }
 }
