@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.api;
 
+import com.evolveum.polygon.conndev.concepts.Path;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.*;
 
@@ -19,8 +20,7 @@ import java.util.Map;
  *
  * @param components
  */
-public record AttributePath(List<Component> components) implements Resolver<ObjectNode, JsonNode> {
-
+public record AttributePath(List<Component> components) implements Path<AttributePath.Component>  {
 
     public static AttributePath of(Component... components) {
         return new AttributePath(List.of(components));
@@ -30,17 +30,6 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
         return new AttributePath(List.of(Arrays.stream(components).map(Attribute::new).toArray(Component[]::new)));
     }
 
-    @Override
-    public JsonNode resolve(ObjectNode node) {
-        JsonNode current = node;
-        for (Component component : components) {
-            current = component.resolve(current);
-            if (current == null) {
-                return null;
-            }
-        }
-        return current;
-    }
 
     public AttributePath child(String name) {
         return child( new Attribute(name));
@@ -74,14 +63,6 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
     public record Attribute(String name) implements Component {
 
         @Override
-        public JsonNode resolve(JsonNode contextNode) {
-            if (contextNode instanceof ObjectNode object) {
-                return object.get(name);
-            }
-            return null;
-        }
-
-        @Override
         public void toString(StringBuilder builder, Component previous) {
             if (previous instanceof Attribute) {
                 builder.append('.');
@@ -91,14 +72,6 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
     }
 
     public record Extension(String name) implements Component {
-
-        @Override
-        public JsonNode resolve(JsonNode contextNode) {
-            if (contextNode instanceof ObjectNode object) {
-                return object.get(name);
-            }
-            return null;
-        }
 
         @Override
         public void toString(StringBuilder builder, Component previous) {
@@ -112,57 +85,12 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
     public record IndexFilter(int index) implements FilterComponent {
 
         @Override
-        public JsonNode resolve(JsonNode contextNode) {
-            if (contextNode instanceof ArrayNode array) {
-                if (array.size() > index) {
-                    return array.get(index);
-                }
-                return null;
-            }
-            return null;
-        }
-
-        @Override
         public void toString(StringBuilder builder, Component previous) {
             builder.append('[').append(index).append(']');
         }
     }
 
     public record SimpleValueFilter(Map<String, Object> keyValues) implements FilterComponent {
-
-        @Override
-        public JsonNode resolve(JsonNode contextNode) {
-            if (contextNode instanceof ObjectNode node && matches(node)) {
-                return node;
-            }
-            if (contextNode instanceof ArrayNode array) {
-                for (JsonNode node : array) {
-                    if (matches(node)) {
-                        return node;
-                    }
-                }
-            }
-            return null;
-        }
-
-        private boolean matches(JsonNode node) {
-            if (node instanceof ObjectNode objectNode) {
-                for (var keyValue : keyValues.entrySet()) {
-                    var maybeVal = objectNode.get(keyValue.getKey());
-                    if (maybeVal instanceof StringNode) {
-                        return keyValue.getValue().equals(maybeVal.asText());
-                    }
-                    if (maybeVal instanceof NumericNode) {
-                        return keyValue.getValue().equals(maybeVal.numberValue());
-                    }
-                    if (maybeVal instanceof BooleanNode) {
-                        return keyValue.getValue().equals(maybeVal.asBoolean());
-                    }
-                    return false;
-                }
-            }
-            return false;
-        }
 
         @Override
         public void toString(StringBuilder builder, Component previous) {
@@ -185,11 +113,11 @@ public record AttributePath(List<Component> components) implements Resolver<Obje
         }
     }
 
-    public interface Component extends Resolver<JsonNode, JsonNode> {
+    public sealed interface Component {
         void toString(StringBuilder builder, Component previous);
     }
 
-    public interface FilterComponent extends Component {
+    public sealed interface  FilterComponent extends Component {
     }
 
     @Override
