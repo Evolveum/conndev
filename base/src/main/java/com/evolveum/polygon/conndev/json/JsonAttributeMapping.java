@@ -107,14 +107,39 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
     }
 
     public void toJsonNode(Attribute attribute, ObjectNode parent) {
-        var values = attribute.getValue().stream().map(valueMapping::toWireValue).toList();
-        // FIXME: Add support for deep paths
+        var values = attribute.getValue().stream()
+                .map(valueMapping::toWireValue)
+                .toList();
+
         if (values.isEmpty()) {
             return;
         }
-        var name = path.onlyAttribute();
-        parent.set(name.name(),values.size() == 1 ? values.getFirst() : parent.arrayNode().addAll(values));
 
+        var structuralPath = path.withoutFilters();
+        var components = structuralPath.components();
+
+        if (components.isEmpty()) {
+            return;
+        }
+
+        ObjectNode current = parent;
+        for (int i = 0; i < components.size() - 1; i++) {
+            if (!(components.get(i) instanceof AttributePath.Attribute attr)) {
+                return;
+            }
+            if (!current.has(attr.name()) || !current.get(attr.name()).isObject()) {
+                current.putObject(attr.name());
+            }
+            current = current.withObject(attr.name());
+        }
+
+        var last = components.get(components.size() - 1);
+        if (last instanceof AttributePath.Attribute attr) {
+            JsonNode value = values.size() == 1
+                    ? values.getFirst()
+                    : parent.arrayNode().addAll(values);
+            current.set(attr.name(), value);
+        }
     }
 
     private static boolean matches(AttributePath.SimpleValueFilter filter, JsonNode node) {
