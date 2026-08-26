@@ -15,6 +15,7 @@ import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import com.evolveum.polygon.conndev.json.JsonValueMappingBuilder;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
@@ -403,6 +404,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         private String openApiFormat;
         /** The JSON value mapping implementation. */
         private ValueMapping<Object, JsonNode> implementation;
+        /** Closure-based implementation configuration. */
+        private Closure<?> implementationClosure;
 
 
         /**
@@ -452,10 +455,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                 @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
                 @Script.Initialization
                 Closure<?> closure) {
-            Class<?> typeClass = connIdType != null ? connIdType : Object.class;
-            var builder = new BaseValueMappingBuilder<>(typeClass, JsonNode.class);
-            GroovyClosures.callAndReturnDelegate(closure, builder);
-            this.implementation = (ValueMapping) builder.build();
+            this.implementationClosure = closure;
+
             return this;
         }
 
@@ -490,8 +491,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
          */
         @Override
         public AttributeProtocolMapping<?,?> build() {
+            ValueMapping<Object, JsonNode> implementation;
 
-            if (this.implementation == null) {
+            if (this.implementation != null) {
+                implementation = this.implementation;
+
+            } else if (implementationClosure != null) {
+                var builder = new JsonValueMappingBuilder(OpenApiValueMapping.from(type, openApiFormat));
+                GroovyClosures.callAndReturnDelegate(implementationClosure, builder);
+                implementation = builder.build();
+
+            } else {
                 implementation = OpenApiValueMapping.from(type, openApiFormat);
             }
             if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
