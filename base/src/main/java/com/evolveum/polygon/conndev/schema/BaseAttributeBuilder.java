@@ -10,13 +10,14 @@ import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.AttributeResolverBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.concepts.Deferred;
-import com.evolveum.polygon.conndev.concepts.DefinitionValue;
-import com.evolveum.polygon.conndev.concepts.GroovyClosures;
-import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.concepts.*;
 import com.evolveum.polygon.conndev.groovy.ScriptedSingleAttributeResolverBuilder;
+import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
+import com.evolveum.polygon.conndev.rules.ComplexTypeImpliesEmbeddedReferenceRule;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
+
+import java.util.List;
 
 /**
  * Attribute builder that handles reference attributes in the connector framework.
@@ -32,6 +33,18 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
         A extends AttributeBuilder<? super R, P>,
         R extends ReferenceAttributeBuilder<R, A, P>,
         P extends BaseAttributeDefinition> extends AbstractAttributeBuilder<B ,R, P> implements ReferenceAttributeBuilder<R, A,  P> {
+
+    /**
+     * Structural, protocol-neutral rules applied to every attribute right before it freezes —
+     * see {@link #build()}. Order matters: {@link ComplexTypeImpliesEmbeddedReferenceRule} must
+     * run before {@link AttributeTypeResolutionRule}, since the latter's
+     * {@code COMPLEX_TYPE_IS_EMBEDDED_OBJECT} candidate only reads {@code complexType} directly
+     * (set independently, immediately, by the {@code complexType()} setter) — but this order
+     * still documents the actual dependency between the two rules' effects.
+     */
+    private static final List<StructuralMappingRule> STRUCTURAL_RULES = List.of(
+            new ComplexTypeImpliesEmbeddedReferenceRule(),
+            new AttributeTypeResolutionRule());
 
     /**
      * Deferred setter for the attribute definition, used to delay finalization until all
@@ -127,12 +140,38 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
     }
 
     /**
-     * Builds and returns a {@code BaseAttributeDefinition} instance with the specified attributes.
+     * Builds and returns a {@code P} attribute definition instance with the specified attributes.
      *
-     * @return a new {@code BaseAttributeDefinition} instance configured with the current settings
+     * <p>Applies {@link #STRUCTURAL_RULES} first — including final ConnId type resolution — so
+     * this works whether called as part of the owning object class's {@code build()} (where
+     * {@code applyRules()} has already run) or standalone (e.g. tests building a single attribute
+     * in isolation). Actual construction is delegated to {@link #newDefinition()} — subclasses
+     * that need a connector-specific definition type (e.g. {@code SqlAttributeDefinition}) must
+     * override that, not this method, so rule dispatch is never accidentally skipped.
+     *
+     * @return a new attribute definition instance configured with the current settings
      */
-    public P build() {
+    public final P build() {
         // TODO: Consider refactoring to ConnID schema contributor
+        for (StructuralMappingRule rule : STRUCTURAL_RULES) {
+            if (rule.checkIfApplicable(null, objectClass, this)) {
+                var action = rule.createAction(null);
+                if (action != null) {
+                    action.applyToAttribute(this);
+                }
+            }
+        }
+        return newDefinition();
+    }
+
+    /**
+     * Constructs the attribute definition instance. Called by {@link #build()}, after structural
+     * rule dispatch has already run. Override to construct a connector-specific subtype.
+     *
+     * @return a new attribute definition instance
+     */
+    @SuppressWarnings("unchecked")
+    protected P newDefinition() {
         return (P) new BaseAttributeDefinition(this);
     }
 

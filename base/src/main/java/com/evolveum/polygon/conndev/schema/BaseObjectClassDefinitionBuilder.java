@@ -116,6 +116,18 @@ public class BaseObjectClassDefinitionBuilder<
     private DefinitionValue<Boolean> embedded = DefinitionValue.DEFAULT_FALSE;
 
     /**
+     * Hook for connector-specific rule dispatch (see {@code SqlResourceMappingRule}/
+     * {@code ScimResourceMappingRule}, both bindings of the shared {@code MappingRule}, in
+     * connector translators). Called by {@link #build()} before anything is frozen. No-op by
+     * default; connector subclasses that keep a live reference to their translator and protocol
+     * metadata (set during discovery) override this to evaluate and apply their rules directly,
+     * in one step, right here.
+     */
+    protected void applyRules() {
+        // Default: no rules to apply.
+    }
+
+    /**
      * Constructs a new object class definition builder.
      *
      * @param restSchemaBuilder the parent schema builder that owns this object class
@@ -304,8 +316,15 @@ public class BaseObjectClassDefinitionBuilder<
      * @return the fully built object class definition
      */
     public O build() {
+        // Rule dispatch: connector-specific override may still mutate this builder's own state
+        // (e.g. Uid detection, ChildEmbeddedAction setting `embedded`) or any attribute builder
+        // — must run before anything below reads that state or freezes an attribute.
+        applyRules();
+
         connIdBuilder.setType(name.value());
         connIdBuilder.setEmbedded(embedded.value());
+
+        // Freeze phase: only now is anything actually built.
         var connIdAttrs = new HashMap<String, AP>();
         var nativeAttrs = new HashMap<String, AP>();
         for (var attrBuilder : nativeAttributes.values()) {

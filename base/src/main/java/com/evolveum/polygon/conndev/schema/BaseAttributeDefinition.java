@@ -9,12 +9,12 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.dev.ConnDevAttributeSource;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
-import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,43 +51,22 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
     private AttributeResolver resolver;
 
     /**
-     * Constructs a {@code BaseAttributeDefinition} from the supplied builder, performing type
-     * resolution across protocol mappings and building the final {@link AttributeInfo}.
+     * Constructs a {@code BaseAttributeDefinition} from the supplied builder and builds the
+     * final {@link AttributeInfo}.
+     *
+     * <p>Structural rule dispatch — including final ConnId type resolution
+     * ({@link AttributeTypeResolutionRule}) — has already run by this point, from
+     * {@link BaseAttributeBuilder#build()} just before it constructs this. This constructor
+     * resolves {@link AbstractAttributeBuilder#resolveProtocolMappings()} and freezes the ConnId
+     * {@link AttributeInfo}.
      *
      * @param builder the {@code BaseAttributeBuilder} providing all metadata for this attribute
-     * @throws IllegalStateException if multiple protocol mappings declare conflicting ConnId types
-     * @throws IllegalArgumentException if no ConnId type can be resolved for a non-reference attribute
      */
     public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> builder) {
         remoteName = builder.remoteName;
         emulated = builder.emulated;
 
-        Class<?> suggestedConnIdType = null;
-        for (var proto : builder.protocolMappings.entrySet()) {
-            var protocolMapping = proto.getValue().build();
-            if (protocolMapping == null) {
-                continue;
-            }
-            protocolMappings.put(proto.getKey(), protocolMapping);
-            if (protocolMapping.connIdType() != null) {
-                if (suggestedConnIdType != null && !protocolMapping.connIdType().equals(suggestedConnIdType)) {
-                    throw new IllegalStateException("Multiple ConnID types declared for attribute. " + protocolMapping.connIdType() + ", " + suggestedConnIdType);
-                }
-                suggestedConnIdType = protocolMapping.connIdType();
-            }
-        }
-        if (suggestedConnIdType == null) {
-            suggestedConnIdType = builder.connIdBuilder.type().value();
-        }
-
-        if (!builder.isReference()) {
-            if (suggestedConnIdType == null) {
-                throw new IllegalArgumentException("Missing ConnId type definition for attribute " + remoteName);
-            }
-            builder.connIdBuilder.type(DefinitionValue.detected(suggestedConnIdType));
-        } else {
-            builder.connIdBuilder.type(DefinitionValue.detected(ConnectorObjectReference.class));
-        }
+        protocolMappings.putAll(builder.resolveProtocolMappings());
 
         info = builder.connIdBuilder.build();
         builder.deffered.set(this);
