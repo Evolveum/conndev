@@ -17,6 +17,7 @@ import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
 import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
+import com.evolveum.polygon.conndev.rules.ComplexTypeImpliesEmbeddedReferenceRule;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
@@ -38,9 +39,6 @@ import java.util.Map;
  * managing the ConnId-side metadata via an inner {@link ConnIdBuilder}, providing
  * JSON protocol mapping via an inner {@link JsonBuilder}, and tracking embedded object
  * complex types.</p>
- *
- * <p>Subclasses can override {@link #newProtocolMapping(Class)} to inject custom protocol
- * mapping implementations.</p>
  *
  * @param <B> The concrete builder type (CRTP self-type)
  * @param <A> The public attribute builder interface
@@ -94,7 +92,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     /**
      * The complex type (referenced object class name) for embedded objects.
      */
-    public DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
+    DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
 
     /**
      * Creates a new attribute builder for the given name within the specified object class.
@@ -135,6 +133,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     public A complexType(DefinitionValue<String> objectClass) {
         this.complexType = complexType.moreSpecific(objectClass);
         return self();
+    }
+
+    /**
+     * Returns the complex type (referenced object class name) for embedded objects, as set via
+     * {@link #complexType(DefinitionValue)}. Used by {@link AttributeTypeResolutionRule} and
+     * {@link ComplexTypeImpliesEmbeddedReferenceRule} to read this attribute's already-set state.
+     *
+     * @return the complex type, or an absent {@link DefinitionValue} if none was set
+     */
+    public DefinitionValue<String> complexType() {
+        return complexType;
     }
 
     /**

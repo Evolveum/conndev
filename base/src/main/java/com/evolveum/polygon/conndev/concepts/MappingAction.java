@@ -6,6 +6,10 @@
  */
 package com.evolveum.polygon.conndev.concepts;
 
+import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
+import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
+import com.evolveum.polygon.conndev.build.api.ObjectOperationSupportBuilder;
+
 /**
  * A detected effect produced by a {@link MappingRule}, deferred until the relevant builder is
  * actually reachable — schema effects are applied during schema {@code build()}, handler effects
@@ -17,7 +21,7 @@ package com.evolveum.polygon.conndev.concepts;
  * @param <A>  the attribute builder type
  * @param <H>  the handler builder type
  */
-public interface MappingAction<OC, A, H> {
+public interface MappingAction<OC extends ObjectClassSchemaBuilder<?, ?, ?>, A extends AttributeBuilder<?, ?>, H extends ObjectOperationSupportBuilder> {
 
     /**
      * Apply this action's effect to the object class builder.
@@ -41,5 +45,19 @@ public interface MappingAction<OC, A, H> {
      * @param handlerBuilder the operation support builder for this object class
      */
     default void applyToHandler(H handlerBuilder) {
+    }
+
+    /**
+     * An effect on the attribute builder alone, independent of {@link MappingAction} — a rule
+     * whose action never touches an object class or a handler doesn't need those two no-op
+     * methods at all, so this is its own single-method interface rather than a narrowing of
+     * {@link MappingAction}. Written as a lambda instead of an anonymous class.
+     *
+     * @param <A> the attribute builder type
+     */
+    @FunctionalInterface
+    interface AttributeOnly<A extends AttributeBuilder<?, ?>> {
+
+        void applyToAttribute(A attribute);
     }
 }

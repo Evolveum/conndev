@@ -12,6 +12,7 @@ import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
@@ -114,18 +115,6 @@ public class BaseObjectClassDefinitionBuilder<
      * @see ObjectClassSchemaBuilder#embedded(boolean)
      */
     private DefinitionValue<Boolean> embedded = DefinitionValue.DEFAULT_FALSE;
-
-    /**
-     * Hook for connector-specific rule dispatch (see {@code SqlResourceMappingRule}/
-     * {@code ScimResourceMappingRule}, both bindings of the shared {@code MappingRule}, in
-     * connector translators). Called by {@link #build()} before anything is frozen. No-op by
-     * default; connector subclasses that keep a live reference to their translator and protocol
-     * metadata (set during discovery) override this to evaluate and apply their rules directly,
-     * in one step, right here.
-     */
-    protected void applyRules() {
-        // Default: no rules to apply.
-    }
 
     /**
      * Constructs a new object class definition builder.
@@ -304,7 +293,9 @@ public class BaseObjectClassDefinitionBuilder<
 
 
     /**
-     * Builds and returns the complete {@link BaseObjectClassDefinition}.
+     * Builds and returns the complete {@link BaseObjectClassDefinition}. Rules affecting this
+     * object class's attributes (see {@code BaseSchemaBuilder#applyStructuralRules}) must
+     * already have been applied.
      *
      * <p>This method:
      * <ol>
@@ -316,11 +307,6 @@ public class BaseObjectClassDefinitionBuilder<
      * @return the fully built object class definition
      */
     public O build() {
-        // Rule dispatch: connector-specific override may still mutate this builder's own state
-        // (e.g. Uid detection, ChildEmbeddedAction setting `embedded`) or any attribute builder
-        // — must run before anything below reads that state or freezes an attribute.
-        applyRules();
-
         connIdBuilder.setType(name.value());
         connIdBuilder.setEmbedded(embedded.value());
 

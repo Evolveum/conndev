@@ -9,10 +9,7 @@ package com.evolveum.polygon.conndev.rules;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.MappingAction;
 import com.evolveum.polygon.conndev.concepts.MappingRule;
-import com.evolveum.polygon.conndev.concepts.StructuralMappingRule;
-import com.evolveum.polygon.conndev.groovy.BaseObjectOperationSupportBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeBuilder;
-import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import org.identityconnectors.framework.common.objects.Name;
@@ -22,22 +19,19 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Decides and sets an attribute's final ConnId type — the one {@link StructuralMappingRule} whose
- * {@link #checkIfApplicable} is always {@code true} (every attribute needs a type) and whose
+ * Decides and sets an attribute's final ConnId type — the one {@link MappingRule.AttributeOnly}
+ * rule whose {@link #checkIfApplicable} is always {@code true} (every attribute needs a type) and whose
  * action internally evaluates an ordered priority chain of candidate sources, the first one that
  * has an answer wins. That "first match wins" logic is private to this one rule — it is not a
  * second dispatch strategy the rest of conndev needs to know about; see {@link MappingRule}'s
  * class javadoc.
  * <p>
  * This is the single place that decides the type; nothing else should mutate
- * {@code connIdBuilder}'s type outside of this rule's result. Run from
- * {@link BaseAttributeBuilder#build()}, after whatever rule dispatch was going to happen already
- * has — every candidate below depends on final builder state (e.g. the Uid/Name check needs the
- * ConnId name as renamed by Uid/Name-detection rules, which for object-class-driven builds have
- * already run via {@link BaseObjectClassDefinitionBuilder#applyRules()} by the time any attribute
- * reaches its own {@code build()}).
+ * {@code connIdBuilder}'s type outside of this rule's result. Run via
+ * {@code BaseSchemaBuilder#applyStructuralRules}, after resource-level rules (e.g. Uid/Name
+ * detection) have already run.
  */
-public final class AttributeTypeResolutionRule implements StructuralMappingRule {
+public final class AttributeTypeResolutionRule implements MappingRule.AttributeOnly {
 
     /** One candidate source in the priority chain — see {@link #STEPS}. */
     private interface Candidate {
@@ -58,7 +52,7 @@ public final class AttributeTypeResolutionRule implements StructuralMappingRule 
 
     /** An attribute with a {@code complexType} is always {@link EmbeddedObject}-typed. */
     private static final Candidate COMPLEX_TYPE_IS_EMBEDDED_OBJECT = (builder, suggested) ->
-            builder.complexType.isPresent() ? Optional.of(EmbeddedObject.class) : Optional.empty();
+            builder.complexType().isPresent() ? Optional.of(EmbeddedObject.class) : Optional.empty();
 
     /** Whatever a protocol mapping (JSON/SQL/...) suggested, if anything. */
     private static final Candidate PROTOCOL_MAPPING = (builder, suggested) ->
@@ -78,22 +72,19 @@ public final class AttributeTypeResolutionRule implements StructuralMappingRule 
             DECLARED_ON_BUILDER);
 
     @Override
-    public boolean checkIfApplicable(Void context, BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?> objectClass, BaseAttributeBuilder<?, ?, ?, ?> attribute) {
+    public boolean checkIfApplicable(BaseAttributeBuilder<?, ?, ?, ?> attribute) {
         return true;
     }
 
     @Override
-    public MappingAction<BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?>, BaseAttributeBuilder<?, ?, ?, ?>, BaseObjectOperationSupportBuilder<?, ?, ?, ?, ?>> createAction(Void context) {
-        return new MappingAction<>() {
-            @Override
-            public void applyToAttribute(BaseAttributeBuilder<?, ?, ?, ?> target) {
-                var suggested = target.suggestedConnIdType();
-                for (var step : STEPS) {
-                    var result = step.resolve(target, suggested);
-                    if (result.isPresent()) {
-                        target.connId().type(DefinitionValue.detected(result.get()));
-                        return;
-                    }
+    public MappingAction.AttributeOnly<BaseAttributeBuilder<?, ?, ?, ?>> createAction() {
+        return target -> {
+            var suggested = target.suggestedConnIdType();
+            for (var step : STEPS) {
+                var result = step.resolve(target, suggested);
+                if (result.isPresent()) {
+                    target.connId().type(DefinitionValue.detected(result.get()));
+                    return;
                 }
             }
         };

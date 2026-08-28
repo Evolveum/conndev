@@ -8,10 +8,8 @@ package com.evolveum.polygon.conndev.rules;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.MappingAction;
-import com.evolveum.polygon.conndev.concepts.StructuralMappingRule;
-import com.evolveum.polygon.conndev.groovy.BaseObjectOperationSupportBuilder;
+import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.schema.BaseAttributeBuilder;
-import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
@@ -23,22 +21,19 @@ import org.identityconnectors.framework.common.objects.EmbeddedObject;
  * {@link AttributeTypeResolutionRule}, not here — this rule only owns the reference-relationship
  * and protocol-mapping side effects, which have no ordering conflict with type resolution.
  */
-public final class ComplexTypeImpliesEmbeddedReferenceRule implements StructuralMappingRule {
+public final class ComplexTypeImpliesEmbeddedReferenceRule implements MappingRule.AttributeOnly {
 
     @Override
-    public boolean checkIfApplicable(Void context, BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?> objectClass, BaseAttributeBuilder<?, ?, ?, ?> attribute) {
-        return attribute.complexType.isPresent();
+    public boolean checkIfApplicable(BaseAttributeBuilder<?, ?, ?, ?> attribute) {
+        return attribute.complexType().isPresent();
     }
 
     @Override
-    public MappingAction<BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?>, BaseAttributeBuilder<?, ?, ?, ?>, BaseObjectOperationSupportBuilder<?, ?, ?, ?, ?>> createAction(Void context) {
-        return new MappingAction<>() {
-            @Override
-            public void applyToAttribute(BaseAttributeBuilder<?, ?, ?, ?> target) {
-                target.connId().roleInReference(DefinitionValue.detected(AttributeInfo.RoleInReference.SUBJECT.toString()));
-                target.connId().referencedObjectClassName(target.complexType);
-                target.json().implementation(new EmbeddedObjectJsonMapping(target.contextLookup(), target.complexType.value()));
-            }
+    public MappingAction.AttributeOnly<BaseAttributeBuilder<?, ?, ?, ?>> createAction() {
+        return target -> {
+            target.connId().roleInReference(DefinitionValue.detected(AttributeInfo.RoleInReference.SUBJECT.toString()));
+            target.connId().referencedObjectClassName(target.complexType());
+            target.json().implementation(new EmbeddedObjectJsonMapping(target.contextLookup(), target.complexType().value()));
         };
     }
 }
