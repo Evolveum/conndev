@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.AttributePathFormat;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
@@ -432,6 +433,23 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public JsonMapping path(AttributePath path) {
             this.path = path;
+            return this;
+        }
+
+        @Override
+        public JsonMapping path(String value, AttributePathFormat format) {
+            this.path = format.parse(value);
+            return this;
+        }
+
+        @Override
+        public JsonMapping path(
+                @DelegatesTo(value = AttributeBuilder.PathBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                @Script.Initialization
+                Closure<?> closure) {
+            var builder = new BasePathBuilder();
+            GroovyClosures.callAndReturnDelegate(closure, builder);
+            this.path = builder.build();
             return this;
         }
 
