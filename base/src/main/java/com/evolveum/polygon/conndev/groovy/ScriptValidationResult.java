@@ -41,7 +41,7 @@ public record ScriptValidationResult(Status status, List<ScriptError> errors, bo
             return Map.of("status", "ok");
         }
         if (!combined) {
-            return errors.get(0).toMap();
+            return errors.getFirst().toMap();
         }
         var map = new LinkedHashMap<String, Object>();
         map.put("status", "error");

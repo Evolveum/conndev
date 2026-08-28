@@ -7,11 +7,7 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.groovy.BaseGroovyConnectorConfiguration;
-import com.evolveum.polygon.conndev.groovy.GroovyScriptValidator;
-import com.evolveum.polygon.conndev.groovy.ScriptError;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
+import com.evolveum.polygon.conndev.groovy.*;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;

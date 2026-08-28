@@ -6,7 +6,10 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
-import com.evolveum.polygon.conndev.build.api.*;
+import com.evolveum.polygon.conndev.build.api.ListOperationBuilder;
+import com.evolveum.polygon.conndev.build.api.ObjectClassOperationBuilder;
+import com.evolveum.polygon.conndev.build.api.ObjectOperationSupportBuilder;
+import com.evolveum.polygon.conndev.build.api.ReadOperationBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.*;

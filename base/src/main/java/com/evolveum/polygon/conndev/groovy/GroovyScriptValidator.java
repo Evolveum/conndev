@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.groovy;
 
+import groovy.lang.Script;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -32,7 +33,7 @@ public final class GroovyScriptValidator {
      * no build phase (e.g. schema definitions assembled from multiple sibling scripts, where
      * building just the validated one would fail on definitions declared by its siblings).
      */
-    public static ScriptValidationResult validate(Function<String, groovy.lang.Script> parse, String scriptText, String operation) {
+    public static ScriptValidationResult validate(Function<String, Script> parse, String scriptText, String operation) {
         return validate(parse, () -> { }, scriptText, operation);
     }
 
@@ -43,8 +44,8 @@ public final class GroovyScriptValidator {
      * must not run.
      */
     public static ScriptValidationResult validate(
-            Function<String, groovy.lang.Script> parse, Runnable build, String scriptText, String operation) {
-        groovy.lang.Script script;
+            Function<String, Script> parse, Runnable build, String scriptText, String operation) {
+        Script script;
         try {
             script = parse.apply(scriptText);
         } catch (CompilationFailedException e) {

@@ -10,7 +10,6 @@ import com.evolveum.polygon.conndev.build.api.ObjectOperationSupportBuilder;
 import com.evolveum.polygon.conndev.build.api.OperationSupportBuilder;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.CompositeObjectClassHandler;
-import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 
 import java.util.HashMap;

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import java.io.InputStreamReader;
@@ -30,7 +31,7 @@ public class GroovySchemaLoader {
         shell.evaluate(groovyScript);
     }
 
-    public groovy.lang.Script parse(String groovyScript) {
+    public Script parse(String groovyScript) {
         return shell.parse(groovyScript);
     }
 
