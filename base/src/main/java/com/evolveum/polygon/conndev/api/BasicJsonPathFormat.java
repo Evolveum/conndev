@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  * operators other than {@code ==} combined with {@code and}) are rejected
  * with a {@link ParsingException}.</p>
  */
-public final class BasicJsonPathFormat implements AttributePathFormat {
+public final class BasicJsonPathFormat implements AttributePathFormat<String> {
 
     private static final Pattern UNQUOTED_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_-]*");
 

@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * contains an {@link AttributePath.SimpleValueFilter} fails with
  * {@link AttributePathFormatException}.</p>
  */
-public final class JsonPointerFormat implements AttributePathFormat {
+public final class JsonPointerFormat implements AttributePathFormat<String> {
 
     /**
      * An array index reference token: {@code 0} or a non-zero digit without leading zeros

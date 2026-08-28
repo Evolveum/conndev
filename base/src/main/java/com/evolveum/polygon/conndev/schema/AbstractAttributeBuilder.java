@@ -7,9 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.annotations.Script;
-import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.api.AttributePathFormat;
-import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
@@ -396,8 +394,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         /** The protocol-side name of this JSON mapping. */
         private String name;
-        /** The JSON path for navigating to the attribute value. */
-        private AttributePath path;
+        /** The declared JSON path for navigating to the attribute value. */
+        private AttributePathDeclaration<?, ?> path;
         /** The JSON type string (e.g., "string", "integer", "boolean"). */
         private String type;
         /** The OpenAPI format for typed JSON values (e.g., "date-time", "email"). */
@@ -432,13 +430,18 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         @Override
         public JsonMapping path(AttributePath path) {
-            this.path = path;
+            // a null path is treated as unspecified; the default name-based path applies
+            if (path != null) {
+                this.path = AttributePathDeclaration.of(
+                        DefinitionValue.defaultFrom(JavaPathFormat.INSTANCE),
+                        DefinitionValue.from(path, SourceLocation.capture()));
+            }
             return this;
         }
 
         @Override
-        public JsonMapping path(String value, AttributePathFormat format) {
-            this.path = format.parse(value);
+        public JsonMapping path(String value, AttributePathFormat<String> format) {
+            this.path = AttributePathDeclaration.of(format, value);
             return this;
         }
 
@@ -517,8 +520,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                 implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
             }
             if (path == null) {
-                path = AttributePath.of(name);
+                path = AttributePathDeclaration.of(
+                        DefinitionValue.defaultFrom(JavaPathFormat.INSTANCE),
+                        DefinitionValue.defaultFrom(AttributePath.of(name)));
             }
+            // force parsing so that an invalid expression fails at schema build time
+            path.actual();
             return new JsonAttributeMapping(path, implementation);
         }
     }

@@ -6,34 +6,34 @@
  */
 package com.evolveum.polygon.conndev.api;
 
-import java.util.function.Function;
-
 /**
  * A format for serializing and deserializing {@link AttributePath} instances to and from
- * their string representations.
+ * a source representation of a given type.
  *
  * <p>Built-in implementations are {@link BasicJsonPathFormat}, {@link JsonPointerFormat},
- * and {@link ScimPath}.</p>
+ * and {@link ScimPath} (String-based), and {@link JavaPathFormat} (a no-op format whose
+ * source is the {@link AttributePath} itself).</p>
+ *
+ * @param <S> the type of the source representation
  */
-public interface AttributePathFormat {
-
+public interface AttributePathFormat<S> {
 
     /**
-     * Parses a path string in this format.
+     * Parses a source representation in this format.
      *
-     * @param input the path string
+     * @param source the source representation
      * @return the parsed path
-     * @throws ParsingException if the input is not valid in this format
+     * @throws ParsingException if the source is not valid in this format
      */
-    AttributePath parse(String input);
+    AttributePath parse(S source);
 
     /**
-     * Serializes a path to a string in this format.
+     * Serializes a path to a source representation in this format.
      *
      * @param path the path to serialize
-     * @return the path string
+     * @return the source representation
      * @throws AttributePathFormatException if the path contains a component that can not be
      *         represented in this format
      */
-    String serialize(AttributePath path);
+    S serialize(AttributePath path);
 }

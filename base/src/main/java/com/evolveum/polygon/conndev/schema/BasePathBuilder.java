@@ -6,51 +6,58 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
 import com.evolveum.polygon.conndev.api.AttributePathFormat;
+import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 
 import java.util.Objects;
 
 /**
- * Builder for creating {@link AttributePath} instances from string expressions in a
+ * Builder for creating {@link AttributePathDeclaration} instances from string expressions in a
  * {@link AttributePathFormat} within the Groovy-based schema definition DSL.
  *
- * <p>The path format defaults to {@link AttributeBuilder.PathBuilder#JSON_PATH}; the path
- * value is required and is parsed at {@link #build()} time.</p>
+ * <p>The path format defaults to {@link BasicJsonPathFormat} (basic JSONPath). The expression
+ * is not parsed by {@link #build()}; parsing happens lazily when the declaration's
+ * {@link AttributePathDeclaration#actual()} is first accessed.</p>
  */
 public class BasePathBuilder implements AttributeBuilder.PathBuilder {
 
-    /** The format of the path expression. */
-    private AttributePathFormat type = JSON_PATH;
+    /** The path format with its source location; empty until {@link #type(AttributePathFormat<?>)} is called. */
+    private DefinitionValue<AttributePathFormat<String>> type = DefinitionValue.emptyDefault();
 
-    /** The path expression. */
-    private String value;
+    /** The path expression with its source location. */
+    private DefinitionValue<String> value = DefinitionValue.emptyDefault();
 
     @Override
-    public AttributeBuilder.PathBuilder type(AttributePathFormat type) {
-        this.type = Objects.requireNonNull(type, "path() format must not be null");
+    public AttributeBuilder.PathBuilder type(AttributePathFormat<String> type) {
+        this.type = this.type.moreSpecific(DefinitionValue.from(Objects.requireNonNull(type, "path() format must not be null"),
+                SourceLocation.capture()));
         return self();
     }
 
     @Override
     public AttributeBuilder.PathBuilder value(String value) {
-        this.value = value;
+        this.value = this.value.moreSpecific(DefinitionValue.from(Objects.requireNonNull(value, "path() value must not be null"),
+                SourceLocation.capture()));
         return self();
     }
 
     /**
-     * Parses the configured value in the configured format.
+     * Assembles the {@link AttributePathDeclaration} without parsing the expression.
      *
-     * @return the parsed {@link AttributePath}
-     * @throws IllegalStateException if no path value has been configured
-     * @throws ParsingException if the value is not valid in the configured format
+     * @return the declaration (parsed lazily on first {@link AttributePathDeclaration#actual()} access)
+     * @throws IllegalStateException if no path value has been configured or it is blank
      */
     @Override
-    public AttributePath build() {
-        if (value == null || value.isBlank()) {
+    public AttributePathDeclaration<?,?> build() {
+        if (value.value() == null || value.value().isBlank()) {
             throw new IllegalStateException("path() configuration requires a 'value'");
         }
-        return type.parse(value);
+        DefinitionValue<AttributePathFormat<String>> declaredType =
+                type.isEmpty() ? DefinitionValue.defaultFrom(BasicJsonPathFormat.INSTANCE) : type;
+        return AttributePathDeclaration.of(declaredType, value);
     }
 }

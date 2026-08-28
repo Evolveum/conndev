@@ -8,7 +8,9 @@ package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.api.JsonPointerFormat;
 import com.evolveum.polygon.conndev.api.ParsingException;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.identityconnectors.framework.spi.Configuration;
@@ -111,5 +113,50 @@ public class AttributePathDslTest {
                 }
                 """);
         assertThat(path).isEqualTo(USERS_0_EMAIL);
+    }
+
+    @Test
+    public void testClosureDeclarationRetainsUserInput() {
+        var definition = harness().loadInline("""
+                objectClass("User") {
+                    attribute("email") {
+                        json {
+                            type "string"
+                            path {
+                                type JSON_POINTER
+                                value "/users/0/email"
+                            }
+                        }
+                    }
+                }
+                """).attribute("User", "email");
+        var declaration = definition.json().pathDeclaration();
+
+        assertThat(declaration.value().value()).isEqualTo("/users/0/email");
+        assertThat(declaration.value().origin()).isEqualTo(DefinitionValue.Origin.DECLARED);
+        assertThat(declaration.type().value()).isSameAs(JsonPointerFormat.INSTANCE);
+        assertThat(declaration.type().origin()).isEqualTo(DefinitionValue.Origin.DECLARED);
+        assertThat(definition.json().path()).isEqualTo(USERS_0_EMAIL);
+    }
+
+    @Test
+    public void testClosureInvalidExpressionFailsAtSchemaBuild() {
+        var localHarness = harness();
+        localHarness.loadInline("""
+                objectClass("User") {
+                    attribute("email") {
+                        json {
+                            type "string"
+                            path {
+                                value '$.users[?(@.id != 1)]'
+                            }
+                        }
+                    }
+                }
+                """);
+
+        assertThatThrownBy(() -> localHarness.attribute("User", "email"))
+                .isInstanceOf(ParsingException.class)
+                .hasMessageContaining("$.users[?(@.id != 1)]");
     }
 }

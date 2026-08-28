@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.groovy;
 
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,7 +17,7 @@ import static org.testng.Assert.assertNotNull;
 
 public class GroovyScriptValidatorTest {
 
-    private static groovy.lang.Script parse(String scriptText) {
+    private static Script parse(String scriptText) {
         return new GroovyShell().parse(scriptText);
     }
 
@@ -34,7 +35,7 @@ public class GroovyScriptValidatorTest {
                 GroovyScriptValidatorTest::parse, "def x = ", ScriptValidationRequest.SCRIPT_OPERATION_COMPILE);
 
         assertEquals(result.status(), ScriptValidationResult.Status.ERROR);
-        var error = result.errors().get(0);
+        var error = result.errors().getFirst();
         assertEquals(error.phase(), ScriptError.Phase.COMPILE);
         assertNotNull(error.line());
         assertNotNull(error.column());
@@ -65,7 +66,7 @@ public class GroovyScriptValidatorTest {
                 GroovyScriptValidatorTest::parse, "throw new IllegalStateException('boom')", ScriptValidationRequest.SCRIPT_OPERATION_BUILD);
 
         assertEquals(result.status(), ScriptValidationResult.Status.ERROR);
-        assertEquals(result.errors().get(0).phase(), ScriptError.Phase.EVALUATE);
+        assertEquals(result.errors().getFirst().phase(), ScriptError.Phase.EVALUATE);
     }
 
     @Test
@@ -78,6 +79,6 @@ public class GroovyScriptValidatorTest {
                 GroovyScriptValidatorTest::parse, failingBuild, "1 + 1", ScriptValidationRequest.SCRIPT_OPERATION_BUILD);
 
         assertEquals(result.status(), ScriptValidationResult.Status.ERROR);
-        assertEquals(result.errors().get(0).phase(), ScriptError.Phase.BUILD);
+        assertEquals(result.errors().getFirst().phase(), ScriptError.Phase.BUILD);
     }
 }

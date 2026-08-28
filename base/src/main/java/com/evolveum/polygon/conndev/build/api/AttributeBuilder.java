@@ -348,6 +348,9 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         /**
          * Sets a JSON path for nested attribute access.
          *
+         * <p>A {@code null} path is treated as unspecified: the default path derived
+         * from the attribute name is used.</p>
+         *
          * @param path the JSON path (supports nested fields, arrays, and filters)
          * @return this JSON mapping instance
          */
@@ -356,12 +359,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         /**
          * Sets a JSON path from a string expression in the given format.
          *
+         * <p>The expression is stored as a declaration and parsed lazily, when the
+         * mapping is built or the path is first resolved.</p>
+         *
          * @param value the path expression
          * @param format the format the expression is written in
          * @return this JSON mapping instance
-         * @throws ParsingException if the expression is not valid in the given format
          */
-        JsonMapping path(String value, AttributePathFormat format);
+        JsonMapping path(String value, AttributePathFormat<String> format);
 
         /**
          * Configures a JSON path via a closure:
@@ -374,9 +379,11 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * The {@code type} is optional and defaults to {@link PathBuilder#JSON_PATH}; any
          * {@link AttributePathFormat} instance (e.g. {@code ScimPath.INSTANCE}) may be supplied.
          *
+         * <p>The expression is stored as a declaration and parsed lazily, when the
+         * mapping is built or the path is first resolved.</p>
+         *
          * @param closure a closure that configures the {@link PathBuilder}
          * @return this JSON mapping instance
-         * @throws ParsingException if the value is not valid in the configured format
          */
         JsonMapping path(
                 @DelegatesTo(value = PathBuilder.class, strategy = Closure.DELEGATE_ONLY)
@@ -391,16 +398,19 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * {@link AttributePathFormat} implementations ({@link BasicJsonPathFormat} and
      * {@link JsonPointerFormat}) so that scripts can reference them without imports when
      * the closure delegates to this interface.</p>
+     *
+     * <p>{@link #build()} assembles an {@link AttributePathDeclaration} without parsing
+     * the expression; the path is parsed lazily when the declaration is first resolved.</p>
      */
-    interface PathBuilder extends FluentBuilder<PathBuilder, AttributePath> {
+    interface PathBuilder extends FluentBuilder<PathBuilder, AttributePathDeclaration<?, ?>> {
 
         /** Basic JSONPath format, see {@link BasicJsonPathFormat}. */
         @Groovy.Convenience
-        AttributePathFormat JSON_PATH = BasicJsonPathFormat.INSTANCE;
+        AttributePathFormat<String> JSON_PATH = BasicJsonPathFormat.INSTANCE;
 
         /** JSON Pointer (RFC 6901) format, see {@link JsonPointerFormat}. */
         @Groovy.Convenience
-        AttributePathFormat JSON_POINTER = JsonPointerFormat.INSTANCE;
+        AttributePathFormat<String> JSON_POINTER = JsonPointerFormat.INSTANCE;
 
         /**
          * Sets the format of the path expression.
@@ -408,7 +418,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param type the path format
          * @return this path builder
          */
-        PathBuilder type(AttributePathFormat type);
+        PathBuilder type(AttributePathFormat<String> type);
 
         /**
          * Sets the path expression.
