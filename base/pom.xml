@@ -28,6 +28,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.evolveum.polygon.conndev</groupId>
+            <artifactId>devtools-base</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.evolveum.polygon</groupId>
             <artifactId>connector-common</artifactId>
         </dependency>
@@ -93,6 +97,10 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>2.21</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
 
