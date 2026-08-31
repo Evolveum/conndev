@@ -284,4 +284,77 @@ public class SourceLocationTest {
 
         assertThat(firstLoad).isEqualTo(secondLoad);
     }
+
+    // ========================================================================
+    // 5. fromException(...) -- runtime error location, from a caught Throwable's own
+    //    stack trace rather than the live call stack.
+    // ========================================================================
+
+    /** Evaluates a script that throws on line 2 (line 1 is blank) and returns the caught Throwable. */
+    private Throwable evaluateFailingScript(String fileName) {
+        GroovyShell shell = new GroovyContext().createShell();
+        try {
+            shell.evaluate(new StringReader("\nnull.length()\n"), fileName);
+        } catch (Throwable t) {
+            return t;
+        }
+        throw new IllegalStateException("Expected script to throw");
+    }
+
+    @Test
+    public void fromException_developmentModeDisabled_returnsUnknown() {
+        assertThat(DevelopmentMode.isEnabled()).isFalse();
+        Throwable e = evaluateFailingScriptWithModeTemporarilyEnabled("Disabled.groovy");
+
+        assertThat(SourceLocation.fromException(e)).isSameAs(SourceLocation.UNKNOWN);
+    }
+
+    /** Builds a failing script's exception without leaving development mode enabled afterwards. */
+    private Throwable evaluateFailingScriptWithModeTemporarilyEnabled(String fileName) {
+        DevelopmentMode.set(true);
+        try {
+            return evaluateFailingScript(fileName);
+        } finally {
+            DevelopmentMode.set(false);
+        }
+    }
+
+    @Test
+    public void fromException_developmentModeEnabled_findsGroovyFrame() {
+        DevelopmentMode.set(true);
+        Throwable e = evaluateFailingScript("Failing.groovy");
+
+        SourceLocation location = SourceLocation.fromException(e);
+
+        assertThat(location).isNotSameAs(SourceLocation.UNKNOWN);
+        assertThat(location.name()).isEqualTo("Failing.groovy");
+        assertThat(location.line()).isEqualTo(2);
+    }
+
+    @Test
+    public void fromException_developmentModeEnabled_noGroovyFrame_returnsUnknown() {
+        DevelopmentMode.set(true);
+        Throwable e = new RuntimeException("boom, thrown directly from Java");
+
+        assertThat(SourceLocation.fromException(e)).isSameAs(SourceLocation.UNKNOWN);
+    }
+
+    @Test
+    public void fromException_nullException_returnsUnknown() {
+        DevelopmentMode.set(true);
+        assertThat(SourceLocation.fromException(null)).isSameAs(SourceLocation.UNKNOWN);
+    }
+
+    @Test
+    public void fromException_walksCauseChain() {
+        DevelopmentMode.set(true);
+        Throwable original = evaluateFailingScript("Wrapped.groovy");
+        // Simulates e.g. `new ConnectorException("REST pagination failed", original)`.
+        Exception wrapper = new Exception("REST pagination failed", original);
+
+        SourceLocation location = SourceLocation.fromException(wrapper);
+
+        assertThat(location.name()).isEqualTo("Wrapped.groovy");
+        assertThat(location.line()).isEqualTo(2);
+    }
 }
