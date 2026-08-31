@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.groovy.*;
+import com.evolveum.polygon.conndev.logging.ConnectorLog;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
@@ -40,6 +41,22 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     public abstract ObjectClassHandler handlerFor(ObjectClass objectClass) throws UnsupportedOperationException;
 
+    private volatile ConnectorLog log;
+
+    /**
+     * Returns the logging facade bound to this connector. Every ConnId operation dispatched
+     * through this class is wrapped in an operation entry logged via this facade.
+     *
+     * @return the logging facade
+     */
+    protected ConnectorLog log() {
+        var facade = log;
+        if (facade == null) {
+            log = facade = ConnectorLog.of(getClass());
+        }
+        return facade;
+    }
+
     @Override
     public Uid authenticate(ObjectClass objectClass, String username, GuardedString password, OperationOptions options) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -48,13 +65,16 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     @Override
     public Uid create(ObjectClass objectClass, Set<Attribute> createAttributes, OperationOptions options) {
-        var object = handlerFor(objectClass).checkSupported(ObjectCreateOperation.class).create(createAttributes, options);
-        return object.getUid();
+        return log().runOperation("create", objectClass, "Create " + objectClass.getObjectClassValue(), () ->
+                handlerFor(objectClass).checkSupported(ObjectCreateOperation.class).create(createAttributes, options).getUid());
     }
 
     @Override
     public void delete(ObjectClass objectClass, Uid uid, OperationOptions options) {
-        handlerFor(objectClass).checkSupported(ObjectDeleteOperation.class).delete(uid, options);
+        log().runOperation("delete", objectClass, "Delete " + objectClass.getObjectClassValue(), () -> {
+            handlerFor(objectClass).checkSupported(ObjectDeleteOperation.class).delete(uid, options);
+            return null;
+        });
     }
 
     @Override
@@ -77,9 +97,12 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     @Override
     public void executeQuery(ObjectClass objectClass, Filter query, ResultsHandler handler, OperationOptions options) {
         try {
-            handlerFor(objectClass)
-                    .checkSupported(ObjectSearchOperation.class)
-                    .executeQuery(context(), query, handler, options);
+            log().runOperation("search", objectClass, "Search " + objectClass.getObjectClassValue(), () -> {
+                handlerFor(objectClass)
+                        .checkSupported(ObjectSearchOperation.class)
+                        .executeQuery(context(), query, handler, options);
+                return null;
+            });
         } catch (ConnectorException e) {
             throw e;
         } catch (Exception e) {
@@ -89,20 +112,25 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     @Override
     public Set<AttributeDelta> updateDelta(ObjectClass objclass, Uid uid, Set<AttributeDelta> modifications, OperationOptions options) {
-        return handlerFor(objclass).checkSupported(ObjectUpdateOperation.class).updateDelta(uid, modifications, options);
+        return log().runOperation("update", objclass, "Update " + objclass.getObjectClassValue(), () ->
+                handlerFor(objclass).checkSupported(ObjectUpdateOperation.class).updateDelta(uid, modifications, options));
     }
 
     @Override
     public void sync(ObjectClass objectClass, SyncToken token,
                      SyncResultsHandler handler, OperationOptions options) {
-        handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
-                .sync(token, handler, options, context());
+        log().runOperation("sync", objectClass, "Sync " + objectClass.getObjectClassValue(), () -> {
+            handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
+                    .sync(token, handler, options, context());
+            return null;
+        });
     }
 
     @Override
     public SyncToken getLatestSyncToken(ObjectClass objectClass) {
-        return handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
-                .getLatestSyncToken();
+        return log().runOperation("syncToken", objectClass, "Get latest sync token", () ->
+                handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
+                        .getLatestSyncToken());
     }
 
     @Override

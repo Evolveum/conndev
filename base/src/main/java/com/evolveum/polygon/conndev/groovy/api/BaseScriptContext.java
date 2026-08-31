@@ -8,10 +8,24 @@ package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
 import com.evolveum.polygon.conndev.build.api.FilterBuilder;
+import com.evolveum.polygon.conndev.logging.ConnectorLog;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 
 public interface BaseScriptContext {
+
+    /**
+     * Returns the logging facade for the current script execution.
+     *
+     * <p>Events logged through the facade carry the caller location, so in development mode
+     * they are attributed to the exact script line.
+     *
+     * @return the logging facade
+     */
+    @Groovy.Convenience
+    default ConnectorLog log() {
+        return ConnectorLog.of(getClass());
+    }
 
 
     /**

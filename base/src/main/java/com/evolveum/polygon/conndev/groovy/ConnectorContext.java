@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
+import com.evolveum.polygon.conndev.logging.ConnectorLog;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import org.identityconnectors.framework.common.objects.ObjectClass;
@@ -21,6 +22,15 @@ public interface ConnectorContext extends ContextLookup, RetrievableContext {
     BaseSchema schema();
 
     boolean getDevelopmentMode();
+
+    /**
+     * Returns the logging facade bound to the implementing context class.
+     *
+     * @return the logging facade
+     */
+    default ConnectorLog log() {
+        return ConnectorLog.of(getClass());
+    }
 
     @Override
     default <T extends RetrievableContext> T get(Class<T> contextType) throws IllegalStateException {
