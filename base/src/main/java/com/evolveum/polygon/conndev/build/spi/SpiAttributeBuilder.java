@@ -202,6 +202,13 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
          */
         DefinitionValue<Class<?>> type();
 
+        /**
+         * Returns the ConnId attribute name.
+         *
+         * @return the name definition value (never null)
+         */
+        DefinitionValue<String> name();
+
         default <P> ValueMapping<Object, P> overrideMappingIfNeeded(ValueMapping<Object, P> value) {
             var thisType = type().value();
             var otherType = value.connIdType();

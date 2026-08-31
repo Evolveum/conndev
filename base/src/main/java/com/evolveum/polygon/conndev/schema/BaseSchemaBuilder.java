@@ -13,7 +13,10 @@ import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.build.api.SchemaBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
+import com.evolveum.polygon.conndev.rules.ComplexTypeImpliesEmbeddedReferenceRule;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
@@ -23,11 +26,7 @@ import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Connector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -50,7 +49,16 @@ public class BaseSchemaBuilder<
         OA extends ObjectClassSchemaBuilder<OA,?,?>,
         OC extends BaseObjectClassDefinition<?>,
         S extends BaseSchema<OC>
-    > implements SchemaBuilder<SB, OA> {
+> implements SchemaBuilder<SB, OA> {
+
+    /**
+     * Structural, protocol-neutral rules applied by {@link #applyStructuralRules()}.
+     * {@link ComplexTypeImpliesEmbeddedReferenceRule} must run before
+     * {@link AttributeTypeResolutionRule}.
+     */
+    private static final List<MappingRule.AttributeOnly> STRUCTURAL_RULES = List.of(
+            new ComplexTypeImpliesEmbeddedReferenceRule(),
+            new AttributeTypeResolutionRule());
 
     /** The connector class for which this schema is being built. */
     protected final Class<? extends Connector> connectorClass;
@@ -216,6 +224,29 @@ public class BaseSchemaBuilder<
      */
     public Iterable<OB> allObjectClasses() {
         return objectClasses.values();
+    }
+
+    /**
+     * Applies the structural rules to every attribute of every registered object class. Must be
+     * called after this builder is fully populated and before {@link #build()}.
+     */
+    public void applyStructuralRules() {
+        for (OB objectClass : objectClasses.values()) {
+            for (BaseAttributeBuilder<?, ?, ?, ?> attribute : objectClass.allAttributes()) {
+                applyStructuralRules(attribute);
+            }
+        }
+    }
+
+    private static void applyStructuralRules(BaseAttributeBuilder<?, ?, ?, ?> attribute) {
+        for (MappingRule.AttributeOnly rule : STRUCTURAL_RULES) {
+            if (rule.checkIfApplicable(attribute)) {
+                var action = rule.createAction();
+                if (action != null) {
+                    action.applyToAttribute(attribute);
+                }
+            }
+        }
     }
 
     /**

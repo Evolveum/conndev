@@ -52,6 +52,7 @@ final class SchemaHarness {
      */
     public BaseSchema build() {
         if (cachedSchema == null) {
+            builder.applyStructuralRules();
             cachedSchema = builder.build();
         }
         return cachedSchema;

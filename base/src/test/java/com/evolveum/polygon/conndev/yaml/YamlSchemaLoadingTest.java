@@ -48,11 +48,13 @@ public class YamlSchemaLoadingTest {
 
     /** Loads the whole test connector definition: native + connid files for every object class. */
     private static BaseSchema loadTestSchema() {
-        var loader = new YamlSchemaLoader(schemaBuilder());
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
         loader.loadFromResource("/yaml/User.native.schema.yaml");
         loader.loadFromResource("/yaml/User.connid.schema.yaml");
         loader.loadFromResource("/yaml/Group.native.schema.yaml");
         loader.loadFromResource("/yaml/Address.native.schema.yaml");
+        builder.applyStructuralRules();
         return loader.build();
     }
 
@@ -130,6 +132,7 @@ public class YamlSchemaLoadingTest {
                     jsonType: string
                 """);
 
+        builder.applyStructuralRules();
         var schema = yamlLoader.build();
 
         assertNotNull(schema.objectClass("FromGroovy"));
@@ -173,7 +176,8 @@ public class YamlSchemaLoadingTest {
 
     @Test
     public void guardedStringConnIdTypeIsApplied() {
-        var loader = new YamlSchemaLoader(schemaBuilder());
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
         // no jsonType: an explicit ConnId type without a JSON mapping, like in the Groovy DSL
         loader.load("""
                 objectClass: Secure
@@ -184,6 +188,7 @@ public class YamlSchemaLoadingTest {
                       type: guardedstring
                 """);
 
+        builder.applyStructuralRules();
         var password = loader.build().objectClass("Secure").attributeFromProtocolName("password").connId();
 
         assertEquals(password.getType(), GuardedString.class);

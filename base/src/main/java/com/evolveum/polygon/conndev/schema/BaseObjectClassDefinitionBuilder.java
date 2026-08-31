@@ -12,6 +12,7 @@ import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
@@ -292,7 +293,9 @@ public class BaseObjectClassDefinitionBuilder<
 
 
     /**
-     * Builds and returns the complete {@link BaseObjectClassDefinition}.
+     * Builds and returns the complete {@link BaseObjectClassDefinition}. Rules affecting this
+     * object class's attributes (see {@code BaseSchemaBuilder#applyStructuralRules}) must
+     * already have been applied.
      *
      * <p>This method:
      * <ol>
@@ -306,6 +309,8 @@ public class BaseObjectClassDefinitionBuilder<
     public O build() {
         connIdBuilder.setType(name.value());
         connIdBuilder.setEmbedded(embedded.value());
+
+        // Freeze phase: only now is anything actually built.
         var connIdAttrs = new HashMap<String, AP>();
         var nativeAttrs = new HashMap<String, AP>();
         for (var attrBuilder : nativeAttributes.values()) {

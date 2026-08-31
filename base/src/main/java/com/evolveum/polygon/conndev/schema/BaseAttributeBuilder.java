@@ -127,12 +127,26 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
     }
 
     /**
-     * Builds and returns a {@code BaseAttributeDefinition} instance with the specified attributes.
+     * Builds and returns a {@code P} attribute definition instance with the specified attributes.
+     * Structural rules (see {@code BaseSchemaBuilder#applyStructuralRules}) must already have
+     * been applied. Delegated to {@link #newDefinition()} — subclasses that need a
+     * connector-specific definition type (e.g. {@code SqlAttributeDefinition}) must override
+     * that, not this method.
      *
-     * @return a new {@code BaseAttributeDefinition} instance configured with the current settings
+     * @return a new attribute definition instance configured with the current settings
      */
-    public P build() {
-        // TODO: Consider refactoring to ConnID schema contributor
+    public final P build() {
+        return newDefinition();
+    }
+
+    /**
+     * Constructs the attribute definition instance. Called by {@link #build()}, after structural
+     * rule dispatch has already run. Override to construct a connector-specific subtype.
+     *
+     * @return a new attribute definition instance
+     */
+    @SuppressWarnings("unchecked")
+    protected P newDefinition() {
         return (P) new BaseAttributeDefinition(this);
     }
 

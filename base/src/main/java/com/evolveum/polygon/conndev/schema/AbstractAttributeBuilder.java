@@ -16,12 +16,16 @@ import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
+import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
+import com.evolveum.polygon.conndev.rules.ComplexTypeImpliesEmbeddedReferenceRule;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
+import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import tools.jackson.databind.JsonNode;
 
 import java.util.HashMap;
@@ -36,15 +40,11 @@ import java.util.Map;
  * JSON protocol mapping via an inner {@link JsonBuilder}, and tracking embedded object
  * complex types.</p>
  *
- * <p>Subclasses can override {@link #newProtocolMapping(Class)} to inject custom protocol
- * mapping implementations.</p>
- *
  * @param <B> The concrete builder type (CRTP self-type)
  * @param <A> The public attribute builder interface
  * @param <P> The attribute definition type produced by {@code build()}
  */
 public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,A,P>, A extends AttributeBuilder<A,P>, P> implements AttributeBuilder<A, P> {
-
 
     /**
      * Attribute name used to identify this attribute in object class definition
@@ -92,7 +92,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     /**
      * The complex type (referenced object class name) for embedded objects.
      */
-    private DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
+    DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
 
     /**
      * Creates a new attribute builder for the given name within the specified object class.
@@ -132,15 +132,55 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     @Override
     public A complexType(DefinitionValue<String> objectClass) {
         this.complexType = complexType.moreSpecific(objectClass);
-        if (complexType.isPresent()) {
-            // FIX: This logic should be moved somewhere else
-            connId().type(DefinitionValue.detected(EmbeddedObject.class));
-            connId().roleInReference(DefinitionValue.detected(AttributeInfo.RoleInReference.SUBJECT.toString()));
-            connId().referencedObjectClassName(this.complexType);
-            // FIX: Should use definition value pattern
-            json().implementation(new EmbeddedObjectJsonMapping(contextLookup(), objectClass.value()));
-        }
         return self();
+    }
+
+    /**
+     * Returns the complex type (referenced object class name) for embedded objects, as set via
+     * {@link #complexType(DefinitionValue)}. Used by {@link AttributeTypeResolutionRule} and
+     * {@link ComplexTypeImpliesEmbeddedReferenceRule} to read this attribute's already-set state.
+     *
+     * @return the complex type, or an absent {@link DefinitionValue} if none was set
+     */
+    public DefinitionValue<String> complexType() {
+        return complexType;
+    }
+
+    /**
+     * Builds every registered protocol mapping.
+     *
+     * @return the built protocol mappings, keyed by mapping class
+     */
+    Map<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMapping<?,?>> resolveProtocolMappings() {
+        var result = new HashMap<Class<? extends AttributeProtocolMapping<?,?>>, AttributeProtocolMapping<?,?>>();
+        for (var proto : protocolMappings.entrySet()) {
+            var built = proto.getValue().build();
+            if (built != null) {
+                result.put(proto.getKey(), built);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * The single ConnId type suggested across all protocol mappings, or {@code null} if none
+     * suggested one. Used by {@link AttributeTypeResolutionRule}.
+     *
+     * @return the suggested type, or {@code null}
+     * @throws IllegalStateException if multiple protocol mappings suggest conflicting types
+     */
+    public Class<?> suggestedConnIdType() {
+        Class<?> suggested = null;
+        for (var mapping : resolveProtocolMappings().values()) {
+            if (mapping.connIdType() != null) {
+                if (suggested != null && !mapping.connIdType().equals(suggested)) {
+                    throw new IllegalStateException(
+                            "Multiple ConnID types declared for attribute. " + mapping.connIdType() + ", " + suggested);
+                }
+                suggested = mapping.connIdType();
+            }
+        }
+        return suggested;
     }
 
     /**
@@ -172,7 +212,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
      *
      * @return the context lookup
      */
-    protected ContextLookup contextLookup() {
+    public ContextLookup contextLookup() {
         return objectClass.contextLookup();
     }
 
@@ -264,24 +304,22 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public ConnIdMapping name(DefinitionValue<String> name) {
             this.name = this.name.moreSpecific(name);
-            forceBuiltInTypes();
             return self();
         }
 
-        /**
-         * Returns the ConnId Java type.
-         *
-         * @return the type definition value
-         */
         @Override
         public DefinitionValue<Class<?>> type() {
             return this.type;
         }
 
         @Override
+        public DefinitionValue<String> name() {
+            return this.name;
+        }
+
+        @Override
         public ConnIdMapping type(DefinitionValue<Class<?>> connIdType) {
             this.type = this.type.moreSpecific(connIdType);
-            forceBuiltInTypes();
             return self();
         }
 
@@ -351,14 +389,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         /**
-         * Builds the {@link AttributeInfo} from all configured ConnId metadata,
-         * automatically setting the type to {@Link String} for canonical Uid and Name attributes.
+         * Builds the {@link AttributeInfo} from all configured ConnId metadata.
          *
          * @return the built AttributeInfo
          */
         public AttributeInfo build() {
             var builder = new AttributeInfoBuilder();
-            forceBuiltInTypes();
 
             builder.setType(type.value());
             builder.setName(name.value());
@@ -377,16 +413,6 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             builder.setReferencedObjectClassName(referencedObjectClassName.value());
             builder.setSubtype(subtype.value());
             return builder.build();
-        }
-
-        private void forceBuiltInTypes() {
-            if (Uid.NAME.equals(name.value())) {
-                type = DefinitionValue.detected(String.class);
-            }
-            if (Name.NAME.equals(name.value())) {
-                type = DefinitionValue.detected(String.class);
-            }
-
         }
 
     }
