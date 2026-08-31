@@ -207,6 +207,86 @@ public class JsonAttributeMappingTest {
         assertThat(parent.size()).isEqualTo(0);
     }
 
+    @Test
+    public void testToJsonNode_nestedPath() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("address", "streetAddress"),
+                JsonSchemaValueMapping.STRING
+        );
+
+        Attribute attr = AttributeBuilder.build("address.streetAddress", "123 Main St");
+        mapping.toJsonNode(attr, parent);
+
+        assertThat(parent.size()).isEqualTo(1);
+        assertThat(parent.has("address")).isTrue();
+        assertThat(parent.get("address").isObject()).isTrue();
+        var address = parent.withObject("address");
+        assertThat(address.has("streetAddress")).isTrue();
+        assertThat(address.get("streetAddress").asString()).isEqualTo("123 Main St");
+    }
+
+    @Test
+    public void testToJsonNode_deepNesting() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("contact", "address", "postalCode"),
+                JsonSchemaValueMapping.STRING
+        );
+
+        Attribute attr = AttributeBuilder.build("contact.address.postalCode", "90210");
+        mapping.toJsonNode(attr, parent);
+
+        var contact = parent.withObject("contact");
+        var address = contact.withObject("address");
+        assertThat(address.get("postalCode").asString()).isEqualTo("90210");
+    }
+
+    @Test
+    public void testToJsonNode_mixedFlatAndNested() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var flatMapping = new JsonAttributeMapping(
+                AttributePath.of("userName"),
+                JsonSchemaValueMapping.STRING
+        );
+        var nestedMapping = new JsonAttributeMapping(
+                AttributePath.of("address", "city"),
+                JsonSchemaValueMapping.STRING
+        );
+
+        flatMapping.toJsonNode(AttributeBuilder.build("userName", "jdoe"), parent);
+        nestedMapping.toJsonNode(AttributeBuilder.build("address.city", "Boston"), parent);
+
+        assertThat(parent.get("userName").asString()).isEqualTo("jdoe");
+        assertThat(parent.withObject("address").get("city").asString()).isEqualTo("Boston");
+    }
+
+    @Test
+    public void testToJsonNode_nestedMultiValue() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("roles", "names"),
+                JsonSchemaValueMapping.STRING
+        );
+
+        Attribute attr = AttributeBuilder.build("roles.names", Arrays.asList("admin", "user"));
+        mapping.toJsonNode(attr, parent);
+
+        var roles = parent.withObject("roles");
+        assertThat(roles.get("names").isArray()).isTrue();
+        assertThat(roles.get("names").size()).isEqualTo(2);
+        assertThat(roles.get("names").get(0).asString()).isEqualTo("admin");
+        assertThat(roles.get("names").get(1).asString()).isEqualTo("user");
+    }
+
     // === ConnId Type delegation ===
 
 @Test

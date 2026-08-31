@@ -6,10 +6,7 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
-import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
-import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
-import groovy.lang.Closure;
 
 import java.util.function.Function;
 
@@ -24,13 +21,8 @@ import java.util.function.Function;
  * @param <C> the ConnId value type
  * @param <P> the protocol (wire) value type
  */
-public class BaseValueMappingBuilder<C,P> implements ValueMappingBuilder<C,P> {
-
-    /** Function used to deserialize values from protocol type to ConnId type. */
-    private Function<P, C> deserialize;
-
-    /** Function used to serialize values from ConnId type to protocol type. */
-    private Function<C, P> serialize;
+public class BaseValueMappingBuilder<C,P>
+        extends AbstractValueMappingBuilder<C, P, BaseValueMappingBuilder<C, P>> {
 
     /** The ConnId value class for this mapping. */
     private final Class<C> connIdType;
@@ -38,47 +30,9 @@ public class BaseValueMappingBuilder<C,P> implements ValueMappingBuilder<C,P> {
     /** The protocol (wire) value class for this mapping. */
     private final Class<P> protocolType;
 
-    /**
-     * Constructs a new value mapping builder with the given ConnId and protocol types.
-     *
-     * @param connIdType the ConnId value class
-     * @param protocolType the protocol (wire) value class
-     */
     public BaseValueMappingBuilder(Class<C> connIdType, Class<P> protocolType) {
         this.connIdType = connIdType;
         this.protocolType = protocolType;
-    }
-
-    /**
-     * Sets the deserialization function as a Groovy closure.
-     * <p>
-     * The closure receives the protocol-side value and returns the ConnId-side value.
-     * Each invocation receives a fresh {@link DeserializationContext} as the closure's
-     * delegate, providing access to the original value and metadata.
-     *
-     * @param closure the deserialization closure returning a ConnId value
-     * @return this builder for chaining
-     */
-    @Override
-    public ValueMappingBuilder<C,P> deserialize(Closure<C> closure) {
-        this.deserialize = new DeserializeFunction<>(closure);
-        return this;
-    }
-
-    /**
-     * Sets the serialization function as a Groovy closure.
-     * <p>
-     * The closure receives the ConnId-side value and returns the protocol-side value.
-     * The closure is automatically adapted from a groovy.lang.Closure to a
-     * {@link java.util.function.Function}.
-     *
-     * @param closure the serialization closure returning a protocol value
-     * @return this builder for chaining
-     */
-    @Override
-    public ValueMappingBuilder<C,P> serialize(Closure<P> closure) {
-        this.serialize = GroovyClosures.asFunction(closure);
-        return this;
     }
 
     /**
@@ -128,6 +82,7 @@ public class BaseValueMappingBuilder<C,P> implements ValueMappingBuilder<C,P> {
          */
         @Override
         public P toWireValue(C value) throws IllegalArgumentException {
+
             return serialize.apply(value);
         }
 
@@ -141,32 +96,6 @@ public class BaseValueMappingBuilder<C,P> implements ValueMappingBuilder<C,P> {
         @Override
         public C toConnIdValue(P value) throws IllegalArgumentException {
             return deserialize.apply(value);
-        }
-    }
-
-    /**
-     * Adapts a Groovy closure to a {@link java.util.function.Function} for deserialization.
-     * <p>
-     * Each invocation wraps the input value in a {@link DeserializationContext} and
-     * calls the closure with that context as the delegate, enabling rich DSL-style
-     * deserialization logic.
-     *
-     * @param <C> the ConnId value type (closure return type)
-     * @param <P> the protocol (wire) value type (closure input)
-     */
-    private record DeserializeFunction<C,P>(Closure<C> closure) implements Function<P, C> {
-
-        /**
-         * Applies the deserialization closure to the given protocol value.
-         *
-         * @param p the protocol-side value
-         * @return the converted ConnId-side value
-         */
-        @Override
-        public C apply(P p) {
-            var context = new DeserializationContext<>(p);
-
-            return (C) GroovyClosures.copyAndCall(closure, context);
         }
     }
 }
