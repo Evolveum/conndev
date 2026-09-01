@@ -24,9 +24,7 @@ import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import org.identityconnectors.framework.common.objects.AttributeInfo;
-import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
-import org.identityconnectors.framework.common.objects.EmbeddedObject;
+import org.identityconnectors.framework.common.objects.*;
 import tools.jackson.databind.JsonNode;
 
 import java.util.HashMap;
@@ -249,6 +247,22 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     @Override
     public ConnIdMapping connId() {
         return connIdBuilder;
+    }
+
+    /**
+     * Special ConnId attributes (UID / NAME) are always exchanged as {@link String},
+     * regardless of the protocol's native type. Returns the type this attribute's
+     * protocol mapping must produce, or {@code null} when no forcing applies.
+     */
+    Class<?> forcedConnIdType() {
+     // TOOD is this needed ?
+        if (connId().type().origin() == DefinitionValue.Origin.DECLARED) {
+            return null;
+        }
+        var connIdName = connId().name().value();
+        return (Uid.NAME.equals(connIdName) || Name.NAME.equals(connIdName))
+                ? String.class
+                : null;
     }
 
     /**
@@ -518,6 +532,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public AttributeProtocolMapping<?,?> build() {
             ValueMapping<Object, JsonNode> implementation;
+            var forced = forcedConnIdType();
 
             if (this.implementation != null) {
                 implementation = this.implementation;
@@ -530,7 +545,10 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             } else {
                 implementation = OpenApiValueMapping.from(type, openApiFormat);
             }
-            if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
+            if(forced!=null && !forced.equals(implementation.connIdType())){
+
+                implementation = ValueTypeOverrideMapping.of(forced, implementation);
+            } else if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
                 // apply ConnId type override
                 implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
             }
