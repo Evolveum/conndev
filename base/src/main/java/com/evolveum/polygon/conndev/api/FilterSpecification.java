@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.api;
 
+import com.evolveum.polygon.conndev.annotations.Groovy;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.AttributeFilter;
 import org.identityconnectors.framework.common.objects.filter.ContainsFilter;
@@ -112,6 +113,11 @@ public interface FilterSpecification {
          */
         default SingleValueAttribute anySingleValue() {
             return new SingleValueAttribute(this);
+        }
+
+        @Groovy.Convenience
+        default SingleValueAttribute anyValue() {
+            return anySingleValue();
         }
     }
 

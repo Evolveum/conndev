@@ -18,6 +18,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.*;
 
 /**
@@ -53,8 +54,7 @@ public class ForcedConnIdTypeTest {
     public void uidAttribute_forcesString() {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
-
-        assertEquals(attribute.forcedConnIdType(), String.class);
+        assertThat(attribute.build().connId().getType()).isEqualTo(String.class);
     }
 
     @Test
@@ -63,23 +63,16 @@ public class ForcedConnIdTypeTest {
         attribute.connId().name(Name.NAME);
         attribute.json().type("integer");
 
-        assertEquals(attribute.forcedConnIdType(), String.class);
+        assertThat(attribute.build().connId().getType()).isEqualTo(String.class);
     }
 
-    @Test
-    public void regularAttribute_isNotForced() {
-        var attribute = newObjectClass().attribute("count");
-        attribute.json().type("integer");
-
-        assertNull(attribute.forcedConnIdType());
-    }
 
     @Test
     public void defaultType_doesNotSuppressForcing() {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
 
-        assertEquals(attribute.forcedConnIdType(), String.class);
+        assertEquals(attribute.build().connId().getType(), String.class);
     }
 
     @Test
@@ -87,8 +80,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
         attribute.connId().type(DefinitionValue.detected( String.class));
-
-        assertEquals(attribute.forcedConnIdType(), String.class);
+        assertEquals(attribute.build().connId().getType(), String.class);
     }
 
     @Test
@@ -174,15 +166,4 @@ public class ForcedConnIdTypeTest {
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(42)), 42);
     }
 
-    @Test
-    public void uidAttribute_explicitType_mappingKeepsNativeType() {
-        var attribute = newUidAttribute();
-        attribute.json().type("integer");
-        attribute.connId().type(Integer.class);
-
-        var definition = attribute.build();
-
-        assertEquals(definition.connId().getType(), Integer.class);
-        assertEquals(definition.json().connIdType(), Integer.class);
-    }
 }

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.schema;
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
@@ -24,7 +25,9 @@ import com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
+import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import tools.jackson.databind.JsonNode;
 
 import java.util.HashMap;
@@ -247,22 +250,6 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     @Override
     public ConnIdMapping connId() {
         return connIdBuilder;
-    }
-
-    /**
-     * Special ConnId attributes (UID / NAME) are always exchanged as {@link String},
-     * regardless of the protocol's native type. Returns the type this attribute's
-     * protocol mapping must produce, or {@code null} when no forcing applies.
-     */
-    Class<?> forcedConnIdType() {
-     // TOOD is this needed ?
-        if (connId().type().origin() == DefinitionValue.Origin.DECLARED) {
-            return null;
-        }
-        var connIdName = connId().name().value();
-        return (Uid.NAME.equals(connIdName) || Name.NAME.equals(connIdName))
-                ? String.class
-                : null;
     }
 
     /**
@@ -532,7 +519,6 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         @Override
         public AttributeProtocolMapping<?,?> build() {
             ValueMapping<Object, JsonNode> implementation;
-            var forced = forcedConnIdType();
 
             if (this.implementation != null) {
                 implementation = this.implementation;
@@ -545,10 +531,15 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             } else {
                 implementation = OpenApiValueMapping.from(type, openApiFormat);
             }
-            if(forced!=null && !forced.equals(implementation.connIdType())){
 
-                implementation = ValueTypeOverrideMapping.of(forced, implementation);
-            } else if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
+            if (connIdType == null) {
+                var maybeBuiltIn = ConnIdBuiltInAttribute.findBuiltIn(connIdBuilder.name.value());
+                if (maybeBuiltIn != null) {
+                    connIdType = maybeBuiltIn.getForcedType();
+                }
+            }
+
+            if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
                 // apply ConnId type override
                 implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
             }

@@ -11,10 +11,12 @@ import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Uid;
 
+import java.util.Arrays;
+
 public enum ConnIdBuiltInAttribute {
 
-    UID(Uid.NAME),
-    NAME(Name.NAME),
+    UID(Uid.NAME, String.class),
+    NAME(Name.NAME, String.class),
     PASSWORD(OperationalAttributes.PASSWORD_NAME),
     ENABLE(OperationalAttributes.ENABLE_NAME),
     ENABLE_DATE(OperationalAttributes.ENABLE_DATE_NAME),
@@ -22,13 +24,27 @@ public enum ConnIdBuiltInAttribute {
     LOCK_OUT(OperationalAttributes.LOCK_OUT_NAME);
 
     private String connIdName;
+    private Class<?> forcedType;
 
     ConnIdBuiltInAttribute(String name) {
+        this(name, null);
+    }
+
+    ConnIdBuiltInAttribute(String name, Class<?> forcedType) {
         this.connIdName = name;
+        this.forcedType = forcedType;
     }
 
     public String getConnIdName() {
         return connIdName;
+    }
+
+    public Class<?> getForcedType() {
+        return forcedType;
+    }
+
+    public static ConnIdBuiltInAttribute findBuiltIn(String name) {
+        return Arrays.stream(values()).filter(v -> v.connIdName.equals(name)).findFirst().orElse(null);
     }
 
     @Groovy.Convenience

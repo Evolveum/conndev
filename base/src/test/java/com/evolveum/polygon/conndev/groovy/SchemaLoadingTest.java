@@ -12,11 +12,13 @@ import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.ZonedDateTime;
 
@@ -862,5 +864,219 @@ public class SchemaLoadingTest {
         // Protocol attributes still accessible
         assertThat(schema.objectClass("Widget").attributeFromProtocolName("widgetId")).isNotNull();
         assertThat(schema.objectClass("Widget").attributeFromProtocolName("widgetName")).isNotNull();
+    }
+
+    // ========================================================================
+    // 20. Regression: built-in ConnId attributes (uid/name) must present String
+    //     type to ConnId and convert values even when the protocol type differs
+    // ========================================================================
+
+    private static final String UID_INT64_FIXTURE = """
+        objectClass("UidInt64") {
+            attribute("id") {
+                jsonType "integer";
+                openApiFormat "int64";
+                description "numeric user id";
+            };
+            attribute("login") {
+                jsonType "string";
+                description "login name";
+            };
+            attribute("numId") {
+                jsonType "integer";
+                openApiFormat "int64";
+                description "control: not a ConnId built-in";
+            };
+            attribute("numIds") {
+                jsonType "integer";
+                openApiFormat "int64";
+                multiValued true;
+                description "control: multi-valued, not a built-in";
+            };
+            connIdAttribute("UID", "id");
+            connIdAttribute("NAME", "login");
+        }
+        """;
+
+    private static final String UID_INT32_FIXTURE = """
+        objectClass("UidInt32") {
+            attribute("id") {
+                jsonType "integer";
+                description "int32 user id";
+            };
+            connIdAttribute("UID", "id");
+        }
+        """;
+
+    private SchemaHarness builtInTypesSchema() {
+        return harness().loadInline(UID_INT64_FIXTURE).loadInline(UID_INT32_FIXTURE);
+    }
+
+    // --- ConnId metadata type ----------------------------------------------
+
+    @Test
+    public void builtInUidInt64_backing_connIdTypeIsString() {
+        var schema = builtInTypesSchema();
+
+        var uid = schema.objectClass("UidInt64").attributeFromConnIdName(Uid.NAME);
+        assertThat(uid).isNotNull();
+        assertThat(uid.connId().getType())
+                .withFailMessage("ConnId type should be String, because it is mapped as UID attribute")
+                .isEqualTo(String.class);
+    }
+
+    @Test
+    public void builtInUidInt32_backing_connIdTypeIsString() {
+        var schema = builtInTypesSchema();
+
+        var uid = schema.objectClass("UidInt32").attributeFromConnIdName(Uid.NAME);
+        assertThat(uid).isNotNull();
+        assertThat(uid.connId().getType())
+                .withFailMessage("ConnId type should be String, because it is mapped as UID attribute")
+                .isEqualTo(String.class);
+    }
+
+    @Test
+    public void builtInName_backing_connIdTypeIsString() {
+        var schema = builtInTypesSchema();
+
+        var name = schema.objectClass("UidInt64").attributeFromConnIdName(Name.NAME);
+        assertThat(name).isNotNull();
+        assertThat(name.connId().getType()).isEqualTo(String.class);
+    }
+
+    @Test
+    public void nonBuiltInInt64Attribute_keepsProtocolType() {
+        var schema = builtInTypesSchema();
+
+        // int64 suggests Long; the override must not leak to non-built-in attributes
+        assertThat(schema.attribute("UidInt64", "numId").connId().getType()).isEqualTo(Long.class);
+    }
+
+    // --- Protocol mapping ConnId type (what the runtime mapping exposes) ---
+
+    @Test
+    public void builtInAttributes_jsonMappingConnIdTypeIsString() {
+        var schema = builtInTypesSchema();
+
+        assertThat(schema.attribute("UidInt64", "id").json().connIdType())
+                .withFailMessage("uid mapping should present String to ConnId, not the protocol type")
+                .isEqualTo(String.class);
+        assertThat(schema.attribute("UidInt64", "login").json().connIdType()).isEqualTo(String.class);
+        assertThat(schema.attribute("UidInt32", "id").json().connIdType()).isEqualTo(String.class);
+    }
+
+    @Test
+    public void nonBuiltInAttribute_jsonMappingKeepsProtocolType() {
+        var schema = builtInTypesSchema();
+
+        assertThat(schema.attribute("UidInt64", "numId").json().connIdType()).isEqualTo(Long.class);
+    }
+
+    // --- Values wire -> ConnId ---------------------------------------------
+
+    @Test
+    public void builtInUidInt64_backing_wireValuesConvertedToString() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+        var root = mapper.createObjectNode();
+        root.put("id", 123L);
+        root.put("login", "jdoe");
+        root.put("numId", 456L);
+
+        var uidValue = schema.attribute("UidInt64", "id").json().singleValueFromObject(root);
+        assertThat(uidValue)
+                .withFailMessage("uid value should be converted to String for ConnId")
+                .isInstanceOf(String.class);
+        assertThat((String) uidValue).isEqualTo("123");
+
+        assertThat(schema.attribute("UidInt64", "login").json().singleValueFromObject(root)).isEqualTo("jdoe");
+
+        // control attribute is untouched: raw Long from the int64 mapping
+        var numIdValue = schema.attribute("UidInt64", "numId").json().singleValueFromObject(root);
+        assertThat(numIdValue).isInstanceOf(Long.class);
+        assertThat(numIdValue).isEqualTo(456L);
+    }
+
+    @Test
+    public void builtInUidInt32_backing_wireValuesConvertedToString() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+        var root = mapper.createObjectNode();
+        root.put("id", 42);
+
+        var uidValue = schema.attribute("UidInt32", "id").json().singleValueFromObject(root);
+        assertThat(uidValue).isInstanceOf(String.class);
+        assertThat((String) uidValue).isEqualTo("42");
+    }
+
+    @Test
+    public void nonBuiltInMultiValuedInt64_valuesKeepProtocolType() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+        var root = mapper.createObjectNode();
+        root.putArray("numIds").add(1L).add(2L).add(3L);
+
+        var values = schema.attribute("UidInt64", "numIds").json().valuesFromObject(root);
+
+        assertThat(values).containsExactly(1L, 2L, 3L);
+        assertThat(values).allSatisfy(value -> assertThat(value).isInstanceOf(Long.class));
+    }
+
+    // --- Values ConnId -> wire ---------------------------------------------
+
+    @Test
+    public void builtInUidInt64_backing_connIdValueConvertedToWireNumber() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+
+        var parent = mapper.createObjectNode();
+        schema.attribute("UidInt64", "id").json()
+                .toJsonNode(AttributeBuilder.build(Uid.NAME, "123"), parent);
+
+        var idNode = parent.get("id");
+        assertThat(idNode)
+                .withFailMessage("uid String must be serialized back to the protocol numeric type")
+                .isNotNull();
+        assertThat(idNode.isNumber()).isTrue();
+        assertThat(idNode.isTextual()).isFalse();
+        assertThat(idNode.longValue()).isEqualTo(123L);
+
+        var nameParent = mapper.createObjectNode();
+        schema.attribute("UidInt64", "login").json()
+                .toJsonNode(AttributeBuilder.build(Name.NAME, "jdoe"), nameParent);
+
+        assertThat(nameParent.get("login").isTextual()).isTrue();
+        assertThat(nameParent.get("login").asString()).isEqualTo("jdoe");
+    }
+
+    @Test
+    public void builtInUidInt32_backing_connIdValueConvertedToWireNumber() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+
+        var parent = mapper.createObjectNode();
+        schema.attribute("UidInt32", "id").json()
+                .toJsonNode(AttributeBuilder.build(Uid.NAME, "42"), parent);
+
+        assertThat(parent.get("id").isNumber()).isTrue();
+        assertThat(parent.get("id").intValue()).isEqualTo(42);
+    }
+
+    // --- Round trip ----------------------------------------------------------
+
+    @Test
+    public void builtInUidInt64_backing_roundTripPreservesString() {
+        var schema = builtInTypesSchema();
+        var mapper = new ObjectMapper();
+
+        var mapping = schema.attribute("UidInt64", "id").json();
+        var parent = mapper.createObjectNode();
+        mapping.toJsonNode(AttributeBuilder.build(Uid.NAME, "987"), parent);
+
+        var connIdValue = mapping.singleValueFromAttribute(parent.get("id"));
+
+        assertThat(connIdValue).isInstanceOf(String.class);
+        assertThat(connIdValue).isEqualTo("987");
     }
 }
