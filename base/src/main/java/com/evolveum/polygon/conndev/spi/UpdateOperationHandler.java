@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import org.identityconnectors.framework.common.objects.AttributeDelta;
 import org.identityconnectors.framework.common.objects.OperationOptions;
@@ -21,5 +22,5 @@ public interface UpdateOperationHandler extends AttributeAwareOperationHandler<A
     boolean requiresOriginalState();
 
 
-    void update(UpdateOperationBuilder.UpdateRequest request, OperationOptions options);
+    void update(UpdateOperationBuilder.UpdateRequest request, OperationOptions options, ContextLookup context);
 }

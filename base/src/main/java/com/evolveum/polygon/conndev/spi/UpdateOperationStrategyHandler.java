@@ -1,79 +1,79 @@
 /*
  * Copyright (c) 2026 Evolveum and contributors
- * 
+ *
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
- * 
+ *
  */
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.AttributeDelta;
+import org.identityconnectors.framework.common.objects.ConnectorObject;
+import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.OperationOptions;
+import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
-import static com.evolveum.polygon.conndev.spi.AttributeAwareOperationHandler.Capability;
-
+/** Routes deltas in registration order and executes the selected handlers in one scope. */
 public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
 
     private final ConnectorContext context;
     private final ObjectClass objectClass;
-    private final Collection<UpdateOperationHandler> handlers;
+    private final OperationExecutor executor;
+    private final List<UpdateOperationHandler> handlers;
 
-    public UpdateOperationStrategyHandler(ConnectorContext context, ObjectClass objectClass, Collection<UpdateOperationHandler> handlers) {
+    public UpdateOperationStrategyHandler(ConnectorContext context, ObjectClass objectClass,
+            OperationExecutor executor, Collection<UpdateOperationHandler> handlers) {
         this.context = context;
         this.objectClass = objectClass;
-        this.handlers = handlers;
+        this.executor = executor;
+        this.handlers = List.copyOf(handlers);
     }
 
     @Override
-    public Set<AttributeDelta> updateDelta(Uid uid, Set<AttributeDelta> modifications, OperationOptions options) {
-        var previousStateRequired = false;
-        var outstanding = new HashSet<>(modifications);
-        var handlersToUse = new ArrayList<Capability<AttributeDelta,UpdateOperationHandler>>();
-        for (UpdateOperationHandler handler : handlers) {
-            // Pass a snapshot: a handler without attribute restrictions returns the supplied
-            // collection as-is, and the removeAll below would empty it before update() runs.
-            var support = handler.canHandle(List.copyOf(outstanding), options);
-            if (support.isUnsupported()) {
-                continue;
-            }
-            // Update information if we need previous state
-            if (handler.requiresOriginalState()) {
-                previousStateRequired = true;
-            }
-            outstanding.removeAll(support.supported());
-            handlersToUse.add(support);
-            if (outstanding.isEmpty()) {
-                // NO need to check rest of handlers, if all delta components are processed.
-                break;
+    public Set<AttributeDelta> updateDelta(
+            Uid uid, Set<AttributeDelta> modifications, OperationOptions options) {
+        var requested = modifications != null ? Set.copyOf(modifications) : Set.<AttributeDelta>of();
+        if (requested.isEmpty()) {
+            return requested;
+        }
+        var routing = new AttributeOperationRouting<>(requested);
+        var selected = new ArrayList<
+                AttributeAwareOperationHandler.Capability<AttributeDelta, UpdateOperationHandler>>();
+        var originalRequired = false;
+        for (var handler : handlers) {
+            var capability = routing.select(handler, options);
+            if (!capability.isUnsupported()) {
+                selected.add(capability);
+                originalRequired |= handler.requiresOriginalState();
             }
         }
-        if (!outstanding.isEmpty()) {
-            // FIXME? Error that we can not update all requested attributes?
-            throw new ConnectorException("Attribute deltas are unsupported: " + outstanding);
-        }
+        routing.requireComplete();
+        var readOriginal = originalRequired;
 
-        ConnectorObject originalState = previousStateRequired ? readObject(uid) : null;
-
-        for (var capability : handlersToUse) {
-            var deltasToApply = capability.supported();
-            // FIXME: After state should be computed for absolute here? or in handler?
-            var request = new UpdateOperationBuilder.UpdateRequest(objectClass, uid, capability.supported(), originalState);
-            capability.handler().update(request, options);
-
-        }
-        return null;
+        return executor.execute(scope -> {
+            var before = readOriginal ? readObject(uid, options, scope) : null;
+            for (var capability : selected) {
+                capability.handler().update(new UpdateOperationBuilder.UpdateRequest(
+                        objectClass, uid, capability.supported(), before), options, scope);
+            }
+            return requested;
+        });
     }
 
-    private ConnectorObject readObject(Uid uid) {
+    private ConnectorObject readObject(Uid uid, OperationOptions options,
+            com.evolveum.polygon.conndev.api.ContextLookup operationContext) {
         var result = new ArrayList<ConnectorObject>();
         context.handlerFor(objectClass).checkSupported(ObjectSearchOperation.class)
-                .executeQuery(context, new EqualsFilter(uid), result::add, null);
+                .executeQuery(operationContext, new EqualsFilter(uid), result::add, options);
         return result.stream().findFirst().orElseThrow(
-                () -> new ConnectorException("Can not update object: " + uid + ". Unable to read previous state"));
+                () -> new ConnectorException("Unable to read previous state for " + uid));
     }
-
 }

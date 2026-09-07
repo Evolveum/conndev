@@ -1,89 +1,78 @@
 /*
  * Copyright (c) 2026 Evolveum and contributors
- * 
+ *
  * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
- * 
+ *
  */
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
-import org.identityconnectors.framework.common.objects.*;
+import org.identityconnectors.framework.common.objects.Attribute;
+import org.identityconnectors.framework.common.objects.ConnectorObject;
+import org.identityconnectors.framework.common.objects.OperationOptions;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+/** Creates one primary object and then its separately stored attributes in one scope. */
 public class CreateOperationStrategyHandler implements ObjectCreateOperation {
 
-    private final ConnectorContext context;
-    private final ObjectClass objectClass;
-    private final Collection<CreateOperationHandler> handlers;
+    private final OperationExecutor executor;
+    private final List<CreateOperationHandler> primaryHandlers;
+    private final List<AttributeCreateOperationHandler> attributeHandlers;
 
-    public CreateOperationStrategyHandler(ConnectorContext context, ObjectClass objectClass, Collection<CreateOperationHandler> handlers) {
-        this.context = context;
-        this.objectClass = objectClass;
-        this.handlers = handlers;
+    public CreateOperationStrategyHandler(OperationExecutor executor,
+            Collection<CreateOperationHandler> primaryHandlers,
+            Collection<AttributeCreateOperationHandler> attributeHandlers) {
+        this.executor = executor;
+        this.primaryHandlers = List.copyOf(primaryHandlers);
+        this.attributeHandlers = List.copyOf(attributeHandlers);
     }
 
     @Override
     public ConnectorObject create(Set<Attribute> createAttributes, OperationOptions options) {
-        
-        var handler = selectMostSpecific(createAttributes, options);
-        // Create object
-        var result = handler.create(createAttributes, options);
-        if (result == null) {
-            throw new ConnectorException("Problem creating object.");
-        }
-        if (updatesNeeded(result, createAttributes)) {
-            // walk thru update processors and create delta? or just create updates?
-            var delta = computeNecessaryUpdateDelta(result, createAttributes);
-            context.handlerFor(objectClass).checkSupported(ObjectUpdateOperation.class);
-        
-        
-        }
-        return result.object();
-    }
-
-    private Set<BaseAttributeDelta> computeNecessaryUpdateDelta(CreateOperationHandler.Result result, Set<Attribute> requestedAttributes) {
-        var createdObject = result.object();
-        if (createdObject == null) {
-            createdObject = readObject(result.uid());
-        }
-        // FIXME: Here we should compute delta
-        var ret = new HashSet<BaseAttributeDelta>();
-        for (var requested : requestedAttributes) {
-            var created = createdObject.getAttributeByName(requested.getName());
-            if (created == null) {
-                // Compare values
-                ret.add(deltaFrom(requested));
+        var requested = createAttributes != null ? Set.copyOf(createAttributes) : Set.<Attribute>of();
+        var routing = new AttributeOperationRouting<>(requested);
+        AttributeAwareOperationHandler.Capability<Attribute, CreateOperationHandler> primary = null;
+        for (var handler : primaryHandlers) {
+            var capability = routing.inspect(handler, options);
+            if (primary == null) {
+                primary = capability;
+            }
+            if (!capability.isUnsupported()) {
+                primary = capability;
+                break;
             }
         }
-        return ret;
-    }
-
-    private ConnectorObject readObject(Uid uid) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    private BaseAttributeDelta deltaFrom(Attribute requested) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    private boolean updatesNeeded(CreateOperationHandler.Result result, Set<Attribute> createAttributes) {
-        // FIXME: Determine based on attribute set and existing object if additional updates are neccessary
-        return false;
-    }
-
-    private CreateOperationHandler selectMostSpecific(Set<Attribute> request, OperationOptions options) {
-        // FIXME: Consider capabilities & handler which can handle most of the attributes
-        for (var handler : handlers) {
-            var support = handler.canHandle(request, options);
-            if (support.isUnsupported()) {
-                continue;
-            }
-            return handler;
+        if (primary == null) {
+            throw new ConnectorException("No create handler configured");
         }
-        return null;
+        routing.claim(primary.supported());
+
+        var selected = new ArrayList<
+                AttributeAwareOperationHandler.Capability<Attribute, AttributeCreateOperationHandler>>();
+        for (var handler : attributeHandlers) {
+            var capability = routing.select(handler, options);
+            if (!capability.isUnsupported()) {
+                selected.add(capability);
+            }
+        }
+        routing.requireComplete();
+
+        var selectedPrimary = primary;
+        return executor.execute(scope -> {
+            var result = selectedPrimary.handler().create(
+                    Set.copyOf(selectedPrimary.supported()), options, scope);
+            if (result == null || result.uid() == null || result.object() == null) {
+                throw new ConnectorException("Primary create handler returned an incomplete result");
+            }
+            for (var capability : selected) {
+                capability.handler().create(new AttributeCreateOperationHandler.Request(
+                        result.cls(), result.uid(), Set.copyOf(capability.supported())), options, scope);
+            }
+            return result.object();
+        });
     }
 }
