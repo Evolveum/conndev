@@ -1,0 +1,28 @@
+objectClasses:
+  User:
+    attributes:
+      active:
+        jsonType: boolean
+        updateable: true
+        description: "Is user active"
+      email:
+        jsonType: string
+        openApiFormat: email
+        updateable: true
+        description: "The user's email address"
+      full_name:
+        jsonType: string
+        creatable: true
+        updateable: true
+        description: "the user's full name"
+      id:
+        jsonType: integer
+        openApiFormat: int64
+        description: "The unique identifier for the user"
+        connId:
+          name: UID
+      login:
+        jsonType: string
+        description: "the user's username"
+        connId:
+          name: NAME
