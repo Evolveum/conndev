@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.ObjectUpdateOperation;
+import com.evolveum.polygon.conndev.spi.OperationExecutor;
 import com.evolveum.polygon.conndev.spi.UpdateOperationHandler;
 import com.evolveum.polygon.conndev.spi.UpdateOperationStrategyHandler;
 
@@ -31,14 +32,14 @@ public abstract class AbstractUpdateOperationBuilder<OC extends BaseObjectClassD
         if (isEmpty()) {
             return null;
         }
-        var handlers = collectHandlers();
-        return new UpdateOperationStrategyHandler(parent.context, parent.getObjectClass().objectClass(), handlers);
+        return new UpdateOperationStrategyHandler(parent.context, parent.getObjectClass().objectClass(),
+                operationExecutor(), collectHandlers());
     }
 
-    /**
-     * Cheap pre-check run before {@link #collectHandlers()}. Subclasses that use the
-     * {@link #build()} template override this instead of {@link #build()} itself.
-     */
+    protected OperationExecutor operationExecutor() {
+        return OperationExecutor.direct(parent.context);
+    }
+
     protected boolean isEmpty() {
         return collectHandlers().isEmpty();
     }

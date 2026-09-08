@@ -6,10 +6,12 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.api.ContextLookup;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.Uid;
 
 public interface DeleteOperationHandler {
 
-    void delete(Uid uid, OperationOptions options);
+    /** Executes one explicitly registered cleanup or primary deletion step. */
+    void delete(Uid uid, OperationOptions options, ContextLookup context);
 }

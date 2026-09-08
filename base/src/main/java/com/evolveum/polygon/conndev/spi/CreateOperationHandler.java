@@ -6,14 +6,14 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.api.ContextLookup;
 import org.identityconnectors.framework.common.objects.*;
 
 import java.util.Set;
 
 public interface CreateOperationHandler extends AttributeAwareOperationHandler<Attribute, CreateOperationHandler> {
 
-     Result create(final Set<Attribute> createAttributes,
-                           final OperationOptions options);
+     Result create(Set<Attribute> createAttributes, OperationOptions options, ContextLookup context);
 
      record Result(ObjectClass cls, Uid uid, ConnectorObject object) {
 

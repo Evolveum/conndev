@@ -9,11 +9,14 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.build.api.CreateOperationBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
+import com.evolveum.polygon.conndev.spi.AttributeCreateOperationHandler;
 import com.evolveum.polygon.conndev.spi.CreateOperationHandler;
 import com.evolveum.polygon.conndev.spi.CreateOperationStrategyHandler;
 import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
+import com.evolveum.polygon.conndev.spi.OperationExecutor;
 
 import java.util.Collection;
+import java.util.List;
 
 public abstract class AbstractCreateOperationBuilder<OC extends BaseObjectClassDefinition<? extends BaseAttributeDefinition>>
         extends AbstractOperationBuilder<OC, CreateOperationBuilder> implements CreateOperationBuilder {
@@ -32,13 +35,17 @@ public abstract class AbstractCreateOperationBuilder<OC extends BaseObjectClassD
         if (handlers.isEmpty()) {
             return null;
         }
-        return new CreateOperationStrategyHandler(parent.context, parent.getObjectClass().objectClass(), handlers);
+        return new CreateOperationStrategyHandler(operationExecutor(), handlers, attributeHandlers());
     }
 
-    /**
-     * Collects the handlers to dispatch through. Subclasses that use the {@link #build()}
-     * template override this instead of {@link #build()} itself.
-     */
+    protected OperationExecutor operationExecutor() {
+        return OperationExecutor.direct(parent.context);
+    }
+
+    protected Collection<AttributeCreateOperationHandler> attributeHandlers() {
+        return List.of();
+    }
+
     protected Collection<CreateOperationHandler> collectHandlers() {
         throw new UnsupportedOperationException("collectHandlers() not implemented - override build() directly instead");
     }
