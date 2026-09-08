@@ -9,8 +9,6 @@ package com.evolveum.polygon.conndev.build.spi;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.FluentBuilder;
-import com.evolveum.polygon.conndev.schema.ValueTypeOverrideMapping;
-import com.evolveum.polygon.conndev.spi.ValueMapping;
 
 /**
  * SPI-level attribute builder base interface.
@@ -208,19 +206,5 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
          * @return the name definition value (never null)
          */
         DefinitionValue<String> name();
-
-        default <P> ValueMapping<Object, P> overrideMappingIfNeeded(ValueMapping<Object, P> value) {
-            var thisTypeDecl = type();
-            // override default with more specific value
-            if (thisTypeDecl.isDefault()) {
-                return value;
-            }
-            var thisType = thisTypeDecl.value();
-            var otherType = value.connIdType();
-            if (thisType.equals(otherType)) {
-                return value;
-            }
-            return ValueTypeOverrideMapping.of(thisType, value);
-        }
     }
 }

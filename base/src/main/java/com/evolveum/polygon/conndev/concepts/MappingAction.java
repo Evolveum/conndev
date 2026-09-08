@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.concepts;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectOperationSupportBuilder;
+import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 
 /**
  * A detected effect produced by a {@link MappingRule}, deferred until the relevant builder is
@@ -59,5 +60,19 @@ public interface MappingAction<OC extends ObjectClassSchemaBuilder<?, ?, ?>, A e
     interface AttributeOnly<A extends AttributeBuilder<?, ?>> {
 
         void applyToAttribute(A attribute);
+    }
+
+    /**
+     * An effect on the object-class builder alone, independent of {@link MappingAction} — the
+     * object-class counterpart of {@link AttributeOnly}: a rule whose action never touches an
+     * attribute or a handler doesn't need those no-op methods at all, so this is its own
+     * single-method interface rather than a narrowing of {@link MappingAction}.
+     *
+     * @param <OC> the object-class builder type
+     */
+    @FunctionalInterface
+    interface ObjectClassOnly<OC extends BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?>> {
+
+        void applyToObjectClass(OC objectClass);
     }
 }

@@ -8,7 +8,6 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.*;
-import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
@@ -29,6 +28,7 @@ import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
 import tools.jackson.databind.JsonNode;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,11 +90,6 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     DefinitionValue<String> remoteName;
 
     /**
-     * The ConnId Java type. Null until set via a protocol mapping or explicit type definition.
-     */
-    Class<?> connIdType;
-
-    /**
      * The complex type (referenced object class name) for embedded objects.
      */
     DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
@@ -152,6 +147,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     }
 
 
+
+    /**
+     * Returns the builders of all registered protocol mappings, in registration order of
+     * iteration over the backing map. Used by {@code AttributeTypeCoercionRule} to push the
+     * attribute's final ConnId type into each mapping builder.
+     *
+     * @return the protocol mapping builders
+     */
+    public Collection<AttributeProtocolMappingBuilder> protocolMappingBuilders() {
+        return protocolMappings.values();
+    }
 
     /**
      * Builds every registered protocol mapping.
@@ -402,8 +408,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         /**
-         * Builds the {@link AttributeInfo} from all configured ConnId metadata,
-         * automatically setting the type to {@Link String} for canonical Uid and Name attributes.
+         * Builds the {@link AttributeInfo} from all configured ConnId metadata.
+         *
+         * <p>Must be called only after structural rules have run (see
+         * {@code BaseSchemaBuilder#applyStructuralRules}); in particular the final ConnId type
+         * is decided by {@code AttributeTypeResolutionRule}, which forces {@code String} for
+         * the built-in {@code __UID__}/{@code __NAME__} attributes.
          *
          * @return the built AttributeInfo
          */
@@ -444,6 +454,31 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         private ValueMapping<Object, JsonNode> implementation;
         /** Closure-based implementation configuration. */
         private Closure<?> implementationClosure;
+        /** The attribute's final ConnId type, applied by {@code AttributeTypeCoercionRule}. */
+        private Class<?> connIdTypeOverride;
+
+        @Override
+        public void applyConnIdTypeOverride(Class<?> connIdType) {
+            this.connIdTypeOverride = connIdType;
+        }
+
+        /** The configured JSON type, or {@code null}. Package access for
+         * {@code BaseObjectClassDefinitionBuilder#deriveDefaultNameFromUid}. */
+        String jsonType() {
+            return type;
+        }
+
+        /** The configured OpenAPI format, or {@code null}. Package access for
+         * {@code BaseObjectClassDefinitionBuilder#deriveDefaultNameFromUid}. */
+        String jsonOpenApiFormat() {
+            return openApiFormat;
+        }
+
+        /** The configured JSON path declaration, or {@code null}. Package access for
+         * {@code BaseObjectClassDefinitionBuilder#deriveDefaultNameFromUid}. */
+        AttributePathDeclaration<?, ?> jsonPath() {
+            return path;
+        }
 
 
         /**
@@ -550,7 +585,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         /**
          * Builds the {@link JsonAttributeMapping}. If no implementation is set, creates
          * one from the JSON type and OpenAPI format. Applies a {@link ValueTypeOverrideMapping}
-         * if the ConnId type differs from the implementation's native type.
+         * if the attribute's final ConnId type (recorded via
+         * {@link #applyConnIdTypeOverride(Class)}) differs from the implementation's native type.
          *
          * @return the built JsonAttributeMapping
          */
@@ -570,15 +606,9 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                 implementation = OpenApiValueMapping.from(type, openApiFormat);
             }
 
-            if (connIdType == null) {
-                var maybeBuiltIn = ConnIdBuiltInAttribute.findBuiltIn(connIdBuilder.name.value());
-                if (maybeBuiltIn != null) {
-                    connIdType = maybeBuiltIn.getForcedType();
-                }
-            }
-            if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
-                // apply ConnId type override
-                implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
+            if (connIdTypeOverride != null && !connIdTypeOverride.equals(implementation.connIdType())) {
+                // apply the ConnId type override decided by AttributeTypeCoercionRule
+                implementation = ValueTypeOverrideMapping.of(connIdTypeOverride, implementation);
             }
             if (path == null) {
                 path = AttributePathDeclaration.of(

@@ -6,14 +6,13 @@
  */
 package com.evolveum.polygon.conndev.rules;
 
+import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.MappingAction;
 import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.schema.BaseAttributeBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
-import org.identityconnectors.framework.common.objects.Name;
-import org.identityconnectors.framework.common.objects.Uid;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +37,13 @@ public final class AttributeTypeResolutionRule implements MappingRule.AttributeO
         Optional<Class<?>> resolve(BaseAttributeBuilder<?, ?, ?, ?> builder, Class<?> protocolSuggestedType);
     }
 
-    /** {@link Uid}/{@link Name} can only ever be backed by a {@code String} — a hard ConnId
-     * framework constraint (see their javadoc), not a heuristic, so it wins over everything. */
-    private static final Candidate UID_OR_NAME_IS_STRING = (builder, suggested) -> {
-        var name = builder.connId().name().value();
-        return (Uid.NAME.equals(name) || Name.NAME.equals(name))
-                ? Optional.of(String.class) : Optional.empty();
+    /** Built-in ConnId attributes with a forced type (today: {@code __UID__}/{@code __NAME__}
+     * — a hard ConnId framework constraint, see {@code Uid}/{@code Name} javadoc) can only ever
+     * be backed by that type — not a heuristic, so it wins over everything. The forced types
+     * are declared once, in {@link ConnIdBuiltInAttribute}; this rule is where they apply. */
+    private static final Candidate BUILT_IN_FORCED_TYPE = (builder, suggested) -> {
+        var builtIn = ConnIdBuiltInAttribute.findBuiltIn(builder.connId().name().value());
+        return builtIn != null ? Optional.ofNullable(builtIn.getForcedType()) : Optional.empty();
     };
 
     /** Reference attributes are always {@link ConnectorObjectReference}-typed. */
@@ -65,7 +65,7 @@ public final class AttributeTypeResolutionRule implements MappingRule.AttributeO
             Optional.ofNullable(builder.connId().type().value());
 
     private static final List<Candidate> STEPS = List.of(
-            UID_OR_NAME_IS_STRING,
+            BUILT_IN_FORCED_TYPE,
             REFERENCE_IS_CONNECTOR_OBJECT_REFERENCE,
             COMPLEX_TYPE_IS_EMBEDDED_OBJECT,
             PROTOCOL_MAPPING,

@@ -8,10 +8,12 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
@@ -53,21 +55,23 @@ public class BaseObjectClassDefinitionBuilder<
     /**
      * Maps ConnId built-in attribute display names to their canonical ConnId names.
      *
-     * <p>Supported mappings:
+     * <p>Supported mappings (the only built-ins aliasable via
+     * {@link #connIdAttribute(String, String)}):
      * <ul>
      *   <li>{@code "UID"} → {@link Uid#NAME} (usually "UID")</li>
      *   <li>{@code "NAME"} → {@link Name#NAME} (usually "NAME")</li>
      * </ul>
      *
-     * The map is immutable and populated at class-load time from the ConnId constant definitions.
+     * The canonical ConnId names come from {@link ConnIdBuiltInAttribute} — the single
+     * registry of built-in ConnId attributes.
      */
     private static final Map<String, String> BUILT_IN_ATTRIBUTES;
 
 
     static {
         Map<String, String> builder = new HashMap<>();
-        builder.put("UID", Uid.NAME);
-        builder.put("NAME", Name.NAME);
+        builder.put("UID", ConnIdBuiltInAttribute.UID.getConnIdName());
+        builder.put("NAME", ConnIdBuiltInAttribute.NAME.getConnIdName());
         BUILT_IN_ATTRIBUTES = Map.copyOf(builder);
 
     }
@@ -370,11 +374,93 @@ public class BaseObjectClassDefinitionBuilder<
      */
     public boolean connIdAttributeNotDefined(String name) {
         for (var attrBuilder : nativeAttributes.values()) {
-            if (name.equals(attrBuilder.connIdBuilder.build().getName())) {
+            if (name.equals(attrBuilder.connIdBuilder.name().value())) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Finds the attribute builder whose ConnId attribute name equals the given one.
+     *
+     * @param connIdName the ConnId attribute name (e.g. {@code __UID__})
+     * @return the matching attribute builder, or {@code null} if none is mapped to the name
+     */
+    public AB attributeBuilderFromConnIdName(String connIdName) {
+        for (var attrBuilder : nativeAttributes.values()) {
+            if (connIdName.equals(attrBuilder.connIdBuilder.name().value())) {
+                return attrBuilder;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether this object class needs a default {@code __NAME__} attribute derived from its
+     * {@code __UID__} attribute — a UID-mapped attribute exists and nothing (neither
+     * protocol-specific detection nor an explicit {@code connIdAttribute("NAME", …)}) has
+     * claimed {@code __NAME__} yet.
+     *
+     * @return {@code true} if {@link #applyDefaultNameFromUid()} should create the default
+     */
+    public boolean needsDefaultNameFromUid() {
+        return attributeBuilderFromConnIdName(Uid.NAME) != null
+                && connIdAttributeNotDefined(Name.NAME);
+    }
+
+    /**
+     * Creates the object class's default {@code __NAME__} attribute as a copy of the
+     * {@code __UID__} attribute's protocol mapping (see
+     * {@link #deriveDefaultNameFromUid}) and marks it {@code derivedFromUid} — the effect of
+     * the "NAME defaults to a copy of UID when not detected or explicitly defined" rule
+     * (see {@code NameDefaultsToUidRule}). No-op unless {@link #needsDefaultNameFromUid()}.
+     */
+    public void applyDefaultNameFromUid() {
+        if (!needsDefaultNameFromUid()) {
+            return;
+        }
+        var nameAttribute = deriveDefaultNameFromUid(attributeBuilderFromConnIdName(Uid.NAME));
+        if (nameAttribute != null) {
+            nameAttribute.derivedFromUid(DefinitionValue.detected(true));
+        }
+    }
+
+    /**
+     * Creates the default {@code __NAME__} attribute as a copy of the given UID attribute —
+     * the protocol-specific half of {@link #applyDefaultNameFromUid()}. The protocol mapping
+     * is a copy of the UID's, so NAME always reads the same protocol value.
+     *
+     * <p>The base implementation copies the UID attribute's JSON mapping (path, type and
+     * OpenAPI format); a custom value-mapping implementation on the UID is not inherited.
+     * Protocols with their own mapping model override this (e.g. SQL copies the column
+     * mapping, SCIM copies the SCIM path).
+     *
+     * @param uidAttribute the attribute builder mapped to {@code __UID__}
+     * @return the created {@code __NAME__} attribute builder, or {@code null} if this
+     *         protocol has nothing to copy from the UID attribute
+     */
+    public AB deriveDefaultNameFromUid(AB uidAttribute) {
+        if (nativeAttributes.containsKey(Name.NAME)) {
+            return null;
+        }
+        var uidJsonBuilder = uidAttribute.protocolMappings.get(JsonAttributeMapping.class);
+        if (!(uidJsonBuilder instanceof AbstractAttributeBuilder.JsonBuilder uidJson)) {
+            return null;
+        }
+        var nameAttribute = nativeAttributes.computeIfAbsent(Name.NAME,
+                key -> newAttribute(DefinitionValue.defaultFrom(Name.NAME)));
+        var nameJson = (AbstractAttributeBuilder.JsonBuilder) nameAttribute.json();
+        if (uidJson.jsonType() != null) {
+            nameJson.type(uidJson.jsonType());
+        }
+        if (uidJson.jsonOpenApiFormat() != null) {
+            nameJson.openApiFormat(uidJson.jsonOpenApiFormat());
+        }
+        if (uidJson.jsonPath() != null) {
+            nameJson.path(uidJson.jsonPath());
+        }
+        return nameAttribute;
     }
 
     @Override

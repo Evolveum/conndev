@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectClassSchemaBuilder;
 import com.evolveum.polygon.conndev.build.api.ObjectOperationSupportBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeBuilder;
+import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
 
 /**
  * Detects a property from protocol-specific discovery metadata and, if applicable, produces a
@@ -78,5 +79,33 @@ public interface MappingRule<C, OC extends ObjectClassSchemaBuilder<?, ?, ?>, A 
          * @return the action to apply, or {@code null} if there's nothing to apply after all
          */
         MappingAction.AttributeOnly<BaseAttributeBuilder<?, ?, ?, ?>> createAction();
+    }
+
+    /**
+     * A rule that inspects and mutates an object-class builder's own already-set state — no
+     * discovery metadata, no attribute or handler effect. The object-class counterpart of
+     * {@link AttributeOnly}: independent of {@link MappingRule} itself, same two-step shape
+     * (check, then act) without the unused parameters. Structural rules of this shape run per
+     * object class <i>before</i> the per-attribute structural rules (see
+     * {@code BaseSchemaBuilder#applyStructuralRules}), so any attributes they create are
+     * picked up by the attribute-level rules as well.
+     */
+    interface ObjectClassOnly {
+
+        /**
+         * Check if this rule has anything to do for the given object class.
+         *
+         * @param objectClass the object-class builder
+         * @return {@code true} if {@link #createAction} should be called
+         */
+        boolean checkIfApplicable(BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?> objectClass);
+
+        /**
+         * Create the action describing this rule's effect. Called only when
+         * {@link #checkIfApplicable} returns {@code true}.
+         *
+         * @return the action to apply, or {@code null} if there's nothing to apply after all
+         */
+        MappingAction.ObjectClassOnly<BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?>> createAction();
     }
 }

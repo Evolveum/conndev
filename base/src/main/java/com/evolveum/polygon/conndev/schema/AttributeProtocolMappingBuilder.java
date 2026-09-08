@@ -27,6 +27,19 @@ public interface AttributeProtocolMappingBuilder {
     Class<?> suggestedConnIdType();
 
     /**
+     * Records the attribute's final ConnId type so {@link #build()} can align the built
+     * mapping with it — wrapping the value mapping in a type override when the mapping's
+     * native ConnId type differs (e.g. a numeric wire value presented to ConnId as
+     * {@code String}). Applied by {@code AttributeTypeCoercionRule} after type resolution and
+     * before {@link #build()}; the default implementation ignores the type (mappings whose
+     * native type always matches, or that need no value conversion).
+     *
+     * @param connIdType the attribute's final ConnId type
+     */
+    default void applyConnIdTypeOverride(Class<?> connIdType) {
+    }
+
+    /**
      * Builds and returns an immutable {@link AttributeProtocolMapping}
      * configured according to the builder's settings.
      *

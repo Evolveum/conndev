@@ -47,6 +47,13 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
     /** Whether this attribute is emulated (i.e. simulated rather than directly present on the target). */
     private final DefinitionValue<Boolean> emulated;
 
+    /**
+     * Whether this attribute was automatically derived from the object class's
+     * {@code __UID__} attribute (e.g. the default {@code __NAME__} created as a copy of the
+     * UID mapping by {@code NameDefaultsToUidRule}).
+     */
+    private final DefinitionValue<Boolean> derivedFromUid;
+
     /** Optional resolver for computing or transforming attribute values at runtime. */
     private AttributeResolver resolver;
 
@@ -65,6 +72,7 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
     public BaseAttributeDefinition(BaseAttributeBuilder<?,?,?,?> builder) {
         remoteName = builder.remoteName;
         emulated = builder.emulated;
+        derivedFromUid = builder.derivedFromUid;
 
         protocolMappings.putAll(builder.resolveProtocolMappings());
 
@@ -141,6 +149,17 @@ public class BaseAttributeDefinition implements ConnDevAttributeSource {
      */
     public boolean emulated() {
         return emulated.value();
+    }
+
+    /**
+     * Indicates whether this attribute was automatically derived from the object class's
+     * {@code __UID__} attribute (e.g. the default {@code __NAME__} created as a copy of the
+     * UID mapping by {@code NameDefaultsToUidRule}).
+     *
+     * @return {@code true} if the attribute is derived from the UID attribute
+     */
+    public boolean derivedFromUid() {
+        return derivedFromUid.value();
     }
 
     /**

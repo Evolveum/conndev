@@ -15,8 +15,10 @@ import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.rules.AttributeTypeCoercionRule;
 import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
 import com.evolveum.polygon.conndev.rules.ComplexTypeImpliesEmbeddedReferenceRule;
+import com.evolveum.polygon.conndev.rules.NameDefaultsToUidRule;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.Name;
@@ -52,13 +54,24 @@ public class BaseSchemaBuilder<
 > implements SchemaBuilder<SB, OA> {
 
     /**
-     * Structural, protocol-neutral rules applied by {@link #applyStructuralRules()}.
-     * {@link ComplexTypeImpliesEmbeddedReferenceRule} must run before
-     * {@link AttributeTypeResolutionRule}.
+     * Object-class-level structural, protocol-neutral rules applied by
+     * {@link #applyStructuralRules()}, per object class, before the per-attribute rules — so
+     * attributes they create (e.g. {@code NameDefaultsToUidRule}'s default
+     * {@code __NAME__}) are picked up by the attribute-level rules.
+     */
+    private static final List<MappingRule.ObjectClassOnly> OBJECT_CLASS_STRUCTURAL_RULES = List.of(
+            new NameDefaultsToUidRule());
+
+    /**
+     * Attribute-level structural, protocol-neutral rules applied by
+     * {@link #applyStructuralRules()}. {@link ComplexTypeImpliesEmbeddedReferenceRule} must run
+     * before {@link AttributeTypeResolutionRule}, which must run before
+     * {@link AttributeTypeCoercionRule} (coercion consumes the resolved type).
      */
     private static final List<MappingRule.AttributeOnly> STRUCTURAL_RULES = List.of(
             new ComplexTypeImpliesEmbeddedReferenceRule(),
-            new AttributeTypeResolutionRule());
+            new AttributeTypeResolutionRule(),
+            new AttributeTypeCoercionRule());
 
     /** The connector class for which this schema is being built. */
     protected final Class<? extends Connector> connectorClass;
@@ -227,14 +240,29 @@ public class BaseSchemaBuilder<
     }
 
     /**
-     * Applies the structural rules to every attribute of every registered object class. Must be
-     * called after this builder is fully populated and before {@link #build()}.
+     * Applies the structural rules to every registered object class: the object-class-level
+     * rules first (so attributes they create are seen by the attribute-level rules), then the
+     * attribute-level rules on every attribute. Must be called after this builder is fully
+     * populated — in particular after protocol-specific detection rules have run — and before
+     * {@link #build()}.
      */
     public void applyStructuralRules() {
         for (OB objectClass : objectClasses.values()) {
-            for (BaseAttributeBuilder<?, ?, ?, ?> attribute : objectClass.allAttributes()) {
-                applyStructuralRules(attribute);
+            applyStructuralRules(objectClass);
+        }
+    }
+
+    private static void applyStructuralRules(BaseObjectClassDefinitionBuilder<?, ?, ?, ?, ?, ?> objectClass) {
+        for (MappingRule.ObjectClassOnly rule : OBJECT_CLASS_STRUCTURAL_RULES) {
+            if (rule.checkIfApplicable(objectClass)) {
+                var action = rule.createAction();
+                if (action != null) {
+                    action.applyToObjectClass(objectClass);
+                }
             }
+        }
+        for (BaseAttributeBuilder<?, ?, ?, ?> attribute : objectClass.allAttributes()) {
+            applyStructuralRules(attribute);
         }
     }
 

@@ -40,6 +40,35 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
     public Deferred.Settable<BaseAttributeDefinition> deffered = Deferred.settable();
 
     /**
+     * Marks this attribute as automatically derived from the object class's
+     * {@code __UID__} attribute — set by the framework when a default
+     * {@code __NAME__} is created as a copy of the UID mapping (see
+     * {@code NameDefaultsToUidRule}). Runtime code tests this marker instead of re-deriving
+     * the relationship (e.g. by comparing protocol mappings).
+     */
+    DefinitionValue<Boolean> derivedFromUid = DefinitionValue.DEFAULT_FALSE;
+
+    /**
+     * Sets the derived-from-UID flag (see {@link #derivedFromUid()}).
+     *
+     * @param value the flag with metadata
+     * @return this builder for chaining
+     */
+    public R derivedFromUid(DefinitionValue<Boolean> value) {
+        this.derivedFromUid = this.derivedFromUid.moreSpecific(value);
+        return self();
+    }
+
+    /**
+     * Returns the derived-from-UID flag.
+     *
+     * @return the flag definition value (never null)
+     */
+    public DefinitionValue<Boolean> derivedFromUid() {
+        return derivedFromUid;
+    }
+
+    /**
      * The object class name referenced by this reference attribute.
      */
     private DefinitionValue<String> referencedObjectClass = DefinitionValue.emptyDefault();

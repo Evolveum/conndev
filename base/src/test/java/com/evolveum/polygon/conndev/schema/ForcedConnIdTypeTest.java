@@ -27,21 +27,47 @@ import static org.testng.Assert.*;
  * not textual — e.g. a schema whose native {@code id} attribute has an integer
  * wire type while being declared as the UID attribute.
  * <p>
- * Covers both halves of the mechanism:
+ * Covers both halves of the mechanism, both applied externally via
+ * {@link BaseSchemaBuilder#applyStructuralRules()} before building (the production
+ * order — protocol detection first, structural rules second):
  * <ul>
- *   <li>{@link AbstractAttributeBuilder#forcedConnIdType()} — which attributes are
- *       forced to String, and that only an explicitly <em>declared</em> ConnId type
- *       suppresses the forcing (framework defaults and rule-detected values do not),</li>
- *   <li>the {@link JsonAttributeMapping} produced by {@code json().type("integer")} —
- *       it reports {@code String} as its ConnId type and converts numeric wire values
- *       to/from String, while leaving the wire representation a JSON number.</li>
+ *   <li>{@code AttributeTypeResolutionRule} — the built-in forced type from
+ *       {@code ConnIdBuiltInAttribute} wins over protocol suggestions and declared
+ *       types, forcing the ConnId type to String,</li>
+ *   <li>{@code AttributeTypeCoercionRule} — pushes that final type into the JSON
+ *       mapping builder, so the {@link JsonAttributeMapping} produced by
+ *       {@code json().type("integer")} reports {@code String} as its ConnId type
+ *       and converts numeric wire values to/from String, while leaving the wire
+ *       representation a JSON number.</li>
  * </ul>
  */
 public class ForcedConnIdTypeTest {
 
+    private static TestSchemaBuilder schema;
+
+    /** Schema builder that materializes {@link TestObjectClass}es so the structural
+     * rules (applied on the whole builder) reach the test's object classes. */
+    private static final class TestSchemaBuilder extends BaseSchemaBuilder<
+            TestSchemaBuilder,
+            TestObjectClass,
+            TestSchemaBuilder,
+            TestObjectClass,
+            BaseObjectClassDefinition<BaseAttributeDefinition>,
+            BaseSchema<BaseObjectClassDefinition<BaseAttributeDefinition>>> {
+
+        TestSchemaBuilder() {
+            super(StubConnector.class, ContextLookup.none());
+        }
+
+        @Override
+        protected TestObjectClass newObjectClass(DefinitionValue<String> name) {
+            return new TestObjectClass(this, name);
+        }
+    }
+
     private static TestObjectClass newObjectClass() {
-        var schemaBuilder = new BaseSchemaBuilder(StubConnector.class, ContextLookup.none());
-        return new TestObjectClass(schemaBuilder, DefinitionValue.from("Test", SourceLocation.capture()));
+        schema = new TestSchemaBuilder();
+        return schema.objectClass(DefinitionValue.from("Test", SourceLocation.capture()));
     }
 
     private static TestAttributeBuilder newUidAttribute() {
@@ -50,11 +76,18 @@ public class ForcedConnIdTypeTest {
         return attribute;
     }
 
+    /** Applies the structural rules (type resolution + type coercion) and then builds
+     * the attribute — the same order the connectors use. */
+    private static BaseAttributeDefinition build(TestAttributeBuilder attribute) {
+        schema.applyStructuralRules();
+        return attribute.build();
+    }
+
     @Test
     public void uidAttribute_forcesString() {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
-        assertThat(attribute.build().connId().getType()).isEqualTo(String.class);
+        assertThat(build(attribute).connId().getType()).isEqualTo(String.class);
     }
 
     @Test
@@ -63,7 +96,7 @@ public class ForcedConnIdTypeTest {
         attribute.connId().name(Name.NAME);
         attribute.json().type("integer");
 
-        assertThat(attribute.build().connId().getType()).isEqualTo(String.class);
+        assertThat(build(attribute).connId().getType()).isEqualTo(String.class);
     }
 
 
@@ -72,7 +105,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
 
-        assertEquals(attribute.build().connId().getType(), String.class);
+        assertEquals(build(attribute).connId().getType(), String.class);
     }
 
     @Test
@@ -80,7 +113,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
         attribute.connId().type(DefinitionValue.detected( String.class));
-        assertEquals(attribute.build().connId().getType(), String.class);
+        assertEquals(build(attribute).connId().getType(), String.class);
     }
 
     @Test
@@ -88,7 +121,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
 
         assertEquals(mapping.connIdType(), String.class);
     }
@@ -98,7 +131,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
         Object value = mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(42));
 
         assertTrue(value instanceof String, "UID value should be deserialized as String, got: " + value);
@@ -110,7 +143,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
         ObjectNode parent = JsonNodeFactory.instance.objectNode();
 
         mapping.toJsonNode(AttributeBuilder.build(Uid.NAME, "42"), parent);
@@ -127,7 +160,7 @@ public class ForcedConnIdTypeTest {
         attribute.connId().name(Name.NAME);
         attribute.json().type("integer");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
 
         assertEquals(mapping.connIdType(), String.class);
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(7)), "7");
@@ -138,7 +171,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("integer").openApiFormat("int64");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
 
         assertEquals(mapping.connIdType(), String.class);
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(42)), "42");
@@ -149,7 +182,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newUidAttribute();
         attribute.json().type("string");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
 
         assertEquals(mapping.connIdType(), String.class);
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.stringNode("abc")), "abc");
@@ -160,7 +193,7 @@ public class ForcedConnIdTypeTest {
         var attribute = newObjectClass().attribute("count");
         attribute.json().type("integer");
 
-        var mapping = attribute.build().json();
+        var mapping = build(attribute).json();
 
         assertEquals(mapping.connIdType(), Integer.class);
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(42)), 42);
