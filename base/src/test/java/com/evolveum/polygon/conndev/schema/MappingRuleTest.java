@@ -32,21 +32,6 @@ import static org.testng.Assert.*;
  */
 public class MappingRuleTest {
 
-    private static final class StubConnector implements Connector {
-        @Override
-        public Configuration getConfiguration() {
-            return null;
-        }
-
-        @Override
-        public void init(Configuration configuration) {
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     /** Minimal attribute builder: B, A and R collapsed into a single self-referential type. */
     private static final class TestAttributeBuilder extends BaseAttributeBuilder<
             TestAttributeBuilder, TestAttributeBuilder, TestAttributeBuilder, BaseAttributeDefinition> {
