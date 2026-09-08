@@ -8,10 +8,11 @@ package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
 import com.evolveum.polygon.conndev.annotations.Script;
-import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.spi.SpiAttributeBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
@@ -347,10 +348,85 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         /**
          * Sets a JSON path for nested attribute access.
          *
+         * <p>A {@code null} path is treated as unspecified: the default path derived
+         * from the attribute name is used.</p>
+         *
          * @param path the JSON path (supports nested fields, arrays, and filters)
          * @return this JSON mapping instance
          */
         JsonMapping path(AttributePath path);
+
+        /**
+         * Sets a JSON path from a string expression in the given format.
+         *
+         * <p>The expression is stored as a declaration and parsed lazily, when the
+         * mapping is built or the path is first resolved.</p>
+         *
+         * @param value the path expression
+         * @param format the format the expression is written in
+         * @return this JSON mapping instance
+         */
+        JsonMapping path(String value, AttributePathFormat<String> format);
+
+        /**
+         * Configures a JSON path via a closure:
+         * <pre>
+         * path {
+         *     type JSON_POINTER
+         *     value '/emails/0/value'
+         * }
+         * </pre>
+         * The {@code type} is optional and defaults to {@link PathBuilder#JSON_PATH}; any
+         * {@link AttributePathFormat} instance (e.g. {@code ScimPath.INSTANCE}) may be supplied.
+         *
+         * <p>The expression is stored as a declaration and parsed lazily, when the
+         * mapping is built or the path is first resolved.</p>
+         *
+         * @param closure a closure that configures the {@link PathBuilder}
+         * @return this JSON mapping instance
+         */
+        JsonMapping path(
+                @DelegatesTo(value = PathBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                @Script.Initialization
+                Closure<?> closure);
+    }
+
+    /**
+     * Builder for configuring a JSON path from a string expression.
+     *
+     * <p>The constants {@link #JSON_PATH} and {@link #JSON_POINTER} hold the built-in
+     * {@link AttributePathFormat} implementations ({@link BasicJsonPathFormat} and
+     * {@link JsonPointerFormat}) so that scripts can reference them without imports when
+     * the closure delegates to this interface.</p>
+     *
+     * <p>{@link #build()} assembles an {@link AttributePathDeclaration} without parsing
+     * the expression; the path is parsed lazily when the declaration is first resolved.</p>
+     */
+    interface PathBuilder extends FluentBuilder<PathBuilder, AttributePathDeclaration<?, ?>> {
+
+        /** Basic JSONPath format, see {@link BasicJsonPathFormat}. */
+        @Groovy.Convenience
+        AttributePathFormat<String> JSON_PATH = BasicJsonPathFormat.INSTANCE;
+
+        /** JSON Pointer (RFC 6901) format, see {@link JsonPointerFormat}. */
+        @Groovy.Convenience
+        AttributePathFormat<String> JSON_POINTER = JsonPointerFormat.INSTANCE;
+
+        /**
+         * Sets the format of the path expression.
+         *
+         * @param type the path format
+         * @return this path builder
+         */
+        PathBuilder type(AttributePathFormat<String> type);
+
+        /**
+         * Sets the path expression.
+         *
+         * @param value the path expression in the configured format
+         * @return this path builder
+         */
+        PathBuilder value(String value);
     }
 
     /**

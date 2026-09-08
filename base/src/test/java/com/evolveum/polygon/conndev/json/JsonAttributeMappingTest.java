@@ -7,17 +7,25 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
+import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
+import com.evolveum.polygon.conndev.api.PathTypeException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertThrows;
 
 public class JsonAttributeMappingTest {
 
@@ -206,6 +214,8 @@ public class JsonAttributeMappingTest {
 
         assertThat(parent.size()).isEqualTo(0);
     }
+
+    // === Value Filters ===
 
     @Test
     public void testToJsonNode_nestedPath() {

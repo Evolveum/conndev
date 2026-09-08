@@ -7,8 +7,6 @@
 package com.evolveum.polygon.conndev.api;
 
 import com.evolveum.polygon.conndev.concepts.Path;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;

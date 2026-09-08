@@ -7,6 +7,11 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
+import com.evolveum.polygon.conndev.api.JavaPathFormat;
+import com.evolveum.polygon.conndev.api.ParsingException;
+import com.evolveum.polygon.conndev.api.PathTypeException;
+import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Path;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
@@ -21,18 +26,44 @@ import java.util.List;
 
 public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode, JsonNode> {
 
-    protected final AttributePath path;
+    protected final AttributePathDeclaration<?, ?> pathDeclaration;
     protected final ValueMapping<Object, JsonNode> valueMapping;
+    private final AttributePath path;
 
     public JsonAttributeMapping(String name,
                                 ValueMapping<Object, JsonNode> valueMapping) {
-        this(AttributePath.of(name), valueMapping);
+        this(AttributePathDeclaration.of(
+                DefinitionValue.defaultFrom(JavaPathFormat.INSTANCE),
+                DefinitionValue.defaultFrom(AttributePath.of(name))), valueMapping);
     }
 
+    /**
+     * Creates a mapping for the given pre-built path. A {@code null} path disables
+     * path resolution: {@link #attributeFromObject(ObjectNode)} returns {@code null}.
+     *
+     * @param path the pre-built path, or {@code null} to disable path resolution
+     * @param valueMapping the value mapping
+     */
     public JsonAttributeMapping(AttributePath path,
                                 ValueMapping<Object, JsonNode> valueMapping) {
-        this.path = path;
+        this(path == null ? null : AttributePathDeclaration.of(JavaPathFormat.INSTANCE, path), valueMapping);
+    }
+
+    /**
+     * Creates a mapping from the given path declaration.
+     *
+     * <p>For string-based declarations the expression is parsed lazily: an invalid
+     * expression surfaces as a {@link ParsingException} when the path is first
+     * resolved (e.g. during {@link #attributeFromObject(ObjectNode)}), not here.</p>
+     *
+     * @param pathDeclaration the path declaration, or {@code null} to disable path resolution
+     * @param valueMapping the value mapping
+     */
+    public JsonAttributeMapping(AttributePathDeclaration<?, ?> pathDeclaration,
+                                ValueMapping<Object, JsonNode> valueMapping) {
+        this.pathDeclaration = pathDeclaration;
         this.valueMapping = valueMapping;
+        this.path = pathDeclaration != null ? pathDeclaration.actual() : null;
     }
 
 
@@ -79,8 +110,8 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
 
     @Override
     public JsonNode attributeFromObject(ObjectNode object) {
-        if (path != null) {
-            return path.resolve(object, NULLABLE_PATH_RESOLVER);
+        if (pathDeclaration != null) {
+            return pathDeclaration.actual().resolve(object, NULLABLE_PATH_RESOLVER);
         }
         return null;
     }
@@ -160,6 +191,9 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
         if (realNode == null) {
             return false;
         }
+        if (filterVal == null) {
+            return realNode instanceof NullNode;
+        }
         return switch (realNode) {
             case StringNode str -> filterVal.equals(str.asString());
             case NumericNode num -> filterVal instanceof Number filterNum && numbersMatch(num.numberValue(), filterNum);
@@ -184,7 +218,23 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
                 || value instanceof BigInteger;
     }
 
+    /**
+     * Returns the resolved attribute path of this mapping.
+     *
+     * @return the parsed {@link AttributePath}, or {@code null} if path resolution is disabled
+     */
     public AttributePath path() {
-        return path;
+        return pathDeclaration == null ? null : pathDeclaration.actual();
+    }
+
+    /**
+     * Returns the path declaration as configured, keeping the user-provided value
+     * (a path expression or a pre-built path), its format, and its source location
+     * for error reports.
+     *
+     * @return the path declaration, or {@code null} if path resolution is disabled
+     */
+    public AttributePathDeclaration<?, ?> pathDeclaration() {
+        return pathDeclaration;
     }
 }

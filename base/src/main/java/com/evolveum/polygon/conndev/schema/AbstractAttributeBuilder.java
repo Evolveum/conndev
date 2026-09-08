@@ -7,8 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.annotations.Script;
-import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ValueMappingBuilder;
@@ -42,11 +41,15 @@ import java.util.Map;
  * JSON protocol mapping via an inner {@link JsonBuilder}, and tracking embedded object
  * complex types.</p>
  *
+ * <p>Subclasses can override {@link #newProtocolMapping(Class)} to inject custom protocol
+ * mapping implementations.</p>
+ *
  * @param <B> The concrete builder type (CRTP self-type)
  * @param <A> The public attribute builder interface
  * @param <P> The attribute definition type produced by {@code build()}
  */
 public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilder<B,A,P>, A extends AttributeBuilder<A,P>, P> implements AttributeBuilder<A, P> {
+
 
     /**
      * Attribute name used to identify this attribute in object class definition
@@ -148,6 +151,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         return complexType;
     }
 
+
+
     /**
      * Builds every registered protocol mapping.
      *
@@ -184,6 +189,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
         return suggested;
     }
+
 
     /**
      * Marks this attribute as emulated (resolved at runtime).
@@ -309,6 +315,11 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             return self();
         }
 
+        /**
+         * Returns the ConnId Java type.
+         *
+         * @return the type definition value
+         */
         @Override
         public DefinitionValue<Class<?>> type() {
             return this.type;
@@ -316,7 +327,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         @Override
         public DefinitionValue<String> name() {
-            return this.name;
+            return name;
         }
 
         @Override
@@ -391,7 +402,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         /**
-         * Builds the {@link AttributeInfo} from all configured ConnId metadata.
+         * Builds the {@link AttributeInfo} from all configured ConnId metadata,
+         * automatically setting the type to {@Link String} for canonical Uid and Name attributes.
          *
          * @return the built AttributeInfo
          */
@@ -416,7 +428,6 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             builder.setSubtype(subtype.value());
             return builder.build();
         }
-
     }
 
     class JsonBuilder implements AttributeProtocolMappingBuilder, JsonMapping {
@@ -424,7 +435,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         /** The protocol-side name of this JSON mapping. */
         private String name;
         /** The JSON path for navigating to the attribute value. */
-        private AttributePath path;
+        private AttributePathDeclaration<?,?> path;
         /** The JSON type string (e.g., "string", "integer", "boolean"). */
         private String type;
         /** The OpenAPI format for typed JSON values (e.g., "date-time", "email"). */
@@ -461,7 +472,34 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         @Override
         public JsonMapping path(AttributePath path) {
-            this.path = path;
+            // a null path is treated as unspecified; the default name-based path applies
+            if (path != null) {
+                this.path = AttributePathDeclaration.of(
+                        DefinitionValue.defaultFrom(JavaPathFormat.INSTANCE),
+                        DefinitionValue.from(path, SourceLocation.capture()));
+            }
+            return this;
+        }
+
+        @Override
+        public JsonMapping path(String value, AttributePathFormat<String> format) {
+            return path(AttributePathDeclaration.of(format, value));
+        }
+
+        public JsonMapping path(AttributePathDeclaration<?,?> format) {
+            this.path = format;
+            return this;
+        }
+
+
+        @Override
+        public JsonMapping path(
+                @DelegatesTo(value = AttributeBuilder.PathBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                @Script.Initialization
+                Closure<?> closure) {
+            var builder = new BasePathBuilder();
+            GroovyClosures.callAndReturnDelegate(closure, builder);
+            this.path = builder.build();
             return this;
         }
 
@@ -538,14 +576,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                     connIdType = maybeBuiltIn.getForcedType();
                 }
             }
-
             if (connIdType != null && !connIdType.equals(implementation.connIdType())) {
                 // apply ConnId type override
                 implementation = ValueTypeOverrideMapping.of(connIdType, implementation);
             }
             if (path == null) {
-                path = AttributePath.of(name);
+                path = AttributePathDeclaration.of(
+                        DefinitionValue.defaultFrom(JavaPathFormat.INSTANCE),
+                        DefinitionValue.defaultFrom(AttributePath.of(name)));
             }
+            // force parsing so that an invalid expression fails at schema build time
+            path.actual();
             return new JsonAttributeMapping(path, implementation);
         }
     }

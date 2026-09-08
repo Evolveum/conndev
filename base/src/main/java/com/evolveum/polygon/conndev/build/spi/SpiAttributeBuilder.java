@@ -210,7 +210,12 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
         DefinitionValue<String> name();
 
         default <P> ValueMapping<Object, P> overrideMappingIfNeeded(ValueMapping<Object, P> value) {
-            var thisType = type().value();
+            var thisTypeDecl = type();
+            // override default with more specific value
+            if (thisTypeDecl.isDefault()) {
+                return value;
+            }
+            var thisType = thisTypeDecl.value();
             var otherType = value.connIdType();
             if (thisType.equals(otherType)) {
                 return value;
