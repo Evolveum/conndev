@@ -37,8 +37,11 @@ import java.lang.annotation.Target;
  *   <li>{@link ValueParser} — override the auto-inferred scalar coercion with a specialised
  *       {@link DeclYamlValueParser}.</li>
  *   <li>{@link Custom} — a structural shape handled by a named {@link CustomYamlHandler}.</li>
- *   <li>{@link Map} — a map of sub-builders: each entry is bound onto the sub-builder created by the
- *       named factory method (e.g. {@code @Yaml.Map("attribute")} drives an {@code attributes} block).</li>
+ *   <li>{@link Map} — a map of sub-builders: the annotation sits on the {@code String}-arg factory
+ *       method that creates the sub-builders, and {@link Map#value()} is the YAML block key (e.g.
+ *       {@code @Yaml.Map("attributes")} on {@code attribute(String)} drives an {@code attributes}
+ *       block; each entry is bound onto the sub-builder created by invoking the factory with the
+ *       entry's key).</li>
  * </ul>
  */
 public final class Yaml {
@@ -81,11 +84,11 @@ public final class Yaml {
     }
 
     /**
-     * Marks a method as a map-of-sub-builders binding. The YAML value is a mapping of name to
-     * definition; each entry is bound onto the sub-builder returned by the factory method named by
-     * {@link #value()} (invoked with the entry's key), e.g. {@code @Yaml.Map("attributes")}.
-     *
-     * Use this annotation on methods, which creates object by key and provides attributes.
+     * Marks the sub-builder factory method of a map-of-sub-builders binding. The annotation sits on
+     * the {@code String}-arg factory method (e.g. {@code attribute(String)}); {@link #value()} is the
+     * YAML block key. The YAML value is a mapping of name to definition; each entry is bound onto
+     * the sub-builder returned by invoking the annotated factory with the entry's key
+     * (e.g. {@code @Yaml.Map("attributes")} on {@code attribute(String)}).
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)

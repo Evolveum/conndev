@@ -51,7 +51,7 @@ public final class DeclYamlBinder {
      * sub-selection (e.g. an endpoint's config minus the keys the handler consumed).
      */
     public void bindEntries(List<LocatedNode.Entry> entries, Object target) {
-        Map<String, DeclYamlBinding> bindings = DeclYamlBindingCache.bindingsFor(target);
+        Map<String, DeclYamlBinding> bindings = DeclYamlBinding.bindingsFor(target);
         for (LocatedNode.Entry entry : entries) {
             DeclYamlBinding binding = bindings.get(entry.key());
             if (binding == null) {
