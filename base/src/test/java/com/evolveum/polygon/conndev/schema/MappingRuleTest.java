@@ -14,8 +14,6 @@ import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.groovy.BaseObjectOperationSupportBuilder;
 import org.identityconnectors.framework.common.objects.Uid;
-import org.identityconnectors.framework.spi.Configuration;
-import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;

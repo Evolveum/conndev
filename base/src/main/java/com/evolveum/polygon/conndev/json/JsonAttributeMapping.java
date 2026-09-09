@@ -10,7 +10,6 @@ import com.evolveum.polygon.conndev.api.AttributePath;
 import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
 import com.evolveum.polygon.conndev.api.JavaPathFormat;
 import com.evolveum.polygon.conndev.api.ParsingException;
-import com.evolveum.polygon.conndev.api.PathTypeException;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Path;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
@@ -164,7 +163,7 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
             current = current.withObject(attr.name());
         }
 
-        var last = components.get(components.size() - 1);
+        var last = components.getLast();
         if (last instanceof AttributePath.Attribute attr) {
             JsonNode value = values.size() == 1
                     ? values.getFirst()

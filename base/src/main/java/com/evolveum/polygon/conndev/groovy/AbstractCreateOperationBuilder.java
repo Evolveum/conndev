@@ -9,11 +9,7 @@ package com.evolveum.polygon.conndev.groovy;
 import com.evolveum.polygon.conndev.build.api.CreateOperationBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
-import com.evolveum.polygon.conndev.spi.AttributeCreateOperationHandler;
-import com.evolveum.polygon.conndev.spi.CreateOperationHandler;
-import com.evolveum.polygon.conndev.spi.CreateOperationStrategyHandler;
-import com.evolveum.polygon.conndev.spi.ObjectCreateOperation;
-import com.evolveum.polygon.conndev.spi.OperationExecutor;
+import com.evolveum.polygon.conndev.spi.*;
 
 import java.util.Collection;
 import java.util.List;

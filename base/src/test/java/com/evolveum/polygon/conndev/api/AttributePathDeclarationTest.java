@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.api;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
-import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import org.testng.annotations.Test;
 
 import java.util.List;

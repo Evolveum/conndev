@@ -31,9 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.expectThrows;
+import static org.testng.Assert.*;
 
 public class OperationStrategyHandlerTest {
 
