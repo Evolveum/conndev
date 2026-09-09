@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
@@ -69,7 +70,7 @@ public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
     }
 
     private ConnectorObject readObject(Uid uid, OperationOptions options,
-            com.evolveum.polygon.conndev.api.ContextLookup operationContext) {
+            ContextLookup operationContext) {
         var result = new ArrayList<ConnectorObject>();
         context.handlerFor(objectClass).checkSupported(ObjectSearchOperation.class)
                 .executeQuery(operationContext, new EqualsFilter(uid), result::add, options);

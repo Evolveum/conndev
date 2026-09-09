@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.build.spi.SpiObjectClassHandlerBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 
 /**
  * Base interface for all ConnId operation builders.
@@ -28,6 +29,7 @@ public interface ObjectClassOperationBuilder<B extends ObjectClassOperationBuild
      * @param enabled the flag indicating if the operation should be enabled
      * @return the builder instance for method chaining
      */
+    @Yaml.Key
     default B enabled(boolean enabled) {
         enabled(DefinitionValue.from(enabled, SourceLocation.capture()));
         return self();

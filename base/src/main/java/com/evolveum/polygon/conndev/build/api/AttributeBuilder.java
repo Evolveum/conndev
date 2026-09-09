@@ -16,6 +16,8 @@ import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
+import com.evolveum.polygon.conndev.annotations.Yaml;
+import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdTypeParser;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import tools.jackson.databind.JsonNode;
@@ -41,8 +43,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param readable true if the attribute should be readable, false otherwise
      * @return the current instance of {@code AttributeBuilder<B, P>} for method chaining
      */
+    @Yaml.Key
     default B readable(boolean readable) {
         connId().readable(DefinitionValue.from(readable, SourceLocation.capture()));
+        return self();
+    }
+
+    default B readable(DefinitionValue<Boolean> readable) {
+        connId().readable(readable);
         return self();
     }
 
@@ -54,8 +62,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param required true if the attribute should be required, false otherwise
      * @return the current instance of {@code AttributeBuilder} for method chaining
      */
+    @Yaml.Key
     default B required(boolean required) {
         connId().required(DefinitionValue.from(required, SourceLocation.capture()));
+        return self();
+    }
+
+    default B required(DefinitionValue<Boolean> required) {
+        connId().required(required);
         return self();
     }
 
@@ -65,8 +79,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param description the description text
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B description(String description) {
         connId().description(DefinitionValue.from(description, SourceLocation.capture()));
+        return self();
+    }
+
+    default B description(DefinitionValue<String> description) {
+        connId().description(description);
         return self();
     }
 
@@ -76,8 +96,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param returnedByDefault true if the attribute should be included by default, false otherwise
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B returnedByDefault(boolean returnedByDefault) {
         connId().returnedByDefault(DefinitionValue.from(returnedByDefault, SourceLocation.capture()));
+        return self();
+    }
+
+    default B returnedByDefault(DefinitionValue<Boolean> returnedByDefault) {
+        connId().returnedByDefault(returnedByDefault);
         return self();
     }
 
@@ -87,8 +113,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param multiValued true if the attribute accepts multiple values, false otherwise
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B multiValued(boolean multiValued) {
         connId().multiValued(DefinitionValue.from(multiValued, SourceLocation.capture()));
+        return self();
+    }
+
+    default B multiValued(DefinitionValue<Boolean> multiValued) {
+        connId().multiValued(multiValued);
         return self();
     }
 
@@ -98,8 +130,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param creatable true if the attribute should be creatable, false otherwise
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B creatable(boolean creatable) {
         connId().creatable(DefinitionValue.from(creatable, SourceLocation.capture()));
+        return self();
+    }
+
+    default B creatable(DefinitionValue<Boolean> creatable) {
+        connId().creatable(creatable);
         return self();
     }
 
@@ -109,8 +147,14 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param updatable true if the attribute should be updatable, false otherwise
      * @return the current instance for {@code AttributeBuilder} for method chaining
      */
+    @Yaml.Key
     default B updatable(boolean updatable) {
         connId().updatable(DefinitionValue.from(updatable, SourceLocation.capture()));
+        return self();
+    }
+
+    default B updatable(DefinitionValue<Boolean> updatable) {
+        connId().updatable(updatable);
         return self();
     }
 
@@ -122,7 +166,12 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @return the current instance for method chaining
      */
     @Groovy.AlternateSpelling
+    @Yaml.Key
     default B updateable(boolean updatable) {
+        return updatable(updatable);
+    }
+
+    default B updateable(DefinitionValue<Boolean> updatable) {
         return updatable(updatable);
     }
 
@@ -133,6 +182,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param emulated true if the attribute should be emulated, false otherwise
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B emulated(boolean emulated) {
         return emulated(DefinitionValue.from(emulated, SourceLocation.capture()));
     }
@@ -145,6 +195,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      *
      * @return a JSON mapping builder instance
      */
+    @Yaml.Sub
     JsonMapping json();
 
     /**
@@ -160,6 +211,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      *
      * @return the ConnId mapping instance
      */
+    @Yaml.Sub
     ConnIdMapping connId();
 
     /**
@@ -216,6 +268,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @deprecated Use {@link JsonMapping#type(String)} directly instead.
      */
     @Deprecated
+    @Yaml.Key
     default B jsonType(String jsonType) {
         json().type(jsonType);
         return self();
@@ -230,6 +283,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @param objectClass the object class name for this complex type attribute
      * @return the current instance for method chaining
      */
+    @Yaml.Key
     default B complexType(String objectClass) {
         return complexType(DefinitionValue.from(objectClass, SourceLocation.capture()));
     }
@@ -245,6 +299,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      * @deprecated Use {@link JsonMapping#openApiFormat(String)} directly instead.
      */
     @Deprecated
+    @Yaml.Key
     default B openApiFormat(String openapiFormat) {
         json().openApiFormat(openapiFormat);
         return self();
@@ -319,6 +374,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param protocolName the JSON field name
          * @return this JSON mapping instance
          */
+        @Yaml.Key
         JsonMapping name(String protocolName);
         /**
          * Sets the JSON type.
@@ -326,6 +382,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param jsonType the JSON data type (e.g., "string", "integer")
          * @return this JSON mapping instance
          */
+        @Yaml.Key
         JsonMapping type(String jsonType);
         /**
          * Sets the OpenAPI format.
@@ -333,6 +390,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param openapiFormat the OpenAPI format (e.g., "date-time", "email")
          * @return this JSON mapping instance
          */
+        @Yaml.Key
         JsonMapping openApiFormat(String openapiFormat);
 
         /**
@@ -444,6 +502,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @return this ConnId mapping instance
          */
         @SuppressWarnings("java:S1845")
+        @Yaml.Key
         default ConnIdMapping name(String name) {
             return name(DefinitionValue.from(name, SourceLocation.capture()));
         }
@@ -459,6 +518,8 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          * @param connIdType the ConnId Java class
          * @return this ConnId mapping instance
          */
+        @Yaml.Key
+        @Yaml.ValueParser(DeclConnIdTypeParser.class)
         default ConnIdMapping type(Class<?> connIdType) {
             return type(DefinitionValue.from(connIdType, SourceLocation.capture()));
         }

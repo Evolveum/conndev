@@ -22,7 +22,7 @@ public @interface Script {
      * Usually delegates to builder methods and configures the builder.
      * Execution happens in the context where it's defined.
      */
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)
     @interface Initialization {
     }
@@ -32,7 +32,7 @@ public @interface Script {
      * Stored as prototype and cloned/executed later via GroovyClosures.copyAndCall().
      * Execution happens in runtime context (e.g., during search, attribute resolution).
      */
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)
     @interface Runtime {
     }

@@ -126,10 +126,11 @@ public class YamlSchemaLoadingTest {
                 .load("objectClass(\"FromGroovy\") { attribute(\"a\") { jsonType \"string\" } }");
         var yamlLoader = new YamlSchemaLoader(builder);
         yamlLoader.load("""
-                objectClass: FromYaml
-                attributes:
-                  b:
-                    jsonType: string
+                objectClasses:
+                  FromYaml:
+                    attributes:
+                      b:
+                        jsonType: string
                 """);
 
         builder.applyStructuralRules();
@@ -143,10 +144,11 @@ public class YamlSchemaLoadingTest {
     @Test
     public void unknownKeyFailsFast() {
         var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
-                objectClass: Broken
-                attributes:
-                  name:
-                    creatabel: false
+                objectClasses:
+                  Broken:
+                    attributes:
+                      name:
+                        creatabel: false
                 """));
 
         assertTrue(exception.getMessage().contains("creatabel"),
@@ -156,13 +158,15 @@ public class YamlSchemaLoadingTest {
     @Test
     public void multiDocumentFileIsRejected() {
         var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
-                objectClass: One
+                objectClasses:
+                  One: {}
                 ---
-                objectClass: Two
+                objectClasses:
+                  Two: {}
                 """));
 
-        assertTrue(exception.getMessage().contains("exactly one object class"),
-                "error should explain the one-class-per-file rule: " + exception.getMessage());
+        assertTrue(exception.getMessage().contains("exactly one document"),
+                "error should explain the one-document-per-file rule: " + exception.getMessage());
     }
 
     @Test
@@ -180,12 +184,13 @@ public class YamlSchemaLoadingTest {
         var loader = new YamlSchemaLoader(builder);
         // no jsonType: an explicit ConnId type without a JSON mapping, like in the Groovy DSL
         loader.load("""
-                objectClass: Secure
-                attributes:
-                  password:
-                    readable: false
-                    connId:
-                      type: guardedstring
+                objectClasses:
+                  Secure:
+                    attributes:
+                      password:
+                        readable: false
+                        connId:
+                          type: GuardedString
                 """);
 
         builder.applyStructuralRules();
@@ -198,11 +203,12 @@ public class YamlSchemaLoadingTest {
     @Test
     public void unknownConnIdTypeFails() {
         var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
-                objectClass: Broken
-                attributes:
-                  a:
-                    connId:
-                      type: uuid
+                objectClasses:
+                  Broken:
+                    attributes:
+                      a:
+                        connId:
+                          type: uuid
                 """));
 
         assertTrue(exception.getMessage().contains("uuid"), exception.getMessage());
@@ -246,10 +252,11 @@ public class YamlSchemaLoadingTest {
     public void unknownTopLevelBlockIsDispatchedToProtocolBlockConsumer() {
         var schemaBuilder = new StubProtocolAwareSchemaBuilder();
         new YamlSchemaLoader(schemaBuilder).load("""
-                objectClass: Widget
-                sql:
-                  table: widgets
-                  schema: public
+                objectClasses:
+                  Widget:
+                    sql:
+                      table: widgets
+                      schema: public
                 """);
 
         var widget = (StubProtocolAwareObjectClass) schemaBuilder.objectClass("Widget");
@@ -262,9 +269,10 @@ public class YamlSchemaLoadingTest {
     @Test
     public void unknownTopLevelBlockWithoutConsumerFailsFast() {
         var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
-                objectClass: Widget
-                sql:
-                  table: widgets
+                objectClasses:
+                  Widget:
+                    sql:
+                      table: widgets
                 """));
 
         assertTrue(exception.getMessage().contains("sql"), exception.getMessage());

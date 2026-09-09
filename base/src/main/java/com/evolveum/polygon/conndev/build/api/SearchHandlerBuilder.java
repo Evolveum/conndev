@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.concepts.Fluent;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -30,6 +31,7 @@ public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> extends
      * @param emptyFilterSupported true if the endpoint should be used for searches without filters
      * @return this builder for chaining
      */
+    @Yaml.Key
     R emptyFilterSupported(boolean emptyFilterSupported);
 
     /**

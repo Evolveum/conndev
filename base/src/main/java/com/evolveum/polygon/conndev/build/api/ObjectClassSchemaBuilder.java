@@ -10,6 +10,8 @@ import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.annotations.Yaml;
+import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdAliasHandler;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 
@@ -34,6 +36,7 @@ public interface ObjectClassSchemaBuilder<
      * @param description the object class description
      * @return this builder for chaining
      */
+    @Yaml.Key
     default B description(String description) {
         return description(DefinitionValue.from(description, SourceLocation.capture()));
     }
@@ -51,17 +54,28 @@ public interface ObjectClassSchemaBuilder<
      * @param embedded true if the object class is embedded, false if it is referenced
      * @return this builder for chaining
      */
+    @Yaml.Key
     default B embedded(boolean embedded) {
         return embedded(DefinitionValue.from(embedded, SourceLocation.capture()));
     }
 
     B embedded(DefinitionValue<Boolean> embedded);
+
+    /**
+     * YAML structural hook for the class-level {@code connId} alias map
+     * ({@code connId: {UID: id}}). The method body is never invoked — the binder routes the block
+     * to {@link DeclConnIdAliasHandler}.
+     */
+    @Yaml.Custom(DeclConnIdAliasHandler.class)
+    default void connId() {
+    }
     /**
      * Creates / gets attribute definition with the specified name.
      *
      * @param name the name of the attribute to be configured
      * @return an instance of {@link AttributeBuilder} for further configuration of the attribute
      */
+    @Yaml.Map("attributes")
     A attribute(String name);
 
     /**
@@ -70,6 +84,7 @@ public interface ObjectClassSchemaBuilder<
      * @param name the name of the reference attribute to be configured
      * @return an instance of {@link ReferenceAttributeBuilder} for further configuration of the reference attribute
      */
+    @Yaml.Map("references")
     R reference(String name);
 
     /**

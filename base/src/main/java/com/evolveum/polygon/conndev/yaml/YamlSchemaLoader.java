@@ -6,205 +6,116 @@
  */
 package com.evolveum.polygon.conndev.yaml;
 
-import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
-import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
-import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
+import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
-import com.evolveum.polygon.conndev.yaml.model.YamlAttribute;
-import com.evolveum.polygon.conndev.yaml.model.YamlReference;
-import com.evolveum.polygon.conndev.yaml.model.YamlSchemaDocument;
-import org.identityconnectors.common.security.GuardedByteArray;
-import org.identityconnectors.common.security.GuardedString;
-import org.identityconnectors.framework.common.objects.AttributeInfo;
+import com.evolveum.polygon.conndev.yaml.decl.LocatedDocument;
+import com.evolveum.polygon.conndev.yaml.decl.LocatedNode;
+import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.time.ZonedDateTime;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Declarative YAML front-end of the schema DSL — the YAML counterpart of
- * {@link com.evolveum.polygon.conndev.groovy.GroovySchemaLoader}. Documents are deserialized by
- * Jackson into the typed {@link YamlSchemaDocument} model (unknown keys fail fast) and applied onto
- * the same {@link BaseSchemaBuilder} the Groovy DSL drives, so both front-ends can be used side by
- * side and a connector can migrate its definitions file by file.
+ * {@link com.evolveum.polygon.conndev.groovy.GroovySchemaLoader}. A document is parsed into a
+ * location-aware tree ({@link LocatedDocument}) and bound by the generic {@link DeclYamlBinder} onto the
+ * same {@link BaseSchemaBuilder} the Groovy DSL drives, so both front-ends can be used side by side
+ * and a connector can migrate its definitions file by file.
  *
- * <p>One file describes exactly one object class and its type is given by the file-name convention
- * mirroring the Groovy one ({@code User.native.schema.yaml}, {@code User.connid.schema.yaml});
- * multi-document files are rejected. Documents naming the same object class merge into one builder,
- * so the native definition and the ConnId overlay stay in separate files, like in Groovy.
+ * <p>The document uses the extended shape: a plural {@code objectClasses} mapping (one entry per
+ * object class) plus an optional top-level {@code relationships} mapping. Documents naming the same
+ * object class merge into one builder ({@code objectClass(name)} is a {@code computeIfAbsent}), so a
+ * native definition and a ConnId overlay can stay in separate files, like in Groovy. Only one
+ * document per file is allowed.
  */
 public class YamlSchemaLoader {
 
-    /**
-     * ConnId attribute value types by their YAML name — the full set from
-     * {@code FrameworkUtil.getAllSupportedAttributeTypes()} except {@code ConnectorObjectReference}
-     * and {@code EmbeddedObject}, which are expressed by the dedicated {@code references} and
-     * {@code complexType} constructs.
-     */
-    private static final Map<String, Class<?>> CONNID_TYPES = Map.ofEntries(
-            Map.entry("string", String.class),
-            Map.entry("integer", Integer.class),
-            Map.entry("long", Long.class),
-            Map.entry("boolean", Boolean.class),
-            Map.entry("double", Double.class),
-            Map.entry("float", Float.class),
-            Map.entry("character", Character.class),
-            Map.entry("byte", Byte.class),
-            Map.entry("binary", byte[].class),
-            Map.entry("bigdecimal", BigDecimal.class),
-            Map.entry("biginteger", BigInteger.class),
-            Map.entry("guardedstring", GuardedString.class),
-            Map.entry("guardedbytearray", GuardedByteArray.class),
-            Map.entry("zoneddatetime", ZonedDateTime.class),
-            Map.entry("map", Map.class));
-
     private final BaseSchemaBuilder schemaBuilder;
+    private final GroovyScriptCompiler compiler;
 
     public YamlSchemaLoader(BaseSchemaBuilder schemaBuilder) {
         this.schemaBuilder = schemaBuilder;
+        this.compiler = new GroovyScriptCompiler(new GroovyContext());
     }
 
     public void load(String yaml) {
-        apply(YamlDocuments.readSingle(yaml, YamlSchemaDocument.class, "object class", "inline document"));
+        loadDocument(LocatedDocument.parse("inline document", yaml));
     }
 
     public void load(Reader reader, String sourceName) {
-        apply(YamlDocuments.readSingle(reader, YamlSchemaDocument.class, "object class", sourceName));
+        loadDocument(LocatedDocument.parse(sourceName, reader));
     }
 
     public void loadFromResource(String resource) {
-        apply(YamlDocuments.readSingleFromResource(getClass(), resource, YamlSchemaDocument.class, "object class"));
+        InputStream stream = getClass().getResourceAsStream(resource);
+        if (stream == null) {
+            throw new IllegalArgumentException("YAML resource not found: " + resource);
+        }
+        try (Reader reader = new InputStreamReader(stream)) {
+            loadDocument(LocatedDocument.parse(resource, reader));
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read YAML resource (" + resource + "): " + e.getMessage(), e);
+        }
     }
 
     public BaseSchema build() {
         return schemaBuilder.build();
     }
 
-    private void apply(YamlSchemaDocument document) {
-        if (document.objectClass == null || document.objectClass.isBlank()) {
-            throw new IllegalArgumentException("YAML schema document is missing the objectClass name");
+    private void loadDocument(LocatedDocument document) {
+        LocatedNode root = document.root();
+        if (root.kind() != LocatedNode.Kind.OBJECT) {
+            throw new IllegalArgumentException("YAML schema document must be a mapping (" + document.sourceName() + ")");
         }
-
-        // The generic schema builder returns the build.api interface; connIdAttribute lives on the
-        // concrete builder, so we work with the concrete type the runtime actually produces.
-        BaseObjectClassDefinitionBuilder objectClass =
-                (BaseObjectClassDefinitionBuilder) schemaBuilder.objectClass(document.objectClass);
-        if (document.description != null) {
-            objectClass.description(document.description);
-        }
-        if (Boolean.TRUE.equals(document.embedded)) {
-            objectClass.embedded(true);
-        }
-
-        document.attributes.forEach((name, attribute) -> apply(objectClass.attribute(name), name, attribute));
-        document.references.forEach((name, reference) -> apply(objectClass, name, reference));
-
-        // connIdAttribute validates the built-in alias (UID/NAME) and requires the attribute to exist,
-        // so the mapping is applied after the attributes are declared.
-        document.connId.forEach(objectClass::connIdAttribute);
-
-        document.protocolBlocks.forEach((name, block) -> {
-            if (!(objectClass instanceof YamlProtocolBlockConsumer consumer)) {
-                throw new IllegalArgumentException("Unknown key '" + name + "' in YAML schema document for object class '"
-                        + document.objectClass + "'");
-            }
-            consumer.applyProtocolBlock(name, block);
-        });
-    }
-
-    private void apply(AttributeBuilder builder, String name, YamlAttribute attribute) {
-        if (attribute == null) {
-            return; // "name:" with no keys declares the attribute with defaults
-        }
-        if (attribute.description != null) {
-            builder.description(attribute.description);
-        }
-        if (attribute.jsonType != null) {
-            builder.json().type(attribute.jsonType);
-        }
-        if (attribute.openApiFormat != null) {
-            builder.json().openApiFormat(attribute.openApiFormat);
-        }
-        if (attribute.remoteName != null) {
-            builder.json().name(attribute.remoteName);
-        }
-        if (attribute.required != null) {
-            builder.required(attribute.required);
-        }
-        if (attribute.multiValued != null) {
-            builder.multiValued(attribute.multiValued);
-        }
-        if (attribute.creatable != null) {
-            builder.creatable(attribute.creatable);
-        }
-        if (attribute.updateable != null) {
-            builder.updatable(attribute.updateable);
-        }
-        if (attribute.readable != null) {
-            builder.readable(attribute.readable);
-        }
-        if (attribute.returnedByDefault != null) {
-            builder.returnedByDefault(attribute.returnedByDefault);
-        }
-        if (attribute.emulated != null) {
-            builder.emulated(attribute.emulated);
-        }
-        if (attribute.complexType != null) {
-            builder.complexType(attribute.complexType);
-        }
-        if (attribute.connId != null) {
-            var connId = builder.connId();
-            if (attribute.connId.name != null) {
-                connId.name(attribute.connId.name);
-            }
-            if (attribute.connId.type != null) {
-                connId.type(connIdType(name, attribute.connId.type));
+        DeclYamlBinder binder = new DeclYamlBinder(document, compiler);
+        boolean hasObjectClasses = false;
+        for (LocatedNode.Entry entry : root.entries()) {
+            switch (entry.key()) {
+                case "objectClasses" -> {
+                    hasObjectClasses = true;
+                    applyObjectClasses(binder, entry.value());
+                }
+                case "relationships" -> applyRelationships(binder, entry.value());
+                default -> throw unknownTopLevelKey(document, entry);
             }
         }
-    }
-
-    private void apply(BaseObjectClassDefinitionBuilder objectClass, String name, YamlReference reference) {
-        ReferenceAttributeBuilder builder = objectClass.reference(name);
-        if (reference.objectClass == null || reference.objectClass.isBlank()) {
-            throw new IllegalArgumentException("Reference '" + name + "' is missing the target objectClass");
-        }
-        builder.objectClass(reference.objectClass);
-        if (reference.role != null) {
-            builder.role(roleInReference(name, reference.role));
-        }
-        if (reference.subtype != null) {
-            builder.subtype(reference.subtype);
-        }
-        if (reference.description != null) {
-            builder.description(reference.description);
-        }
-        if (reference.required != null) {
-            builder.required(reference.required);
-        }
-        if (reference.multiValued != null) {
-            builder.multiValued(reference.multiValued);
+        if (!hasObjectClasses) {
+            throw new IllegalArgumentException("YAML schema document is missing the 'objectClasses' section ("
+                    + document.sourceName() + ")");
         }
     }
 
-    private static Class<?> connIdType(String attribute, String type) {
-        Class<?> mapped = CONNID_TYPES.get(type.toLowerCase(Locale.ROOT));
-        if (mapped == null) {
-            throw new IllegalArgumentException("Unknown connId type '" + type + "' of attribute '" + attribute
-                    + "' (supported: " + String.join(", ", CONNID_TYPES.keySet()) + ")");
+    private void applyObjectClasses(DeclYamlBinder binder, LocatedNode node) {
+        for (LocatedNode.Entry entry : requireMap(node, "objectClasses").entries()) {
+            binder.bind(entry.value(), schemaBuilder.objectClass(entry.key()));
         }
-        return mapped;
     }
 
-    private static AttributeInfo.RoleInReference roleInReference(String reference, String role) {
-        try {
-            return AttributeInfo.RoleInReference.valueOf(role.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown role '" + role + "' of reference '" + reference
-                    + "' (supported: subject, object)");
+    private void applyRelationships(DeclYamlBinder binder, LocatedNode node) {
+        // The base relationship builder is not yet implemented (the concrete subject/object
+        // participants live in the protocol connectors), so a YAML relationships block is rejected
+        // with a clear message rather than silently dropped.
+        throw new IllegalArgumentException("The 'relationships' block is not yet supported by the base "
+                + "schema builder; define relationships in the protocol connector's schema");
+    }
+
+    private static LocatedNode requireMap(LocatedNode node, String key) {
+        // A null/omitted block binds nothing: a scalar (null) node has no entries to iterate.
+        if (node == null || node.isNull()) {
+            return node;
         }
+        if (node.kind() != LocatedNode.Kind.OBJECT) {
+            throw new IllegalArgumentException("'" + key + "' must be a mapping but found a " + node.kind()
+                    + " at " + node.line() + ":" + node.col());
+        }
+        return node;
+    }
+
+    private static IllegalArgumentException unknownTopLevelKey(LocatedDocument document, LocatedNode.Entry entry) {
+        return new IllegalArgumentException("Unknown top-level key '" + entry.key() + "' in YAML schema document ("
+                + document.sourceName() + ":" + entry.keyLine() + ":" + entry.keyCol() + ")");
     }
 }

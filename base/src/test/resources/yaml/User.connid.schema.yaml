@@ -1,4 +1,5 @@
-objectClass: User
-connId:
-  UID: id
-  NAME: login
+objectClasses:
+  User:
+    connId:
+      UID: id
+      NAME: login

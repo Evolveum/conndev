@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
@@ -36,6 +37,7 @@ public interface ReferenceAttributeBuilder<
  * @param objectClass the target object class value
  * @return the current instance for method chaining
  */
+@Yaml.Key
 B objectClass(String objectClass);
 
 /**
@@ -44,6 +46,7 @@ B objectClass(String objectClass);
  * @param subtype the subtype value
  * @return the current instance for method chaining
  */
+@Yaml.Key
 B subtype(String subtype);
 
 /**
@@ -60,6 +63,7 @@ B role(String role);
  * @param role the role enum value
  * @return the current instance for method chaining
  */
+@Yaml.Key
 B role(AttributeInfo.RoleInReference role);
 
     /**

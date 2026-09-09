@@ -1,17 +1,18 @@
-objectClass: Group
-description: SCIM group
-attributes:
-  id:
-    jsonType: string
-    connId:
-      name: __UID__
-      type: string
-  displayName:
-    jsonType: string
-    required: true
-references:
-  members:
-    objectClass: User
-    role: object
-    subtype: _User_Group_Membership
-    multiValued: true
+objectClasses:
+  Group:
+    description: SCIM group
+    attributes:
+      id:
+        jsonType: string
+        connId:
+          name: __UID__
+          type: String
+      displayName:
+        jsonType: string
+        required: true
+    references:
+      members:
+        objectClass: User
+        role: object
+        subtype: _User_Group_Membership
+        multiValued: true

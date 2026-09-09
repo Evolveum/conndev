@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
+import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.Uid;
@@ -17,7 +18,8 @@ public enum ConnIdBuiltInAttribute {
 
     UID(Uid.NAME, String.class),
     NAME(Name.NAME, String.class),
-    PASSWORD(OperationalAttributes.PASSWORD_NAME),
+    PASSWORD(OperationalAttributes.PASSWORD_NAME, GuardedString.class),
+    CURRENT_PASSWORD(OperationalAttributes.CURRENT_PASSWORD_NAME, GuardedString.class),
     ENABLE(OperationalAttributes.ENABLE_NAME),
     ENABLE_DATE(OperationalAttributes.ENABLE_DATE_NAME),
     DISABLE_DATE(OperationalAttributes.DISABLE_DATE_NAME),
