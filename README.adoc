@@ -8,8 +8,8 @@ ConnDev and it's components does not need to be used only as declarative compone
 
 Concrete protocol-specific connectors built on this framework live in the following repositories:
 
- * link:https://github.com/Evolveum/connector-scimrest/[`scimrest-connector`] - **SCIMREST Framework**: SCIM 2 and REST connector library and framework (`connector-scimrest-common`) plus generic SCIM connector & sample connectors.
-*  link:https://github.com/Evolveum/connector-scimrest/[`sql-connector`] - **SQL connector** library and framework (`connector-sql-base`) plus the generic SQL connector (PostgreSQL/Oracle drivers).
+ * link:https://github.com/Evolveum/connector-scimrest/[`connector-scimrest`] - **SCIMREST Framework**: SCIM 2 and REST connector library and framework (`connector-scimrest-common`) plus generic SCIM connector & sample connectors.
+*  link:https://github.com/Evolveum/connector-sql/[`connector-sql`] - **SQL connector** library and framework (`connector-sql-base`) plus the generic SQL connector (PostgreSQL/Oracle drivers).
 
 == How a Connector Is Defined using ConnDev
 
@@ -181,4 +181,4 @@ Gotchas:
 
 == License
 
-European Union Public License v1.2 (EUPL-1.2). See the `LICENSE` file.
+European Union Public License v1.2 (EUPL-1.2). See the link:LICENSE[`LICENSE`] file.
