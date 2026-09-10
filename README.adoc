@@ -1,0 +1,184 @@
+= Polygon ConnDev
+
+Declarative low-code connector development framework for *ConnId*  with object-class centric SPI, Groovy, and YAML DSLs, part of the Evolveum Polygon ecosystem.
+
+ConnDev reframes connector development as a *configuration problem*: a connector is a small Java entry class plus a manifest that points at scripts declaring object classes, attributes, and operations. The framework implements the ConnId SPI, resolves attribute paths, validates definitions at development time, and runs inside MidPoint (or any ConnId-compatible host) exactly like a classic connector bundle.
+
+ConnDev and it's components does not need to be used only as declarative components, but may be used also as part of standard Java connectors, but this is not main intended use-case.
+
+Concrete protocol-specific connectors built on this framework live in the following repositories:
+
+ * link:https://github.com/Evolveum/connector-scimrest/[`scimrest-connector`] - **SCIMREST Framework**: SCIM 2 and REST connector library and framework (`connector-scimrest-common`) plus generic SCIM connector & sample connectors.
+*  link:https://github.com/Evolveum/connector-scimrest/[`sql-connector`] - **SQL connector** library and framework (`connector-sql-base`) plus the generic SQL connector (PostgreSQL/Oracle drivers).
+
+== How a Connector Is Defined using ConnDev
+
+A connector consists of:
+
+* a small Java class extending the protocol library's base (which extends conndev's `ClassHandlerConnectorBase`) and a `*Configuration` class
+  ** This class is responsible for configuring and witing available handlers and components
+* In case of Manifest based connectors:
+  ** a manifest — `connector.manifest.json` *or* `connector.manifest.yaml` (exactly one format, resolved via `ConnectorManifest.load`) — listing the scripts in three groups: `connector.schema`, `connector.authorization`, `connector.operation`. Entries may carry a `disabled` flag.
+
+Scripts follow a per-object-class naming convention (one file per concern; `.groovy` or `.yaml`):
+
+[cols="4,6"]
+|===
+| File | Purpose
+
+a| `X.native.schema.*`
+| Native (remote-system) attributes and types of object class `X`
+
+a| `X.connid.schema.*`
+| ConnId-side schema / attribute-mapping overlay for `X`
+
+a| `X.associations.schema.*`
+| References and relationships
+
+a| `X.search.*`
+| Search endpoints and supported filters
+
+q| `X.op.*` (or `X.create.op.*`, `X.update.op.*`, `X.delete.op.*`)
+| CRUD operation definitions
+
+q| `authorization.op.*`
+| Authentication / authorization customization
+
+q| `connector.manifest.json` / `.yaml`
+| Lists all of the above (exactly one format may be bundled)
+|===
+
+Documents naming the same object class merge into one builder, so a class can be assembled from several scripts in any order. A minimal Groovy schema script:
+
+[source,groovy]
+----
+objectClass("User") {
+    attribute("id") {
+        jsonType "integer"
+        openApiFormat "int64"
+        creatable false
+        updateable false
+        description "User's id"
+    }
+    attribute("login") {
+        jsonType "string"
+        description "User's login name"
+    }
+    attribute("email") {
+        jsonType "string"
+        openApiFormat "email"
+    }
+}
+----
+
+The same object class in YAML (loaded by `YamlSchemaLoader`, same builder underneath):
+
+[source,yaml]
+----
+objectClasses:
+  User:
+    attributes:
+      id:
+        jsonType: integer
+        openApiFormat: int64
+        creatable: false
+        updateable: false
+        description: "User's id"
+      login:
+        jsonType: string
+        description: "User's login name"
+----
+
+…bundled together by the manifest:
+
+[source,json]
+----
+{
+  "application": { "name": "My Application" },
+  "connector": {
+    "schema": [
+      { "script": "/User.native.schema.groovy" },
+      { "script": "/User.connid.schema.yaml" }
+    ],
+    "authorization": [ { "script": "/authorization.op.groovy" } ],
+    "operation": [ { "script": "/User.search.groovy" } ]
+  }
+}
+----
+
+Full working connectors can be found in scimrest-connector and sql-connector.
+
+
+== Core Concepts
+
+See `design-and-style.adoc` for the full design write-up (patterns, interface philosophy, key-file reference). The essentials:
+
+* *DefinitionValue provenance.* Every configurable value is wrapped in `DefinitionValue<T>(value, origin, location)` tracking what it is, where it came from, and where it was declared.
++
+`DEFAULT`:: Framework defaults (least specific)
+`DETECTED`:: Auto-detected from the remote system (JDBC metadata, SCIM discovery, …)
+`DECLARED`:: Explicitly declared by the developer in scripts (most specific)
+
+* *Per-object-class dispatch.* `ClassHandlerConnectorBase` implements the ConnId operations and routes each request through `handlerFor(ObjectClass)` to an `ObjectClassHandler`; the handler answers `checkSupported(OperationType)` with a typed operation handler. `CompositeObjectClassHandler` composes a map of handlers, so one connector can mix and match implementations per object class (e.g. SCIM for users, scripted REST for groups).
+
+
+* *Two-layer script / closure lifecycle.* Groovy closures have exactly two paths: `@Script.Initialization` runs immediately at configuration time (`GroovyClosures.callAndReturnDelegate`, the builder is returned); `@Script.Runtime` closures are cloned and executed per operation (`GroovyClosures.copyAndCall`, the closure's result is returned). This prevents runtime closures from leaking configuration-time state.
+
+* *Attribute paths.* `AttributePath` / `Path` resolve nested JSON nodes with attributes, arrays, index filters, and value filters, shared by both the Groovy and YAML front-ends and by serialization.
+
+* *Schema mapping rule engine.* `MappingRule` / `MappingAction` let declarative rules transform the accumulated definition (e.g. resolving attribute types, promoting complex attributes to embedded references) instead of ad-hoc post-processing.
+
+== Runtime Flow
+
+[source,mermaid]
+----
+flowchart LR
+    A["IDM (eg. midPoint) loads the connector bundle"] --> B["Connector.init(Configuration)"]
+    B --> C["Read connector manifest (JSON or YAML)"]
+    C --> D["Load Groovy / YAML scripts"]
+    D --> E["Build schema:<br/>scripts → BaseSchemaBuilder → ConnId Schema"]
+    D --> F["Build per-object-class<br/>operation handlers"]
+    G["ConnId operation request"] --> H["ClassHandlerConnectorBase"]
+    H --> I["handlerFor(ObjectClass)<br/>→ ObjectClassHandler"]
+    I --> J["checkSupported(operation)<br/>→ operation handler"]
+    J --> K["Remote system<br/>(REST / SCIM / SQL)"]
+----
+
+== Development Mode
+
+ConnDev provides built-in support for extended `developmentMode` which allows building interactive connector development tools on top of it: 
+
+With `developmentMode` enabled in the connector configuration:
+
+* *Script validation for editors.* ConnId's `runScriptOnResource` operation is wired to `validateScript(ScriptValidationRequest)` (supports `build` and `compile`). The candidate script is evaluated in place of its deployed sibling, the full schema/handler build is re-run, and the result is returned as a structured `ScriptValidationResult` — the hook used by development tooling to lint unsaved scripts.
+* *Source location capture.* `SourceLocation.capture()` walks the stack (only while development mode is active) so `DefinitionValue` conflicts and validation errors point at the exact script file/line.
+* *Definition metadata.* The `dev` package exposes the connector's own definition (`ConnDevSchema`, `ConnDevObjectClass`, `ConnDevAttribute`) as inspectable object classes, letting tooling browse the effective schema.
+
+In production mode all of this is inert: no stack-walking, no validation surface.
+
+== Build & Test
+
+Prerequisites: JDK 21, Maven 3.9+. Dependencies are resolved from the Evolveum Nexus repositories (releases + snapshots); the ConnId framework contract (`net.tirasa.connid:connector-framework-contract`) is a `provided` dependency supplied by the IDM at runtime.
+
+[cols="2,6"]
+|===
+| Task | Command
+
+| Build
+| `mvn clean install`
+
+| Test
+| `mvn test`
+
+| SBOM (CycloneDX)
+| `mvn package -Psbom`
+
+|===
+
+Gotchas:
+
+* Tests use *TestNG*, not JUnit. The parent POM pins `surefire-testng` as a Surefire dependency — without it Maven defaults to the JUnit platform and TestNG tests are skipped silently.
+
+== License
+
+European Union Public License v1.2 (EUPL-1.2). See the `LICENSE` file.
