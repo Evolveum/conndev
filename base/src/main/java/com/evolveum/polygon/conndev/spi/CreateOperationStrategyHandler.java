@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
@@ -18,6 +19,8 @@ import java.util.Set;
 
 /** Creates one primary object and then its separately stored attributes in one scope. */
 public class CreateOperationStrategyHandler implements ObjectCreateOperation {
+
+    private static final ConnDevLog LOG = ConnDevLog.of(CreateOperationStrategyHandler.class);
 
     private final OperationExecutor executor;
     private final List<CreateOperationHandler> primaryHandlers;
@@ -61,14 +64,34 @@ public class CreateOperationStrategyHandler implements ObjectCreateOperation {
         }
         routing.requireComplete();
 
+        var facade = LOG;
+        var allHandlers = new ArrayList<Object>();
+        allHandlers.add(primary.handler());
+        for (var capability : selected) {
+            allHandlers.add(capability.handler());
+        }
+        var labels = OperationTracing.labels(allHandlers);
+        var attributesPerHandler = new ArrayList<List<String>>();
+        attributesPerHandler.add(OperationTracing.attributeNames(primary.supported()));
+        for (var capability : selected) {
+            attributesPerHandler.add(OperationTracing.attributeNames(capability.supported()));
+        }
+        OperationTracing.detail(facade, OperationTracing.ROUTING,
+                OperationTracing.routing(labels, attributesPerHandler));
+
         var selectedPrimary = primary;
         return executor.execute(scope -> {
+            OperationTracing.executing(facade, labels.get(0),
+                    OperationTracing.attributeNames(selectedPrimary.supported()));
             var result = selectedPrimary.handler().create(
                     Set.copyOf(selectedPrimary.supported()), options, scope);
             if (result == null || result.uid() == null || result.object() == null) {
                 throw new ConnectorException("Primary create handler returned an incomplete result");
             }
-            for (var capability : selected) {
+            for (var i = 0; i < selected.size(); i++) {
+                var capability = selected.get(i);
+                OperationTracing.executing(facade, labels.get(i + 1),
+                        OperationTracing.attributeNames(capability.supported()));
                 capability.handler().create(new AttributeCreateOperationHandler.Request(
                         result.cls(), result.uid(), Set.copyOf(capability.supported())), options, scope);
             }

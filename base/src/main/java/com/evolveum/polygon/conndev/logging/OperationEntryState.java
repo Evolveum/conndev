@@ -6,7 +6,7 @@
  */
 package com.evolveum.polygon.conndev.logging;
 
-import com.evolveum.polygon.conndev.devtools.log.CallerLocation;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,13 +24,13 @@ public final class OperationEntryState {
     private final OperationEntryState parent;
     private final String operation;
     private final String objectClass;
-    private final CallerLocation location;
+    private final SourceLocation location;
     private final long startTs;
     private final AtomicInteger sequence = new AtomicInteger();
     private volatile boolean completed;
 
     OperationEntryState(String parentId, OperationEntryState parent, String operation, String objectClass,
-                        CallerLocation location, long startTs) {
+                        SourceLocation location, long startTs) {
         this.id = UUID.randomUUID().toString();
         this.parentId = parentId;
         this.parent = parent;
@@ -90,7 +90,7 @@ public final class OperationEntryState {
      *
      * @return the location
      */
-    public CallerLocation location() {
+    public SourceLocation location() {
         return location;
     }
 

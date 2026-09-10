@@ -17,5 +17,5 @@ import java.util.Map;
  * @param detail   key/value detail data (may be null for standalone messages)
  * @param message  human-readable message
  */
-public record DetailEvent(long ts, LogSeverity severity, CallerLocation location, Map<String, Object> detail, String message) {
+public record DetailEvent(long ts, LogSeverity severity, String location, Map<String, Object> detail, String message) {
 }

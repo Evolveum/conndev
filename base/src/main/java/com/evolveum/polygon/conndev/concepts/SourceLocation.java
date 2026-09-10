@@ -54,7 +54,12 @@ public interface SourceLocation {
             return "UNKNOWN";
         }
     };
-    
+
+    static SourceLocation determineForLogging() {
+        // FIXME: probably some clever algorithm to determine which script we are inside?
+        return RUNTIME;
+    }
+
     /**
      * Returns the name of the source location.
      *

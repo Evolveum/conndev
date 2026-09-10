@@ -20,6 +20,17 @@ import java.util.List;
  */
 public record LogOptions(int maxBodyLength, boolean redactSensitive, List<String> sensitiveNames) {
 
+    /** Shared production defaults: truncation enabled, sensitive values redacted. */
+    private static final LogOptions PRODUCTION =
+            new LogOptions(ConndevLogFormat.DEFAULT_MAX_BODY_LENGTH, true, ConndevLogFormat.DEFAULT_SENSITIVE_NAMES);
+
+    /**
+     * Shared development defaults: truncation enabled, sensitive values left unredacted
+     * (debugging authentication issues requires seeing the actual values).
+     */
+    private static final LogOptions DEVELOPMENT =
+            new LogOptions(ConndevLogFormat.DEFAULT_MAX_BODY_LENGTH, false, ConndevLogFormat.DEFAULT_SENSITIVE_NAMES);
+
     /** Normalizes the values: non-positive length falls back to the default, null names to none. */
     public LogOptions {
         if (maxBodyLength <= 0) {
@@ -36,7 +47,7 @@ public record LogOptions(int maxBodyLength, boolean redactSensitive, List<String
      * @return the options
      */
     public static LogOptions production() {
-        return new LogOptions(ConndevLogFormat.DEFAULT_MAX_BODY_LENGTH, true, ConndevLogFormat.DEFAULT_SENSITIVE_NAMES);
+        return PRODUCTION;
     }
 
     /**
@@ -46,7 +57,7 @@ public record LogOptions(int maxBodyLength, boolean redactSensitive, List<String
      * @return the options
      */
     public static LogOptions development() {
-        return new LogOptions(ConndevLogFormat.DEFAULT_MAX_BODY_LENGTH, false, ConndevLogFormat.DEFAULT_SENSITIVE_NAMES);
+        return DEVELOPMENT;
     }
 
     /**

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.devtools.log;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +29,18 @@ public final class OperationLogParser {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    static {
+        // keep the wire-contract records annotation-free: the legacy-location binding lives here
+        MAPPER.addMixIn(StructuredLogEvent.class, StructuredLogEventMixin.class);
+    }
+
+    /** Mixin binding the tolerant {@link LocationDeserializer} to the event's {@code location} property. */
+    private abstract static class StructuredLogEventMixin {
+
+        @JsonDeserialize(using = LocationDeserializer.class)
+        abstract String location();
+    }
 
     private OperationLogParser() {
     }

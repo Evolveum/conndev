@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.spi;
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.build.api.UpdateOperationBuilder;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.AttributeDelta;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
@@ -24,6 +25,8 @@ import java.util.Set;
 
 /** Routes deltas in registration order and executes the selected handlers in one scope. */
 public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
+
+    private static final ConnDevLog LOG = ConnDevLog.of(UpdateOperationStrategyHandler.class);
 
     private final ConnectorContext context;
     private final ObjectClass objectClass;
@@ -58,10 +61,29 @@ public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
         }
         routing.requireComplete();
         var readOriginal = originalRequired;
+        var facade = LOG;
+        var selectedHandlers = new ArrayList<UpdateOperationHandler>(selected.size());
+        for (var capability : selected) {
+            selectedHandlers.add(capability.handler());
+        }
+        var labels = OperationTracing.labels(selectedHandlers);
+        var attributesPerHandler = new ArrayList<List<String>>(selected.size());
+        for (var capability : selected) {
+            attributesPerHandler.add(OperationTracing.deltaNames(capability.supported()));
+        }
+        OperationTracing.detail(facade, OperationTracing.ROUTING,
+                OperationTracing.routing(labels, attributesPerHandler));
+        OperationTracing.detail(facade, OperationTracing.READ_ORIGINAL, readOriginal);
 
         return executor.execute(scope -> {
             var before = readOriginal ? readObject(uid, options, scope) : null;
-            for (var capability : selected) {
+            if (before != null) {
+                OperationTracing.detail(facade, OperationTracing.ORIGINAL_STATE, uid.getUidValue());
+            }
+            for (var i = 0; i < selected.size(); i++) {
+                var capability = selected.get(i);
+                OperationTracing.executing(facade, labels.get(i),
+                        OperationTracing.deltaNames(capability.supported()));
                 capability.handler().update(new UpdateOperationBuilder.UpdateRequest(
                         objectClass, uid, capability.supported(), before), options, scope);
             }

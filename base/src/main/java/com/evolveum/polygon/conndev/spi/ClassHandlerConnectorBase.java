@@ -7,8 +7,10 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.concepts.CheckedCallable;
+import com.evolveum.polygon.conndev.concepts.DevelopmentMode;
 import com.evolveum.polygon.conndev.groovy.*;
-import com.evolveum.polygon.conndev.logging.ConnectorLog;
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
@@ -41,20 +43,46 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     public abstract ObjectClassHandler handlerFor(ObjectClass objectClass) throws UnsupportedOperationException;
 
-    private volatile ConnectorLog log;
+    /**
+     * Logging facade bound to this connector's class, created once per connector instance so
+     * that each connector (including Groovy script subclasses) logs under its own class.
+     * Every ConnId operation dispatched through this class is wrapped in an operation entry
+     * logged via this facade.
+     */
+    private final ConnDevLog log = ConnDevLog.of(getClass());
 
     /**
-     * Returns the logging facade bound to this connector. Every ConnId operation dispatched
-     * through this class is wrapped in an operation entry logged via this facade.
+     * Returns the logging facade bound to this connector.
      *
      * @return the logging facade
      */
-    protected ConnectorLog log() {
-        var facade = log;
-        if (facade == null) {
-            log = facade = ConnectorLog.of(getClass());
-        }
-        return facade;
+    protected ConnDevLog log() {
+        return log;
+    }
+
+    /**
+     * Executes the work within a new operation entry with development mode active for the
+     * duration of the operation when the {@link ConnectorContext} configuration enables it,
+     * so that the entry's events are emitted as structured log lines.
+     *
+     * @param operation   the ConnId operation name
+     * @param objectClass the object class the operation applies to
+     * @param message     human-readable description of the operation
+     * @param work        the work to execute
+     * @param <V>         the result type
+     * @param <E>         the exception type the work may throw
+     * @return the result of the work
+     * @throws E if the work fails
+     */
+    private <V, E extends Throwable> V runTraced(String operation, ObjectClass objectClass, String message,
+            CheckedCallable<V, E> work) throws E {
+        return DevelopmentMode.run(developmentMode(),
+                () -> log().runOperation(operation, objectClass, message, work));
+    }
+
+    private boolean developmentMode() {
+        return context() instanceof ConnectorContext connectorContext
+                && connectorContext.getDevelopmentMode();
     }
 
     @Override
@@ -65,13 +93,13 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     @Override
     public Uid create(ObjectClass objectClass, Set<Attribute> createAttributes, OperationOptions options) {
-        return log().runOperation("create", objectClass, "Create " + objectClass.getObjectClassValue(), () ->
+        return runTraced("create", objectClass, "Create " + objectClass.getObjectClassValue(), () ->
                 handlerFor(objectClass).checkSupported(ObjectCreateOperation.class).create(createAttributes, options).getUid());
     }
 
     @Override
     public void delete(ObjectClass objectClass, Uid uid, OperationOptions options) {
-        log().runOperation("delete", objectClass, "Delete " + objectClass.getObjectClassValue(), () -> {
+        runTraced("delete", objectClass, "Delete " + objectClass.getObjectClassValue(), () -> {
             handlerFor(objectClass).checkSupported(ObjectDeleteOperation.class).delete(uid, options);
             return null;
         });
@@ -97,7 +125,7 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     @Override
     public void executeQuery(ObjectClass objectClass, Filter query, ResultsHandler handler, OperationOptions options) {
         try {
-            log().runOperation("search", objectClass, "Search " + objectClass.getObjectClassValue(), () -> {
+            runTraced("search", objectClass, "Search " + objectClass.getObjectClassValue(), () -> {
                 handlerFor(objectClass)
                         .checkSupported(ObjectSearchOperation.class)
                         .executeQuery(context(), query, handler, options);
@@ -112,14 +140,14 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     @Override
     public Set<AttributeDelta> updateDelta(ObjectClass objclass, Uid uid, Set<AttributeDelta> modifications, OperationOptions options) {
-        return log().runOperation("update", objclass, "Update " + objclass.getObjectClassValue(), () ->
+        return runTraced("update", objclass, "Update " + objclass.getObjectClassValue(), () ->
                 handlerFor(objclass).checkSupported(ObjectUpdateOperation.class).updateDelta(uid, modifications, options));
     }
 
     @Override
     public void sync(ObjectClass objectClass, SyncToken token,
                      SyncResultsHandler handler, OperationOptions options) {
-        log().runOperation("sync", objectClass, "Sync " + objectClass.getObjectClassValue(), () -> {
+        runTraced("sync", objectClass, "Sync " + objectClass.getObjectClassValue(), () -> {
             handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
                     .sync(token, handler, options, context());
             return null;
@@ -128,7 +156,7 @@ public abstract class ClassHandlerConnectorBase implements Connector,
 
     @Override
     public SyncToken getLatestSyncToken(ObjectClass objectClass) {
-        return log().runOperation("syncToken", objectClass, "Get latest sync token", () ->
+        return runTraced("syncToken", objectClass, "Get latest sync token", () ->
                 handlerFor(objectClass).checkSupported(ObjectSyncOperation.class)
                         .getLatestSyncToken());
     }

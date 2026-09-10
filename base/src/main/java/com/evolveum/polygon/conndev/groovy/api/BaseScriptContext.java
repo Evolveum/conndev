@@ -8,7 +8,7 @@ package com.evolveum.polygon.conndev.groovy.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
 import com.evolveum.polygon.conndev.build.api.FilterBuilder;
-import com.evolveum.polygon.conndev.logging.ConnectorLog;
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 
@@ -23,8 +23,8 @@ public interface BaseScriptContext {
      * @return the logging facade
      */
     @Groovy.Convenience
-    default ConnectorLog log() {
-        return ConnectorLog.of(getClass());
+    default ConnDevLog log() {
+        return ConnDevLog.of(getClass());
     }
 
 

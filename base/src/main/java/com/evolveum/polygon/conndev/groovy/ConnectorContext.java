@@ -8,7 +8,7 @@ package com.evolveum.polygon.conndev.groovy;
 
 import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
-import com.evolveum.polygon.conndev.logging.ConnectorLog;
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import org.identityconnectors.framework.common.objects.ObjectClass;
@@ -28,8 +28,8 @@ public interface ConnectorContext extends ContextLookup, RetrievableContext {
      *
      * @return the logging facade
      */
-    default ConnectorLog log() {
-        return ConnectorLog.of(getClass());
+    default ConnDevLog log() {
+        return ConnDevLog.of(getClass());
     }
 
     @Override

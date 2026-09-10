@@ -65,8 +65,6 @@ public class OperationLogParserTest {
         assertThat(event.operation()).isEqualTo("search");
         assertThat(event.objectClass()).isEqualTo("User");
         assertThat(event.message()).isEqualTo("REST failed");
-        assertThat(event.location().methodName()).isEqualTo("fetch");
-        assertThat(event.location().describe()).isEqualTo("fetch(Foo.java:47)");
         assertThat(event.error().message()).isEqualTo("REST failed");
         assertThat(event.error().stacktrace()).containsExactly("boom");
     }
@@ -78,6 +76,30 @@ public class OperationLogParserTest {
         assertThat(OperationLogParser.parseLine("broken conndev-log/v1 not-json-at-all")).isNull();
         assertThat(OperationLogParser.parseLine("broken conndev-log/v1 {\"id\":")).isNull();
         assertThat(OperationLogParser.isStructuredLine("regular log line without payload")).isFalse();
+    }
+
+    @Test
+    public void parsesTraceSeverityProtocolBodyLine() {
+        var line = "HTTP request body /scim/v2/Users conndev-log/v1 "
+                + "{\"v\":1,\"id\":\"op-1\",\"seq\":4,\"ts\":1761741188400,\"severity\":\"TRACE\",\"thread\":\"main\","
+                + "\"event\":\"PROTOCOL\",\"operation\":\"search\",\"objectClass\":\"User\","
+                + "\"message\":\"HTTP request body /scim/v2/Users\","
+                + "\"protocol\":{\"type\":\"http\",\"kind\":\"request-body\",\"method\":\"GET\",\"uri\":\"/scim/v2/Users\","
+                + "\"body\":\"{\\\"userName\\\":\\\"alice\\\"}\"}}";
+
+        var event = OperationLogParser.parseLine(line);
+        assertThat(event).isNotNull();
+        assertThat(event.severity()).isEqualTo(LogSeverity.TRACE);
+        assertThat(event.event()).isEqualTo(EventType.PROTOCOL);
+        assertThat(event.protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_REQUEST_BODY);
+        assertThat(event.protocol().body()).contains("alice");
+    }
+
+    @Test
+    public void traceSeverityRanksBelowDebug() {
+        assertThat(LogSeverity.TRACE.atLeast(LogSeverity.DEBUG)).isFalse();
+        assertThat(LogSeverity.DEBUG.atLeast(LogSeverity.TRACE)).isTrue();
+        assertThat(LogSeverity.fromName("trace")).isEqualTo(LogSeverity.TRACE);
     }
 
     @Test
@@ -105,8 +127,7 @@ public class OperationLogParserTest {
         assertThat(scim.firstMessage()).isEqualTo("Executing SCIM request");
         assertThat(scim.startTs()).isEqualTo(1761741185100L);
         assertThat(scim.endTs()).isEqualTo(1761741188315L);
-        assertThat(scim.location().isScript()).isTrue();
-        assertThat(scim.location().file()).isEqualTo("User.search.groovy");
+        assertThat(scim.location()).isEqualTo("User.search.groovy");
 
         assertThat(scim.protocolEvents()).hasSize(2);
         var request = scim.protocolEvents().get(0);
@@ -114,7 +135,7 @@ public class OperationLogParserTest {
         assertThat(request.protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_REQUEST);
         assertThat(request.protocol().method()).isEqualTo("GET");
         assertThat(request.protocol().uri()).isEqualTo("/scim/v2/Users?startIndex=51&count=50");
-        assertThat(request.location().describe()).isEqualTo("fetch(RestPagingAwareObjectRetriever.java:47)");
+        assertThat(request.location()).isEqualTo("fetch(RestPagingAwareObjectRetriever.java:47)");
         var response = scim.protocolEvents().get(1);
         assertThat(response.protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_RESPONSE);
         assertThat(response.protocol().status()).isEqualTo(504);

@@ -6,15 +6,19 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
+import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.Uid;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /** Runs dependent-data cleanup before the primary deletion in one scope. */
 public class DeleteOperationStrategyHandler implements ObjectDeleteOperation {
+
+    private static final ConnDevLog LOG = ConnDevLog.of(DeleteOperationStrategyHandler.class);
 
     private final OperationExecutor executor;
     private final DeleteOperationHandler primary;
@@ -31,10 +35,22 @@ public class DeleteOperationStrategyHandler implements ObjectDeleteOperation {
 
     @Override
     public void delete(Uid uid, OperationOptions options) {
+        var facade = LOG;
+        var all = new ArrayList<DeleteOperationHandler>();
+        all.addAll(cleanup);
+        all.add(primary);
+        var labels = OperationTracing.labels(all);
+        var cleanupLabels = labels.subList(0, cleanup.size());
+        var primaryLabel = labels.get(labels.size() - 1);
+        if (!cleanupLabels.isEmpty()) {
+            OperationTracing.detail(facade, OperationTracing.CLEANUP, cleanupLabels);
+        }
         executor.execute(scope -> {
-            for (var handler : cleanup) {
-                handler.delete(uid, options, scope);
+            for (var i = 0; i < cleanup.size(); i++) {
+                OperationTracing.executing(facade, cleanupLabels.get(i), List.of());
+                cleanup.get(i).delete(uid, options, scope);
             }
+            OperationTracing.executing(facade, primaryLabel, List.of());
             primary.delete(uid, options, scope);
             return null;
         });

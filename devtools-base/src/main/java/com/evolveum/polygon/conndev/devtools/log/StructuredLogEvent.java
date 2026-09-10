@@ -42,7 +42,7 @@ public record StructuredLogEvent(
         String operation,
         String objectClass,
         String message,
-        CallerLocation location,
+        String location,
         Map<String, Object> detail,
         ProtocolPayload protocol,
         ResultPayload result,

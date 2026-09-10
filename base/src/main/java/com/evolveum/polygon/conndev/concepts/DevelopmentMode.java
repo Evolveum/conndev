@@ -6,6 +6,9 @@
  */
 package com.evolveum.polygon.conndev.concepts;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
 /**
  * Thread-local flag to indicate whether the code is running in development mode.
  * This allows enabling specific debugging, testing, or development behavior
@@ -13,10 +16,15 @@ package com.evolveum.polygon.conndev.concepts;
  */
 public final class DevelopmentMode {
 
-    private static final ThreadLocal<Boolean> DEVELOPMENT_MODE = ThreadLocal.withInitial(() -> false);
+    private static final DevelopmentMode DISABLED = new DevelopmentMode(false);
+    private static final DevelopmentMode ENABLED = new DevelopmentMode(true);
 
-    private DevelopmentMode() {
-        // Utility class
+    private static final ThreadLocal<DevelopmentMode> DEVELOPMENT_MODE = ThreadLocal.withInitial(() -> DISABLED);
+
+    private final boolean active;
+
+    private DevelopmentMode(boolean enabled) {
+        this.active = enabled;
     }
 
     /**
@@ -25,7 +33,7 @@ public final class DevelopmentMode {
      * @param active true to enable, false to disable
      */
     public static void set(boolean active) {
-        DEVELOPMENT_MODE.set(active);
+        DEVELOPMENT_MODE.set(active ?  ENABLED : DISABLED);
     }
 
     /**
@@ -34,7 +42,7 @@ public final class DevelopmentMode {
      * @return true if active, false otherwise
      */
     public static boolean isEnabled() {
-        return DEVELOPMENT_MODE.get();
+        return DEVELOPMENT_MODE.get().active;
     }
 
     /**
@@ -46,7 +54,7 @@ public final class DevelopmentMode {
     }
 
     public static void enable() {
-        DEVELOPMENT_MODE.set(true);
+        DEVELOPMENT_MODE.set(ENABLED);
     }
 
     /**
@@ -66,6 +74,23 @@ public final class DevelopmentMode {
         } finally {
             set(previous);
         }
+    }
+
+    public static <T extends SpecificImplementation> Supplier<T> register(Class<T> type, T enabled, T disabled) {
+        return () -> isEnabled() ? enabled : disabled;
+    }
+
+
+    /**
+     * Marker interface for development mode specific implementations of functionality, which can be switched
+     * based on development mode ON / OFF
+     */
+    public interface SpecificImplementation {
+
+    }
+
+    record Specific() {
+
     }
 }
 

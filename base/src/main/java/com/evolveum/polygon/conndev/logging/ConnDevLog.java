@@ -24,15 +24,16 @@ import org.slf4j.LoggerFactory;
  * <p>Instances are bound to an SLF4J logger, typically of the component emitting the events:
  * {@code ConnectorLog.of(RestClient.class)}.
  */
-public interface ConnectorLog {
+public interface ConnDevLog {
 
     /**
-     * Creates a facade bound to the given logger with the default options.
+     * Creates a facade bound to the given logger with the default options, resolved at write
+     * time against the development mode of the writing thread.
      *
      * @param logger the SLF4J logger
      * @return the facade
      */
-    static ConnectorLog of(Logger logger) {
+    static ConnDevLog of(Logger logger) {
         return of(logger, null);
     }
 
@@ -40,11 +41,11 @@ public interface ConnectorLog {
      * Creates a facade bound to the given logger.
      *
      * @param logger  the SLF4J logger
-     * @param options the logging options (null for defaults)
+     * @param options the logging options (null for defaults resolved at write time)
      * @return the facade
      */
-    static ConnectorLog of(Logger logger, LogOptions options) {
-        return new Slf4jConnectorLog(logger, options);
+    static ConnDevLog of(Logger logger, LogOptions options) {
+        return new Slf4JConnDevLog(logger, options);
     }
 
     /**
@@ -53,7 +54,7 @@ public interface ConnectorLog {
      * @param owner the class the logger is bound to
      * @return the facade
      */
-    static ConnectorLog of(Class<?> owner) {
+    static ConnDevLog of(Class<?> owner) {
         return of(LoggerFactory.getLogger(owner));
     }
 
@@ -64,7 +65,7 @@ public interface ConnectorLog {
      * @param options the logging options (null for defaults)
      * @return the facade
      */
-    static ConnectorLog of(Class<?> owner, LogOptions options) {
+    static ConnDevLog of(Class<?> owner, LogOptions options) {
         return of(LoggerFactory.getLogger(owner), options);
     }
 

@@ -11,6 +11,7 @@ import java.util.Locale;
 /** Log severity levels carried by structured log events. */
 public enum LogSeverity {
 
+    TRACE(-1),
     DEBUG(0),
     INFO(1),
     WARN(2),

@@ -133,6 +133,7 @@ public abstract class Deferred<T> {
      *
      * @param <T> the type of value to be searched or resolved
      */
+    @FunctionalInterface
     interface Search<T> {
 
         T find();

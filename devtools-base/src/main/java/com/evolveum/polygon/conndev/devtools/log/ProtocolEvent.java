@@ -15,5 +15,5 @@ package com.evolveum.polygon.conndev.devtools.log;
  * @param protocol protocol data
  * @param message  human-readable message
  */
-public record ProtocolEvent(long ts, LogSeverity severity, CallerLocation location, ProtocolPayload protocol, String message) {
+public record ProtocolEvent(long ts, LogSeverity severity, String location, ProtocolPayload protocol, String message) {
 }

@@ -45,6 +45,12 @@ public final class ConndevLogFormat {
     /** Protocol kind for an executed SQL query. */
     public static final String SQL_QUERY = "query";
 
+    /** Protocol kind for the body of an outgoing HTTP request (companion of {@link #HTTP_REQUEST}). */
+    public static final String HTTP_REQUEST_BODY = "request-body";
+
+    /** Protocol kind for the body of a received HTTP response (companion of {@link #HTTP_RESPONSE}). */
+    public static final String HTTP_RESPONSE_BODY = "response-body";
+
     /** Default {@code detail} key used for free-form detail messages. */
     public static final String DETAIL_MESSAGE_KEY = "message";
 

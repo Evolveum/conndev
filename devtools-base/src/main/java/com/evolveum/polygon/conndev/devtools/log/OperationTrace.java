@@ -35,7 +35,7 @@ public record OperationTrace(
         String parentId,
         String operation,
         String objectClass,
-        CallerLocation location,
+        String location,
         long startTs,
         Long endTs,
         LogSeverity severity,
