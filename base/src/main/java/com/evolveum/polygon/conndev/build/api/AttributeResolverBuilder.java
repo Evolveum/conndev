@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.groovy.api.AttributeResolutionScriptContext;
 import groovy.lang.Closure;
@@ -42,6 +43,7 @@ public interface AttributeResolverBuilder extends Fluent<AttributeResolverBuilde
      * @param type The resolution type to be used.
      * @return This builder instance for method chaining.
      */
+    @Yaml.Key
     AttributeResolverBuilder resolutionType(ResolutionType type);
 
 
@@ -68,6 +70,7 @@ public interface AttributeResolverBuilder extends Fluent<AttributeResolverBuilde
      */
     AttributeResolverBuilder implementation(
             @DelegatesTo(value = AttributeResolutionScriptContext.class, strategy = Closure.DELEGATE_ONLY)
+            @Script.Runtime
             Closure<?> closure);
 
     enum ResolutionType {
@@ -90,6 +93,7 @@ public interface AttributeResolverBuilder extends Fluent<AttributeResolverBuilde
      * @param attributeName name of attribute
      * @return this builder
      */
+    @Yaml.Key
     AttributeResolverBuilder attribute(String attributeName);
 
 

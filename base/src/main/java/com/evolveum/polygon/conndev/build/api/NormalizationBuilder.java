@@ -8,6 +8,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -32,6 +33,7 @@ public interface NormalizationBuilder extends Fluent<NormalizationBuilder> {
      * @param attribute the attribute to split into multiple values
      * @return this normalizer for chaining
      */
+    @Yaml.Key
     NormalizationBuilder toSingleValue(String attribute);
 
     /**

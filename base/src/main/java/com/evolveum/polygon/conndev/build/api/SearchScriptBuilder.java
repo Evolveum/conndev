@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.groovy.api.SearchScriptContext;
@@ -33,6 +34,7 @@ public interface SearchScriptBuilder extends Fluent<SearchScriptBuilder> {
      * @param emptyFilterSupported true if unfiltered searches are allowed
      * @return this builder for chaining
      */
+    @Yaml.Key
     SearchScriptBuilder emptyFilterSupported(boolean emptyFilterSupported);
 
     /**
