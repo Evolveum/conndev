@@ -9,9 +9,13 @@ package com.evolveum.polygon.conndev.yaml;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Opt-in hook for an object class builder that wants to interpret a protocol-specific top-level
- * block in a YAML schema document (e.g. {@code sql:} for connector-sql, {@code scim:} for
- * connector-scimrest) — the YAML counterpart of the {@code sql()}/{@code scim()} Groovy DSL blocks.
+ * Opt-in escape hatch for an object class builder that wants to interpret a protocol-specific
+ * top-level block in a YAML schema document that cannot (or does not yet) bind declaratively via
+ * {@code @Yaml.*} — the YAML counterpart of a protocol-specific Groovy DSL block. Prefer
+ * {@code @Yaml.Sub}/{@code @Yaml.Key}/{@code @Yaml.Custom} on the block's own builder accessor
+ * (see {@link com.evolveum.polygon.conndev.annotations.Yaml}) when the block's shape allows it —
+ * that keeps the value's YAML source location; this hook only ever sees a plain {@link JsonNode},
+ * without location information.
  *
  * <p>{@link YamlSchemaLoader} stays protocol-agnostic: any top-level key it does not recognize
  * itself (not {@code attributes}, {@code connId}, ...) is handed to the current object class
@@ -21,11 +25,9 @@ import tools.jackson.databind.JsonNode;
 public interface YamlProtocolBlockConsumer {
 
     /**
-     * Applies a protocol-specific block named {@code name} (e.g. {@code "sql"}) to this object
-     * class builder. Implementations should reject block names they don't understand by throwing
-     * {@link IllegalArgumentException}, and validate their own nested structure (e.g. by converting
-     * {@code block} via {@link YamlDocuments#convert(JsonNode, Class)}, which fails fast on unknown
-     * nested keys the same way the rest of the YAML schema DSL does).
+     * Applies a protocol-specific block named {@code name} to this object class builder.
+     * Implementations should reject block names they don't understand by throwing
+     * {@link IllegalArgumentException}, and validate their own nested structure.
      *
      * @param name  the block's key in the YAML document
      * @param block the block's raw content
