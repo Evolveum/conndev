@@ -8,6 +8,7 @@ package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Groovy;
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.build.ConnIdBuiltInAttribute;
 import com.evolveum.polygon.conndev.build.spi.SpiAttributeBuilder;
@@ -16,7 +17,6 @@ import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
-import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdTypeParser;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;

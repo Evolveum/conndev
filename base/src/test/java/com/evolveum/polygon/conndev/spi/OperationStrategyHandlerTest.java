@@ -177,7 +177,7 @@ public class OperationStrategyHandlerTest {
         assertTrue(trace.outcome().ok());
         trace.details().forEach(detail -> assertEquals(detail.severity(), LogSeverity.DEBUG));
         assertEquals(trace.details().size(), 5);
-        assertEquals(trace.details().get(0).detail(),
+        assertEquals(trace.details().getFirst().detail(),
                 Map.of("routing", Map.of(
                         "NamedUpdateHandler#1", List.of("name"),
                         "NamedUpdateHandler#2", List.of("title"))));
@@ -208,7 +208,7 @@ public class OperationStrategyHandlerTest {
         assertEquals(trace.objectClass(), "account");
         assertTrue(trace.outcome().ok());
         assertEquals(trace.details().size(), 3);
-        assertEquals(trace.details().get(0).detail(),
+        assertEquals(trace.details().getFirst().detail(),
                 Map.of("routing", Map.of(
                         "NamedCreateHandler", List.of(Name.NAME),
                         "NamedAttributeCreateHandler", List.of("phones"))));
@@ -238,7 +238,7 @@ public class OperationStrategyHandlerTest {
         assertEquals(trace.objectClass(), "account");
         assertTrue(trace.outcome().ok());
         assertEquals(trace.details().size(), 4);
-        assertEquals(trace.details().get(0).detail(),
+        assertEquals(trace.details().getFirst().detail(),
                 Map.of("cleanup", List.of("NamedDeleteHandler#1", "NamedDeleteHandler#2")));
         assertEquals(trace.details().get(1).detail(),
                 Map.of("executing", Map.of("handler", "NamedDeleteHandler#1")));
@@ -260,7 +260,7 @@ public class OperationStrategyHandlerTest {
         var trace = singleTrace();
         assertEquals(trace.protocolEvents().size(), 2);
 
-        var skeleton = trace.protocolEvents().get(0);
+        var skeleton = trace.protocolEvents().getFirst();
         assertEquals(skeleton.severity(), LogSeverity.DEBUG);
         var request = skeleton.protocol();
         assertEquals(request.type(), "http");
@@ -362,7 +362,7 @@ public class OperationStrategyHandlerTest {
     private static OperationTrace singleTrace() {
         var traces = OperationLogParser.parse(CapturingLogProvider.lines());
         assertEquals(traces.size(), 1);
-        return traces.get(0);
+        return traces.getFirst();
     }
 
     private static List<String> executingHandlers(OperationTrace trace) {

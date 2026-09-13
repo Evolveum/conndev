@@ -6,11 +6,11 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.build.spi.SpiObjectClassHandlerBuilder;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.spi.ObjectClassOperation;
-import com.evolveum.polygon.conndev.annotations.Yaml;
 
 /**
  * Base interface for all ConnId operation builders.

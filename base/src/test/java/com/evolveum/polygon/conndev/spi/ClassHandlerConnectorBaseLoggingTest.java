@@ -16,20 +16,13 @@ import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
 import com.evolveum.polygon.conndev.logging.CapturingLogProvider;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.AttributeDelta;
-import org.identityconnectors.framework.common.objects.AttributeDeltaBuilder;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
-import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.identityconnectors.framework.common.objects.OperationOptions;
-import org.identityconnectors.framework.common.objects.Schema;
-import org.identityconnectors.framework.common.objects.Uid;
+import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.spi.Configuration;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -56,7 +49,7 @@ public class ClassHandlerConnectorBaseLoggingTest {
         assertTrue(lines.stream().allMatch(OperationLogParser::isStructuredLine));
         var traces = OperationLogParser.parse(lines);
         assertEquals(traces.size(), 2);
-        assertEquals(traces.get(0).operation(), "create");
+        assertEquals(traces.getFirst().operation(), "create");
         assertEquals(traces.get(1).operation(), "update");
         assertTrue(traces.stream().allMatch(OperationTrace::completed));
         assertTrue(traces.stream().allMatch(trace -> trace.outcome().ok()));
@@ -94,9 +87,9 @@ public class ClassHandlerConnectorBaseLoggingTest {
         assertTrue(lines.stream().allMatch(OperationLogParser::isStructuredLine));
         var traces = OperationLogParser.parse(lines);
         assertEquals(traces.size(), 1);
-        assertEquals(traces.get(0).operation(), "update");
-        assertTrue(traces.get(0).completed());
-        assertTrue(traces.get(0).outcome().ok());
+        assertEquals(traces.getFirst().operation(), "update");
+        assertTrue(traces.getFirst().completed());
+        assertTrue(traces.getFirst().outcome().ok());
 
         // disable again: plain lines resume
         configuration.setDevelopmentMode(false);
@@ -160,9 +153,9 @@ public class ClassHandlerConnectorBaseLoggingTest {
 
     private static final class TestContext implements ConnectorContext {
 
-        private final java.util.function.Supplier<Boolean> developmentMode;
+        private final Supplier<Boolean> developmentMode;
 
-        private TestContext(java.util.function.Supplier<Boolean> developmentMode) {
+        private TestContext(Supplier<Boolean> developmentMode) {
             this.developmentMode = developmentMode;
         }
 

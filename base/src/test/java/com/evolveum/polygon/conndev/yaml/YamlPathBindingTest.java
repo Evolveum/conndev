@@ -7,11 +7,7 @@
 package com.evolveum.polygon.conndev.yaml;
 
 import com.evolveum.polygon.conndev.annotations.Yaml;
-import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
-import com.evolveum.polygon.conndev.api.AttributePathFormat;
-import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
-import com.evolveum.polygon.conndev.api.JsonPointerFormat;
+import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 import com.evolveum.polygon.conndev.yaml.decl.LocatedDocument;

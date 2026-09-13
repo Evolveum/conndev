@@ -9,9 +9,9 @@ package com.evolveum.polygon.conndev.yaml;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
+import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 import com.evolveum.polygon.conndev.yaml.decl.LocatedDocument;
 import com.evolveum.polygon.conndev.yaml.decl.LocatedNode;
-import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 
 import java.io.IOException;
 import java.io.InputStream;

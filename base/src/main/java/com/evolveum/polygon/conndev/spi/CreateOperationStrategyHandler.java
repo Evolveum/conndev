@@ -81,7 +81,7 @@ public class CreateOperationStrategyHandler implements ObjectCreateOperation {
 
         var selectedPrimary = primary;
         return executor.execute(scope -> {
-            OperationTracing.executing(facade, labels.get(0),
+            OperationTracing.executing(facade, labels.getFirst(),
                     OperationTracing.attributeNames(selectedPrimary.supported()));
             var result = selectedPrimary.handler().create(
                     Set.copyOf(selectedPrimary.supported()), options, scope);

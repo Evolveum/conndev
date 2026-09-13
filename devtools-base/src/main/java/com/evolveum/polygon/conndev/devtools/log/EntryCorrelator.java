@@ -127,7 +127,7 @@ public final class EntryCorrelator {
         var events = new ArrayList<StructuredLogEvent>(raw);
         events.sort(Comparator.comparingInt(e -> e.seq() == null ? 0 : e.seq()));
 
-        var first = events.get(0);
+        var first = events.getFirst();
         var startTs = ts(first);
 
         LogSeverity severity = null;

@@ -8,7 +8,11 @@ package com.evolveum.polygon.conndev.devtools.log;
 
 import org.testng.annotations.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,8 +30,8 @@ public class OperationLogParserTest {
     private static List<String> readFixtureLines() {
         var stream = OperationLogParserTest.class.getResourceAsStream("/sample-operations.log");
         assertThat(stream).isNotNull();
-        try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(stream, java.nio.charset.StandardCharsets.UTF_8))) {
-            var lines = new java.util.ArrayList<String>();
+        try (var reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            var lines = new ArrayList<String>();
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.isBlank()) {
@@ -130,7 +134,7 @@ public class OperationLogParserTest {
         assertThat(scim.location()).isEqualTo("User.search.groovy");
 
         assertThat(scim.protocolEvents()).hasSize(2);
-        var request = scim.protocolEvents().get(0);
+        var request = scim.protocolEvents().getFirst();
         assertThat(request.protocol().type()).isEqualTo(ConndevLogFormat.PROTOCOL_HTTP);
         assertThat(request.protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_REQUEST);
         assertThat(request.protocol().method()).isEqualTo("GET");
@@ -158,23 +162,23 @@ public class OperationLogParserTest {
         assertThat(sql.endTs()).isEqualTo(1761741189130L);
 
         assertThat(sql.protocolEvents()).hasSize(1);
-        var query = sql.protocolEvents().get(0);
+        var query = sql.protocolEvents().getFirst();
         assertThat(query.protocol().type()).isEqualTo(ConndevLogFormat.PROTOCOL_SQL);
         assertThat(query.protocol().sql()).isEqualTo("SELECT * FROM accounts WHERE external_id = ?");
         assertThat(query.protocol().params()).containsEntry("external_id", "u-42");
 
         assertThat(sql.details()).hasSize(1);
-        assertThat(sql.details().get(0).detail()).containsEntry("auxiliaryAccountLookup", true);
+        assertThat(sql.details().getFirst().detail()).containsEntry("auxiliaryAccountLookup", true);
     }
 
     @Test
     public void standaloneMessagesBecomeSingleEventEntries() {
         var messages = FIXTURE.stream().filter(t -> t.id() == null).toList();
         assertThat(messages).hasSize(4);
-        assertThat(messages.get(0).firstMessage()).isEqualTo("Connecting to REST endpoint");
-        assertThat(messages.get(0).severity()).isEqualTo(LogSeverity.INFO);
-        assertThat(messages.get(0).details()).hasSize(1);
-        assertThat(messages.get(0).details().get(0).detail())
+        assertThat(messages.getFirst().firstMessage()).isEqualTo("Connecting to REST endpoint");
+        assertThat(messages.getFirst().severity()).isEqualTo(LogSeverity.INFO);
+        assertThat(messages.getFirst().details()).hasSize(1);
+        assertThat(messages.getFirst().details().getFirst().detail())
                 .containsEntry(ConndevLogFormat.DETAIL_MESSAGE_KEY, "Connecting to REST endpoint");
         assertThat(messages.get(2).firstMessage()).isEqualTo("Attribute 'manager' has no mapping defined");
         assertThat(messages.get(2).severity()).isEqualTo(LogSeverity.WARN);

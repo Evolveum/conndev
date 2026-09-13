@@ -6,7 +6,6 @@
  */
 package com.evolveum.polygon.conndev.concepts;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**

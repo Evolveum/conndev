@@ -10,8 +10,8 @@ import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
-import com.evolveum.polygon.conndev.yaml.decl.LocatedDocument;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
+import com.evolveum.polygon.conndev.yaml.decl.LocatedDocument;
 import groovy.lang.Closure;
 import org.testng.annotations.Test;
 

@@ -7,10 +7,10 @@
 package com.evolveum.polygon.conndev.build.api;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
-import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdAliasHandler;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
@@ -28,7 +28,7 @@ public interface ObjectClassSchemaBuilder<
         B extends ObjectClassSchemaBuilder<B, A, R>,
         A extends AttributeBuilder<? super R, ?>,
         R extends ReferenceAttributeBuilder<R, A, ?>>
-    extends Fluent<B> {
+        extends Fluent<B> {
 
     /**
      * Sets a description for this object class definition.

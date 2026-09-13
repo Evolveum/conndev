@@ -14,9 +14,7 @@ import com.evolveum.polygon.conndev.logging.protocol.HttpProtocolData;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Verifies that a facade created statically (class-load time, development mode inactive) still
@@ -100,6 +98,6 @@ public class Slf4JConnDevLogOptionsTest {
     private static OperationTrace singleTrace() {
         var traces = OperationLogParser.parse(CapturingLogProvider.lines());
         assertEquals(traces.size(), 1);
-        return traces.get(0);
+        return traces.getFirst();
     }
 }

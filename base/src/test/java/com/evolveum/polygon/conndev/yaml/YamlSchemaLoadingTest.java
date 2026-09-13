@@ -6,11 +6,7 @@
  */
 package com.evolveum.polygon.conndev.yaml;
 
-import com.evolveum.polygon.conndev.api.AttributePath;
-import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
-import com.evolveum.polygon.conndev.api.ContextLookup;
-import com.evolveum.polygon.conndev.api.JsonPointerFormat;
-import com.evolveum.polygon.conndev.api.ParsingException;
+import com.evolveum.polygon.conndev.api.*;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;

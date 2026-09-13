@@ -15,6 +15,7 @@ import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
 
+import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,7 @@ public final class CapturingLogProvider implements SLF4JServiceProvider {
 
         @Override
         public Deque<String> getCopyOfDequeByKey(String key) {
-            return new java.util.ArrayDeque<>();
+            return new ArrayDeque<>();
         }
 
         @Override

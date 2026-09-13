@@ -41,7 +41,7 @@ public class DeleteOperationStrategyHandler implements ObjectDeleteOperation {
         all.add(primary);
         var labels = OperationTracing.labels(all);
         var cleanupLabels = labels.subList(0, cleanup.size());
-        var primaryLabel = labels.get(labels.size() - 1);
+        var primaryLabel = labels.getLast();
         if (!cleanupLabels.isEmpty()) {
             OperationTracing.detail(facade, OperationTracing.CLEANUP, cleanupLabels);
         }

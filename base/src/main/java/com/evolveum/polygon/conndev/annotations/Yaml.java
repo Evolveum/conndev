@@ -8,9 +8,9 @@ package com.evolveum.polygon.conndev.annotations;
 
 import com.evolveum.polygon.conndev.api.AttributePathFormat;
 import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
+import com.evolveum.polygon.conndev.yaml.decl.CustomYamlHandler;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlValueParser;
-import com.evolveum.polygon.conndev.yaml.decl.CustomYamlHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

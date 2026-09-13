@@ -10,12 +10,7 @@ import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeDelta;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Attaches orchestration detail events of a strategy handler to the operation entry currently

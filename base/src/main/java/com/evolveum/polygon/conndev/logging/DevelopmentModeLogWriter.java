@@ -1,4 +1,10 @@
- package com.evolveum.polygon.conndev.logging;
+ /*
+ * Copyright (c) 2026 Evolveum and contributors
+ * 
+ * This work is licensed under European Union Public License v1.2. See LICENSE file for details.
+ * 
+ */
+package com.evolveum.polygon.conndev.logging;
 
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.devtools.log.*;

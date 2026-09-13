@@ -8,8 +8,6 @@ package com.evolveum.polygon.conndev.devtools.log;
 
 import org.testng.annotations.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -65,7 +63,7 @@ public class EntryCorrelatorTest {
 
         var trace = correlator.drain().iterator().next();
         assertThat(trace.protocolEvents()).hasSize(2);
-        assertThat(trace.protocolEvents().get(0).protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_REQUEST);
+        assertThat(trace.protocolEvents().getFirst().protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_REQUEST);
         assertThat(trace.protocolEvents().get(1).protocol().kind()).isEqualTo(ConndevLogFormat.HTTP_RESPONSE);
         assertThat(trace.endTs()).isEqualTo(1761741185003L);
     }

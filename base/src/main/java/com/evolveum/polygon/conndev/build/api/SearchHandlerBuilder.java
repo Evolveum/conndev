@@ -6,9 +6,9 @@
  */
 package com.evolveum.polygon.conndev.build.api;
 
+import com.evolveum.polygon.conndev.annotations.Yaml;
 import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.concepts.Fluent;
-import com.evolveum.polygon.conndev.annotations.Yaml;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 

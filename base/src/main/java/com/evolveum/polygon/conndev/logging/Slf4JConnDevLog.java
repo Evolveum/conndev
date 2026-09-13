@@ -10,12 +10,9 @@ import com.evolveum.polygon.conndev.concepts.CheckedCallable;
 import com.evolveum.polygon.conndev.concepts.DevelopmentMode;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.devtools.log.ConndevLogFormat;
-import com.evolveum.polygon.conndev.devtools.log.ErrorPayload;
 import com.evolveum.polygon.conndev.devtools.log.EventType;
 import com.evolveum.polygon.conndev.devtools.log.LogSeverity;
 import com.evolveum.polygon.conndev.devtools.log.ProtocolPayload;
-import com.evolveum.polygon.conndev.devtools.log.ResultPayload;
-import com.evolveum.polygon.conndev.devtools.log.StructuredLogEvent;
 import com.evolveum.polygon.conndev.logging.protocol.HttpProtocolData;
 import com.evolveum.polygon.conndev.logging.protocol.ProtocolData;
 import com.evolveum.polygon.conndev.logging.protocol.SqlProtocolData;
@@ -51,7 +48,7 @@ public final class Slf4JConnDevLog implements ConnDevLog {
      * Options in effect for this facade: the explicitly configured options if given, otherwise
      * the defaults matching the development mode of the writing thread, resolved per emission.
      */
-    private final java.util.function.Supplier<LogOptions> optionsSupplier;
+    private final Supplier<LogOptions> optionsSupplier;
 
     public Slf4JConnDevLog(Logger logger, LogOptions options) {
         this.logger = logger;
