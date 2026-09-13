@@ -8,6 +8,8 @@ package com.evolveum.polygon.conndev.yaml.decl;
 
 import com.evolveum.polygon.conndev.annotations.Script;
 import com.evolveum.polygon.conndev.annotations.Yaml;
+import com.evolveum.polygon.conndev.api.AttributePathDeclaration;
+import com.evolveum.polygon.conndev.api.AttributePathFormat;
 import com.evolveum.polygon.conndev.concepts.CheckedCallable;
 import com.evolveum.polygon.conndev.concepts.CheckedRunnable;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
@@ -17,6 +19,7 @@ import groovy.lang.Closure;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -185,7 +188,8 @@ abstract sealed class DeclYamlBinding {
         return method.getAnnotation(Yaml.Key.class) != null
                 || method.getAnnotation(Yaml.Sub.class) != null
                 || method.getAnnotation(Yaml.Custom.class) != null
-                || method.getAnnotation(Yaml.Map.class) != null;
+                || method.getAnnotation(Yaml.Map.class) != null
+                || method.getAnnotation(Yaml.Path.class) != null;
     }
 
     private static boolean isScriptedClosure(Method method) {
@@ -248,6 +252,7 @@ abstract sealed class DeclYamlBinding {
         Yaml.Custom custom = method.getAnnotation(Yaml.Custom.class);
         Yaml.Map map = method.getAnnotation(Yaml.Map.class);
         Yaml.ValueParser valueParser = method.getAnnotation(Yaml.ValueParser.class);
+        Yaml.Path path = method.getAnnotation(Yaml.Path.class);
         Parameter closureParam = findScriptedClosureParam(method);
 
         String bindingKey = (key != null && !key.value().isEmpty()) ? key.value() : method.getName();
@@ -265,18 +270,45 @@ abstract sealed class DeclYamlBinding {
         if (map != null) {
             return new MapBinding(map.value(), resolved);
         }
-        if (key != null) {
+        if (key != null || path != null) {
             Class<?>[] params = method.getParameterTypes();
             if (params.length != 1) {
-                throw new IllegalStateException("@Yaml.Key method '" + method.getName()
-                        + "' must take exactly one parameter, found " + params.length);
+                throw new IllegalStateException((path != null ? "@Yaml.Path" : "@Yaml.Key") + " method '"
+                        + method.getName() + "' must take exactly one parameter, found " + params.length);
             }
-            DeclYamlValueParser coercer = valueParser != null ? instantiate(valueParser.value()) : DeclDefaultValueParser.INSTANCE;
+            DeclYamlValueParser coercer;
+            if (path != null) {
+                if (params[0] != AttributePathDeclaration.class) {
+                    throw new IllegalStateException("@Yaml.Path method '" + method.getName()
+                            + "' must take a single AttributePathDeclaration parameter, found " + params[0].getName());
+                }
+                coercer = new DeclPathValueParser(resolvePathFormat(path.value()));
+            } else {
+                coercer = valueParser != null ? instantiate(valueParser.value()) : DeclDefaultValueParser.INSTANCE;
+            }
             Method dvMethod = findDefinitionValueOverload(targetClass, method.getName(), params[0]);
             MethodHandle dvOverload = dvMethod != null ? unreflect(dvMethod) : null;
             return new Property(bindingKey, resolved, dvOverload, params, coercer);
         }
         return null;
+    }
+
+    /**
+     * Resolves the format instance of a {@code @Yaml.Path} binding: the format class must expose the
+     * {@code public static final INSTANCE} singleton declared by the framework convention (all
+     * built-in formats do).
+     */
+    private static AttributePathFormat<String> resolvePathFormat(Class<? extends AttributePathFormat<String>> type) {
+        try {
+            var field = type.getField("INSTANCE");
+            if (Modifier.isStatic(field.getModifiers()) && field.getType() == type) {
+                return (AttributePathFormat<String>) field.get(null);
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // fall through to the failure below
+        }
+        throw new IllegalStateException("Path format " + type.getName()
+                + " must expose a 'public static final INSTANCE' field");
     }
 
     /** The most-derived public method matching the annotated method's signature. */

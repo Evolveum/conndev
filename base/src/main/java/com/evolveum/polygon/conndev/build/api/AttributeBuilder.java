@@ -427,6 +427,19 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         JsonMapping path(String value, AttributePathFormat<String> format);
 
         /**
+         * Sets a JSON path from a pre-assembled {@link AttributePathDeclaration} (e.g. one built
+         * by the declarative YAML front-end for a {@code @Yaml.Path} binding).
+         *
+         * <p>The declaration is parsed lazily, when the mapping is built or the path is first
+         * resolved.</p>
+         *
+         * @param declaration the path declaration
+         * @return this JSON mapping instance
+         */
+        @Yaml.Path
+        JsonMapping path(AttributePathDeclaration<?, ?> declaration);
+
+        /**
          * Configures a JSON path via a closure:
          * <pre>
          * path {

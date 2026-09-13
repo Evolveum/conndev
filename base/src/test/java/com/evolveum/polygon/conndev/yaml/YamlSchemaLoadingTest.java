@@ -6,7 +6,11 @@
  */
 package com.evolveum.polygon.conndev.yaml;
 
+import com.evolveum.polygon.conndev.api.AttributePath;
+import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
 import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.api.JsonPointerFormat;
+import com.evolveum.polygon.conndev.api.ParsingException;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
@@ -24,6 +28,8 @@ import org.testng.annotations.Test;
 import tools.jackson.databind.JsonNode;
 
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 
 import static org.testng.Assert.*;
 
@@ -212,6 +218,81 @@ public class YamlSchemaLoadingTest {
                 """));
 
         assertTrue(exception.getMessage().contains("uuid"), exception.getMessage());
+    }
+
+    @Test
+    public void jsonPathIsBoundWithTheDefaultFormat() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      email:
+                        json:
+                          type: string
+                          path: $.emails[?(@.primary == true)].value
+                """);
+
+        builder.applyStructuralRules();
+        var email = loader.build().objectClass("User").attributeFromProtocolName("email");
+        var mapping = email.json();
+
+        assertEquals(mapping.pathDeclaration().type().value(), BasicJsonPathFormat.INSTANCE);
+        assertEquals(mapping.pathDeclaration().value().value(), "$.emails[?(@.primary == true)].value");
+        assertEquals(mapping.pathDeclaration().value().location().line(), 7);
+        assertEquals(mapping.path().components(), List.of(
+                new AttributePath.Attribute("emails"),
+                new AttributePath.SimpleValueFilter(Map.of("primary", Boolean.TRUE)),
+                new AttributePath.Attribute("value")));
+    }
+
+    @Test
+    public void jsonPathBindingSupportsAnExplicitFormat() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      email:
+                        json:
+                          type: string
+                          path:
+                            type: JSON_POINTER
+                            value: /emails/0/value
+                """);
+
+        builder.applyStructuralRules();
+        var email = loader.build().objectClass("User").attributeFromProtocolName("email");
+        var mapping = email.json();
+
+        assertEquals(mapping.pathDeclaration().type().value(), JsonPointerFormat.INSTANCE);
+        assertEquals(mapping.pathDeclaration().value().value(), "/emails/0/value");
+        assertEquals(mapping.path().components(), List.of(
+                new AttributePath.Attribute("emails"),
+                new AttributePath.IndexFilter(0),
+                new AttributePath.Attribute("value")));
+    }
+
+    @Test
+    public void invalidJsonPathFailsAtBuildNamingTheExpression() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      email:
+                        json:
+                          type: string
+                          path: $.emails[?(@.primary == )]
+                """);
+
+        // the structural rules force the mapping build, which forces the lazy path parse
+        var exception = expectThrows(ParsingException.class, builder::applyStructuralRules);
+
+        assertTrue(exception.getMessage().contains("$.emails[?(@.primary == )]"), exception.getMessage());
     }
 
     /**

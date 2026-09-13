@@ -6,6 +6,8 @@
  */
 package com.evolveum.polygon.conndev.annotations;
 
+import com.evolveum.polygon.conndev.api.AttributePathFormat;
+import com.evolveum.polygon.conndev.api.BasicJsonPathFormat;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlBinder;
 import com.evolveum.polygon.conndev.yaml.decl.DeclYamlValueParser;
 import com.evolveum.polygon.conndev.yaml.decl.CustomYamlHandler;
@@ -36,6 +38,9 @@ import java.lang.annotation.Target;
  *   <li>{@link Sub} — a no-arg accessor returning a sub-builder; the value sub-map is bound into it.</li>
  *   <li>{@link ValueParser} — override the auto-inferred scalar coercion with a specialised
  *       {@link DeclYamlValueParser}.</li>
+ *   <li>{@link Path} — a leaf value that is an attribute path: the YAML scalar (or {@code {type, value}}
+ *       mapping) is wrapped into an {@code AttributePathDeclaration} in the declared
+ *       {@link AttributePathFormat} and passed to the method.</li>
  *   <li>{@link Custom} — a structural shape handled by a named {@link CustomYamlHandler}.</li>
  *   <li>{@link Map} — a map of sub-builders: the annotation sits on the {@code String}-arg factory
  *       method that creates the sub-builders, and {@link Map#value()} is the YAML block key (e.g.
@@ -61,6 +66,33 @@ public final class Yaml {
     @Target(ElementType.METHOD)
     public @interface Key {
         String value() default "";
+    }
+
+    /**
+     * Marks a method as an attribute-path binding. The YAML value is either a scalar path
+     * expression or a mapping with a {@code value} entry and an optional {@code type} entry
+     * (one of the names known to {@code AttributePathFormats}, e.g. {@code JSON_POINTER}); in both
+     * cases the expression is wrapped — together with the key's source location — into an
+     * {@code AttributePathDeclaration} in the declared {@link #value() format} and passed to the
+     * method, which must take a single {@code AttributePathDeclaration} parameter.
+     *
+     * <p>The expression is not parsed at binding time; the declaration parses it lazily on first
+     * access, so an invalid expression surfaces when the mapping is built (the builders force the
+     * parse in their {@code build()}). The annotation alone is a binding marker (the YAML key
+     * defaults to the method name); combine it with {@link Key} to bind a differently-named key
+     * (e.g. {@code @Yaml.Key("jsonPath") @Yaml.Path(JsonPointerFormat.class)}).</p>
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Path {
+
+        /**
+         * The {@link AttributePathFormat} the path expression is written in — the default for a
+         * scalar value and for a mapping without a {@code type}. The format class must expose the
+         * framework-convention {@code public static final INSTANCE} singleton (as all built-in
+         * formats do). Defaults to {@link BasicJsonPathFormat}.
+         */
+        Class<? extends AttributePathFormat<String>> value() default BasicJsonPathFormat.class;
     }
 
     /** Marks a no-arg accessor that returns a sub-builder to bind the value sub-map into. */
