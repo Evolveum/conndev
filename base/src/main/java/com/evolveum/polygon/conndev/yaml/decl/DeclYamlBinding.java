@@ -21,6 +21,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
@@ -345,6 +348,12 @@ abstract sealed class DeclYamlBinding {
      * The same-name single-argument {@link DefinitionValue} overload of a leaf method, if one exists.
      * The binder prefers it so the value — together with its YAML location — is carried as a
      * {@code DefinitionValue} instead of a bare primitive.
+     *
+     * <p>The overload is matched only when its {@code DefinitionValue} type argument corresponds to
+     * the plain parameter type (ignoring generics and the primitive/wrapper distinction): a
+     * same-name overload carrying a different value type (e.g. {@code path(DefinitionValue<String>)}
+     * next to a {@code @Yaml.Path} {@code path(AttributePathDeclaration)}) must not be invoked with
+     * a value of the wrong type, since the generic argument is erased in the signature.
      */
     private static Method findDefinitionValueOverload(Class<?> targetClass, String name, Class<?> plainParam) {
         if (plainParam == DefinitionValue.class) {
@@ -352,11 +361,85 @@ abstract sealed class DeclYamlBinding {
         }
         for (Method method : targetClass.getMethods()) {
             if (method.getName().equals(name) && method.getParameterCount() == 1
-                    && method.getParameterTypes()[0] == DefinitionValue.class) {
+                    && method.getParameterTypes()[0] == DefinitionValue.class
+                    && sameValueType(definitionValueArgument(method), plainParam)) {
                 return accessible(method);
             }
         }
         return null;
+    }
+
+    /**
+     * The generic type argument of a single {@code DefinitionValue<T>} parameter, or {@code null}
+     * when the parameter is raw (or not a {@code DefinitionValue} at all) — a raw parameter matches
+     * no plain type, so it can never shadow the plain-typed binding.
+     */
+    private static Type definitionValueArgument(Method method) {
+        if (method.getParameterCount() != 1 || method.getParameterTypes()[0] != DefinitionValue.class) {
+            return null;
+        }
+        var generic = method.getGenericParameterTypes()[0];
+        if (generic instanceof ParameterizedType parameterized) {
+            return parameterized.getActualTypeArguments()[0];
+        }
+        return null;
+    }
+
+    /**
+     * Whether the {@code DefinitionValue} type argument carries the same value type as the plain
+     * parameter: the raw class of the argument (unwrapping parameterizations and wildcards) must
+     * equal the plain parameter or its primitive/wrapper counterpart.
+     */
+    private static boolean sameValueType(Type typeArgument, Class<?> plainParam) {
+        var argumentClass = rawClass(typeArgument);
+        return argumentClass != null && boxed(argumentClass) == boxed(plainParam);
+    }
+
+    /** The raw {@link Class} behind a type: a class itself, a parameterized type's raw type, or a wildcard's bound. */
+    private static Class<?> rawClass(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (type instanceof ParameterizedType parameterized) {
+            return rawClass(parameterized.getRawType());
+        }
+        if (type instanceof WildcardType wildcard) {
+            var upper = wildcard.getUpperBounds();
+            return upper.length > 0 ? rawClass(upper[0]) : null;
+        }
+        return null;
+    }
+
+    /** The wrapper class of a primitive type, or the type itself. */
+    private static Class<?> boxed(Class<?> type) {
+        if (type == boolean.class) {
+            return Boolean.class;
+        }
+        if (type == int.class) {
+            return Integer.class;
+        }
+        if (type == long.class) {
+            return Long.class;
+        }
+        if (type == double.class) {
+            return Double.class;
+        }
+        if (type == float.class) {
+            return Float.class;
+        }
+        if (type == short.class) {
+            return Short.class;
+        }
+        if (type == byte.class) {
+            return Byte.class;
+        }
+        if (type == char.class) {
+            return Character.class;
+        }
+        if (type.isPrimitive()) {
+            return Void.class;
+        }
+        return type;
     }
 
     private static DeclYamlValueParser instantiate(Class<? extends DeclYamlValueParser> type) {
