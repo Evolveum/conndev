@@ -20,7 +20,10 @@ public abstract class AbstractOperationSupportBuilder<
         PO extends ObjectOperationSupportBuilder> implements OperationSupportBuilder<PB,PO> {
 
     private final ConnectorContext context;
-    private final Map<String, PO> handlers = new HashMap<>();
+    // Keyed by ObjectClass rather than raw String: ConnId's ObjectClass identity is
+    // case-insensitive (see ObjectClass.is()/equals()), so "User" and "user" must resolve to the
+    // same handler builder instead of silently producing two competing ones.
+    private final Map<ObjectClass, PO> handlers = new HashMap<>();
 
     protected AbstractOperationSupportBuilder(ConnectorContext context) {
         this.context = context;
@@ -28,7 +31,7 @@ public abstract class AbstractOperationSupportBuilder<
 
     @Override
     public PO objectClass(String user) {
-        return handlers.computeIfAbsent(user, k ->  newObjectSpecific(context.schema().objectClass(user)));
+        return handlers.computeIfAbsent(new ObjectClass(user), k -> newObjectSpecific(context.schema().objectClass(user)));
     }
 
     protected abstract PO newObjectSpecific(BaseObjectClassDefinition classDefinition);
