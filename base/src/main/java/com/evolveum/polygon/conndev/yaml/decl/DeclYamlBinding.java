@@ -45,7 +45,17 @@ abstract sealed class DeclYamlBinding {
 
     /** The bindings of the concrete class of {@code target}, scanned and cached once per class. */
     static Map<String, DeclYamlBinding> bindingsFor(Object target) {
-        return CACHE.computeIfAbsent(target.getClass(), DeclYamlBinding::scan);
+        return bindingsFor(target.getClass());
+    }
+
+    /**
+     * The bindings of {@code clazz}, scanned and cached once per class. Unlike {@link
+     * #bindingsFor(Object)}, this needs no live instance — used by static, non-executing tree
+     * walks (e.g. a Groovy-fragment syntax check) that only need to know a type's {@code @Yaml.*}
+     * shape, not run its builder.
+     */
+    static Map<String, DeclYamlBinding> bindingsFor(Class<?> clazz) {
+        return CACHE.computeIfAbsent(clazz, DeclYamlBinding::scan);
     }
 
     abstract void apply(DeclYamlBinder binder, Object target, LocatedNode value, SourceLocation location);
@@ -107,6 +117,11 @@ abstract sealed class DeclYamlBinding {
         @Override
         void apply(DeclYamlBinder binder, Object target, LocatedNode value, SourceLocation location) {
             custom.apply(binder, target, value);
+        }
+
+        /** The opaque handler — used by a static, non-executing walk to delegate its own syntax check. */
+        CustomYamlHandler handler() {
+            return custom;
         }
     }
 

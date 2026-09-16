@@ -13,17 +13,19 @@ import tools.jackson.core.JsonToken;
 import tools.jackson.core.TokenStreamLocation;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
 /**
  * Parses a YAML document into a location-aware tree of {@link LocatedNode}s.
  *
- * <p>A Jackson 3 {@code readTree()} result carries no position information (and there is no feature
- * flag to add it), so this drives the {@link JsonParser} itself in a recursive-descent walk and
- * records the 1-based {@link TokenStreamLocation} of every token. That is what lets the
- * {@link DeclYamlBinder} attach a real {@code SourceLocation} (source name + line/column) to every value
- * it binds — something the previous typed-POJO front-end could not do.
+ * <p>Jackson's {@code readTree()} carries no position info, so this drives the parser itself in a
+ * recursive-descent walk, recording each token's line/column. That's what lets {@link
+ * DeclYamlBinder} attach a real source location to every value it binds.
+ *
+ * <p>The raw source text is also retained (see {@link #rawLine}) for detail the tree loses, like a
+ * block scalar's indentation.
  */
 public final class LocatedDocument {
 
@@ -31,18 +33,25 @@ public final class LocatedDocument {
 
     private final String sourceName;
     private final LocatedNode root;
+    private final String rawText;
+    private String[] rawLines;
 
-    private LocatedDocument(String sourceName, LocatedNode root) {
+    private LocatedDocument(String sourceName, LocatedNode root, String rawText) {
         this.sourceName = sourceName;
         this.root = root;
+        this.rawText = rawText;
     }
 
     public static LocatedDocument parse(String sourceName, String yaml) {
-        return parse(sourceName, new StringReader(yaml));
+        return parseInternal(sourceName, yaml);
     }
 
     public static LocatedDocument parse(String sourceName, Reader reader) {
-        try (JsonParser parser = MAPPER.createParser(reader)) {
+        return parseInternal(sourceName, readFully(sourceName, reader));
+    }
+
+    private static LocatedDocument parseInternal(String sourceName, String yaml) {
+        try (JsonParser parser = MAPPER.createParser(new StringReader(yaml))) {
             if (parser.nextToken() == null) {
                 throw new IllegalArgumentException("Empty YAML document (" + sourceName + ")");
             }
@@ -51,9 +60,23 @@ public final class LocatedDocument {
                 throw new IllegalArgumentException("Expected exactly one document per file, found a "
                         + "second document (" + sourceName + ")");
             }
-            return new LocatedDocument(sourceName, root);
+            return new LocatedDocument(sourceName, root, yaml);
         } catch (JacksonException e) {
             throw new IllegalArgumentException("Could not parse YAML (" + sourceName + "): " + e.getMessage(), e);
+        }
+    }
+
+    private static String readFully(String sourceName, Reader reader) {
+        try {
+            var out = new StringBuilder();
+            var buffer = new char[4096];
+            int n;
+            while ((n = reader.read(buffer)) != -1) {
+                out.append(buffer, 0, n);
+            }
+            return out.toString();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read YAML (" + sourceName + "): " + e.getMessage(), e);
         }
     }
 
@@ -67,6 +90,15 @@ public final class LocatedDocument {
 
     public SourceLocation location(int line, int col) {
         return SourceLocation.from(sourceName, line, col);
+    }
+
+    /** The raw source's 1-based line {@code lineNumber}, or {@code null} if out of range. */
+    String rawLine(int lineNumber) {
+        if (rawLines == null) {
+            rawLines = rawText.split("\n", -1);
+        }
+        int index = lineNumber - 1;
+        return index >= 0 && index < rawLines.length ? rawLines[index] : null;
     }
 
     private static LocatedNode parseValue(JsonParser parser) {

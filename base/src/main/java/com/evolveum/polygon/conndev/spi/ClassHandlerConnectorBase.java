@@ -167,7 +167,8 @@ public abstract class ClassHandlerConnectorBase implements Connector,
                 || !Boolean.TRUE.equals(groovyConf.getDevelopmentMode())) {
             throw new UnsupportedOperationException("Script execution is supported only in development mode");
         }
-        if (!"groovy".equalsIgnoreCase(request.getScriptLanguage())) {
+        if (!ScriptValidationRequest.LANGUAGE_GROOVY.equalsIgnoreCase(request.getScriptLanguage())
+                && !ScriptValidationRequest.LANGUAGE_YAML.equalsIgnoreCase(request.getScriptLanguage())) {
             throw new IllegalArgumentException("Unsupported script language: " + request.getScriptLanguage());
         }
         var validationRequest = ScriptValidationRequest.from(request);
@@ -185,13 +186,12 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     }
 
     /**
-     * Validates the candidate script described by {@code request} via {@link
-     * GroovyScriptValidator#validate}. {@link ScriptValidationRequest#filename} identifies the
-     * artifact's already-deployed resource, if any, so implementations can reload every other
-     * deployed script while excluding this one, evaluating the candidate in place of its old
-     * content. May throw if the connector cannot be initialized enough to construct a throwaway
-     * validation target; such exceptions are reported as an {@code initialization}-phase
-     * validation error.
+     * Validates the candidate script described by {@code request} — via {@link
+     * GroovyScriptValidator} for Groovy, or the YAML counterpart for YAML ({@link
+     * ScriptValidationRequest#isYaml()}). {@link ScriptValidationRequest#filename} identifies the
+     * already-deployed resource, if any, so implementations can reload every other deployed
+     * script while excluding this one. May throw if the connector can't be initialized enough to
+     * build a throwaway validation target; reported as an {@code initialization}-phase error.
      */
     protected abstract ScriptValidationResult validateScript(ScriptValidationRequest request) throws Exception;
 

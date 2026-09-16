@@ -22,8 +22,8 @@ import static org.testng.Assert.*;
 
 /**
  * {@link ClassHandlerConnectorBase#runScriptOnResource} dispatch: development-mode gate,
- * {@code operation} validation, and routing to {@link ClassHandlerConnectorBase#validateScript}
- * — independent of any concrete connector family.
+ * {@code language}/{@code operation} validation, and routing to {@link
+ * ClassHandlerConnectorBase#validateScript} — independent of any concrete connector family.
  */
 public class ClassHandlerConnectorBaseScriptValidationTest {
 
@@ -113,6 +113,21 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("javascript"));
         }
+    }
+
+    @Test
+    public void acceptsYamlScriptLanguage() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        var context = new ScriptContext("yaml", "objectClasses: {}", Map.of(
+                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
+                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, ScriptValidationRequest.ARTIFACT_KIND_SCHEMA));
+
+        var result = connector.runScriptOnResource(context, null);
+
+        assertEquals(result, Map.of("status", "ok"));
+        assertEquals(connector.capturedRequest.language(), "yaml");
+        assertTrue(connector.capturedRequest.isYaml());
     }
 
     @Test
