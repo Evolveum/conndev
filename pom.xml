@@ -59,6 +59,7 @@
     <modules>
         <module>devtools-base</module>
         <module>base</module>
+        <module>docs</module>
     </modules>
 
     <dependencyManagement>
@@ -81,6 +82,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
@@ -139,6 +145,19 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>3.3.1</version>
+                </plugin>
+                <!-- Declare this plugin in the docs build to render src/main/asciidoc into
+                     fragment HTML at build time (groupId+artifactId+configuration only). -->
+                <plugin>
+                    <groupId>org.asciidoctor</groupId>
+                    <artifactId>asciidoctor-maven-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <!-- Packages the rendered docs into the jar under META-INF/conndev-doc. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.1</version>
                 </plugin>
                 <!-- Declare this plugin in the connector build to add sources (just groupId+artifactId). -->
                 <plugin>

@@ -1,0 +1,13 @@
+apiVersion: conndev-doc/v1
+# Maps GUI topic keys to the rendered HTML resources.
+# resource is a path relative to META-INF/conndev-doc/ (the first path segment is the
+# domain directory, mirroring the src/main/asciidoc layout).
+# protocol tags a topic as protocol-specific; topics without a protocol are generic and
+# are served after the protocol-specific topics of the same key. The framework docs here
+# are generic on purpose (they describe conndev itself, not a single protocol).
+connectorId: conndev
+topics:
+  - key: connid-builtin-attributes
+    title: ConnId Built-in Attributes
+    resource: general/connid-builtin-attributes.html
+    order: 20
