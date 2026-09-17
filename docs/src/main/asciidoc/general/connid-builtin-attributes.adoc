@@ -213,40 +213,23 @@ What does the framework actually *enforce* vs. what is convention?
 
 === Hard-enforced (framework throws)
 
-[cols="2,3,2",options="header"]
-|===
-| Constraint | Behavior | Location
+`pass:[__PASSWORD__]` / `pass:[__CURRENT_PASSWORD__]` type::
+  `AttributeInfo` must declare `GuardedString.class`, else `IllegalArgumentException("Password based attributes must be of type GuardedString.")` — enforced in `AttributeInfo.java` (constructor)
 
-| `pass:[__PASSWORD__]` / `pass:[__CURRENT_PASSWORD__]` type
-| `AttributeInfo` must declare `GuardedString.class`, else
-  `IllegalArgumentException("Password based attributes must be of type GuardedString.")`
-| `AttributeInfo.java` (constructor)
+`pass:[__PASSWORD__]` / `pass:[__CURRENT_PASSWORD__]` value::
+  must be single-valued and the value must be a `GuardedString` instance, else `IllegalArgumentException` — enforced in `Attribute.java` (constructor)
 
-| `pass:[__PASSWORD__]` / `pass:[__CURRENT_PASSWORD__]` value
-| must be single-valued and the value must be a `GuardedString` instance, else
-  `IllegalArgumentException`
-| `Attribute.java` (constructor)
+`pass:[__UID__]` value::
+  must be non-blank `String`, else `IllegalArgumentException` — enforced in `Uid.java`
 
-| `pass:[__UID__]` value
-| must be non-blank `String`, else `IllegalArgumentException`
-| `Uid.java`
+Object identification::
+  `ConnectorObject` requires `Uid` and `Name` *instances* (not plain attributes) — enforced in `ConnectorObject.java` (constructor)
 
-| Object identification
-| `ConnectorObject` requires `Uid` and `Name` *instances* (not plain attributes)
-| `ConnectorObject.java` (constructor)
+Any attribute type (schema)::
+  must be one of the supported types (`FrameworkUtil.checkAttributeType`): `String`, `long/Long`, `char/Character`, `double/Double`, `float/Float`, `int/Integer`, `boolean/Boolean`, `byte/Byte`, `byte[]`, `BigDecimal`, `BigInteger`, `GuardedByteArray`, `GuardedString`, `Map` (+subtypes), `ZonedDateTime`, `ConnectorObjectReference`, `EmbeddedObject` — enforced in `FrameworkUtil.java`
 
-| Any attribute type (schema)
-| must be one of the supported types (`FrameworkUtil.checkAttributeType`):
-  `String`, `long/Long`, `char/Character`, `double/Double`, `float/Float`,
-  `int/Integer`, `boolean/Boolean`, `byte/Byte`, `byte[]`, `BigDecimal`,
-  `BigInteger`, `GuardedByteArray`, `GuardedString`, `Map` (+subtypes),
-  `ZonedDateTime`, `ConnectorObjectReference`, `EmbeddedObject`
-| `FrameworkUtil.java`
-
-| Flag consistency
-| `NOT_READABLE` without `NOT_RETURNED_BY_DEFAULT` is rejected
-| `AttributeInfo.java` (constructor)
-|===
+Flag consistency::
+  `NOT_READABLE` without `NOT_RETURNED_BY_DEFAULT` is rejected — enforced in `AttributeInfo.java` (constructor)
 
 === Conventional (not type-checked by the framework)
 
@@ -277,22 +260,14 @@ and midPoint maps it to `xsd:dateTime` in the generated resource schema
 
 === Regular attributes: `ZonedDateTime` is supported end-to-end
 
-[cols="2,2,2",options="header"]
-|===
-| Direction | Conversion | Location
+schema::
+  `ZonedDateTime` → `xsd:dateTime`; the shadow attribute is typed `XMLGregorianCalendar` — in `ConnIdTypeMapper` → `XsdTypeMapper.toXsdType`
 
-| schema
-| `ZonedDateTime` → `xsd:dateTime`; the shadow attribute is typed `XMLGregorianCalendar`
-| `ConnIdTypeMapper` → `XsdTypeMapper.toXsdType`
+read (ConnId → shadow)::
+  `ZonedDateTime` → `XMLGregorianCalendar` (explicit conversion; passes the runtime type check) — in `ConnIdToUcfObjectConversion.convertAttributeValueFromConnId`
 
-| read (ConnId → shadow)
-| `ZonedDateTime` → `XMLGregorianCalendar` (explicit conversion; passes the runtime type check)
-| `ConnIdToUcfObjectConversion.convertAttributeValueFromConnId`
-
-| write & filters (shadow → ConnId)
-| `XMLGregorianCalendar` → `ZonedDateTime`
-| `ConnIdUtil.convertValueToConnId`
-|===
+write & filters (shadow → ConnId)::
+  `XMLGregorianCalendar` → `ZonedDateTime` — in `ConnIdUtil.convertValueToConnId`
 
 So a connector may declare custom date attributes (and even the password date/interval
 attributes below) as `ZonedDateTime` and midPoint will round-trip them.
@@ -334,19 +309,14 @@ a `Long` value in a `ZonedDateTime`-typed attribute (or vice versa) fails
 midPoint's type-compatibility check.
 
 .Practical rule
-[cols="2,3",options="header"]
-|===
-| Attribute | Value type
+`pass:[__ENABLE_DATE__]`, `pass:[__DISABLE_DATE__]`, `pass:[__LAST_LOGIN_DATE__]`::
+  `long` epoch-millis (UTC) — midPoint hard requirement
 
-| `pass:[__ENABLE_DATE__]`, `pass:[__DISABLE_DATE__]`, `pass:[__LAST_LOGIN_DATE__]`
-| `long` epoch-millis (UTC) — midPoint hard requirement
+`pass:[__PASSWORD_EXPIRATION_DATE__]`, `pass:[__LAST_PASSWORD_CHANGE_DATE__]`, `pass:[__PASSWORD_CHANGE_INTERVAL__]`::
+  `long` recommended (standard infos), `ZonedDateTime` works (generic path)
 
-| `pass:[__PASSWORD_EXPIRATION_DATE__]`, `pass:[__LAST_PASSWORD_CHANGE_DATE__]`, `pass:[__PASSWORD_CHANGE_INTERVAL__]`
-| `long` recommended (standard infos), `ZonedDateTime` works (generic path)
-
-| custom date attributes
-| `ZonedDateTime` (or `long`) — both fully supported
-|===
+custom date attributes::
+  `ZonedDateTime` (or `long`) — both fully supported
 
 == Connector-Side Handling (Generic ConnId SPI)
 
@@ -453,62 +423,44 @@ All in `provisioning/ucf-impl-connid` unless noted.
 `SpecialItemNameMapper` (file `SpecialNameMapper.java`) holds a static
 bi-directional map between ConnId special names and midPoint `icfs:` QNames:
 
-[cols="2,2,3",options="header"]
-|===
-| ConnId Name | midPoint QName | Notes
+`pass:[__NAME__]`::
+  `icfs:name` — secondary identifier
 
-| `pass:[__NAME__]`
-| `icfs:name`
-| secondary identifier
+`pass:[__UID__]`::
+  `icfs:uid` — primary identifier; read-only, maxOccurs 1
 
-| `pass:[__UID__]`
-| `icfs:uid`
-| primary identifier; read-only, maxOccurs 1
+`pass:[__PASSWORD__]`::
+  `icfs:password` — `ProtectedStringType`
 
-| `pass:[__PASSWORD__]`
-| `icfs:password`
-| `ProtectedStringType`
+`pass:[__CURRENT_PASSWORD__]`::
+  `icfs:currentPassword` — `ProtectedStringType`
 
-| `pass:[__CURRENT_PASSWORD__]`
-| `icfs:currentPassword`
-| `ProtectedStringType`
+`pass:[__ENABLE__]`::
+  `icfs:enable` — `xsd:boolean`
 
-| `pass:[__ENABLE__]`
-| `icfs:enable`
-| `xsd:boolean`
+`pass:[__ENABLE_DATE__]`::
+  `icfs:enableDate` — `xsd:long`
 
-| `pass:[__ENABLE_DATE__]`
-| `icfs:enableDate`
-| `xsd:long`
+`pass:[__DISABLE_DATE__]`::
+  `icfs:disableDate` — `xsd:long`
 
-| `pass:[__DISABLE_DATE__]`
-| `icfs:disableDate`
-| `xsd:long`
+`pass:[__LOCK_OUT__]`::
+  `icfs:lockOut` — `xsd:boolean`
 
-| `pass:[__LOCK_OUT__]`
-| `icfs:lockOut`
-| `xsd:boolean`
+`pass:[__PASSWORD_EXPIRATION_DATE__]`::
+  `icfs:passwordExpirationDate` — `xsd:long`
 
-| `pass:[__PASSWORD_EXPIRATION_DATE__]`
-| `icfs:passwordExpirationDate`
-| `xsd:long`
+`pass:[__PASSWORD_EXPIRED__]`::
+  `icfs:passwordExpired` — `xsd:boolean`
 
-| `pass:[__PASSWORD_EXPIRED__]`
-| `icfs:passwordExpired`
-| `xsd:boolean`
+`pass:[__DESCRIPTION__]`::
+  `icfs:description` — "secret" attr — used by midPoint, not declared by the ConnId API
 
-| `pass:[__DESCRIPTION__]`
-| `icfs:description`
-| "secret" attr — used by midPoint, not declared by the ConnId API
+`pass:[__GROUPS__]`::
+  `icfs:groups` — "secret" attr
 
-| `pass:[__GROUPS__]`
-| `icfs:groups`
-| "secret" attr
-
-| `pass:[__LAST_LOGIN_DATE__]`
-| `icfs:lastLoginDate`
-| "secret" attr; `xsd:long`
-|===
+`pass:[__LAST_LOGIN_DATE__]`::
+  `icfs:lastLoginDate` — "secret" attr; `xsd:long`
 
 The "secret" attributes (`SecretIcfOperationalAttributes`) are ICF operational
 names midPoint knows about even though the ConnId API does not standardize them;
@@ -536,38 +488,26 @@ it records their presence (and flags) in `SpecialAttributes`, and
 `ConnIdCapabilitiesAndSchemaParser.updateFromSchema(...)` turns that into
 midPoint capabilities:
 
-[cols="2,2,2",options="header"]
-|===
-| ConnId Attribute in schema | midPoint capability | Detail
+`pass:[__PASSWORD__]`::
+  `capabilities:credentials:password` — `returnedByDefault`/`readable` flags carried over from the `AttributeInfo`
 
-| `pass:[__PASSWORD__]`
-| `capabilities:credentials:password`
-| `returnedByDefault`/`readable` flags carried over from the `AttributeInfo`
+`pass:[__ENABLE__]`::
+  `capabilities:activation:status`
 
-| `pass:[__ENABLE__]`
-| `capabilities:activation:status`
-|
+`pass:[__ENABLE_DATE__]`::
+  `capabilities:activation:validFrom`
 
-| `pass:[__ENABLE_DATE__]`
-| `capabilities:activation:validFrom`
-|
+`pass:[__DISABLE_DATE__]`::
+  `capabilities:activation:validTo`
 
-| `pass:[__DISABLE_DATE__]`
-| `capabilities:activation:validTo`
-|
+`pass:[__LOCK_OUT__]`::
+  `capabilities:activation:lockoutStatus`
 
-| `pass:[__LOCK_OUT__]`
-| `capabilities:activation:lockoutStatus`
-|
+`pass:[__LAST_LOGIN_DATE__]`::
+  `capabilities:behavior:lastLoginTimestamp`
 
-| `pass:[__LAST_LOGIN_DATE__]`
-| `capabilities:behavior:lastLoginTimestamp`
-|
-
-| `pass:[__AUXILIARY_OBJECT_CLASS__]`
-| `capabilities:auxiliaryObjectClasses`
-|
-|===
+`pass:[__AUXILIARY_OBJECT_CLASS__]`::
+  `capabilities:auxiliaryObjectClasses`
 
 For `pass:[__UID__]` and `pass:[__NAME__]`:
 
@@ -592,47 +532,32 @@ For `pass:[__UID__]` and `pass:[__NAME__]`:
 
 `ConnIdToUcfObjectConversion` maps a `ConnectorObject` to a UCF shadow:
 
-[cols="2,2,2",options="header"]
-|===
-| ConnId attribute (value) | Shadow target | Value handling
+`pass:[__PASSWORD__]` (`GuardedString`)::
+  `resourceObject:credentials` — converted to `ProtectedStringType` and *encrypted with the midPoint protector*; an INCOMPLETE attribute ⇒ "password present but unknown"
 
-| `pass:[__PASSWORD__]` (`GuardedString`)
-| `resourceObject:credentials`
-| converted to `ProtectedStringType` and *encrypted with the midPoint protector*;
-  an INCOMPLETE attribute ⇒ "password present but unknown"
+`pass:[__ENABLE__]` (`Boolean`)::
+  `resourceObject:activation:administrativeStatus` + `effectiveStatus` — `ENABLED` / `DISABLED`
 
-| `pass:[__ENABLE__]` (`Boolean`)
-| `resourceObject:activation:administrativeStatus` + `effectiveStatus`
-| `ENABLED` / `DISABLED`
+`pass:[__ENABLE_DATE__]` (`Long` millis)::
+  `resourceObject:activation:validFrom` — `XMLGregorianCalendar`
 
-| `pass:[__ENABLE_DATE__]` (`Long` millis)
-| `resourceObject:activation:validFrom`
-| `XMLGregorianCalendar`
+`pass:[__DISABLE_DATE__]` (`Long` millis)::
+  `resourceObject:activation:validTo` — `XMLGregorianCalendar`
 
-| `pass:[__DISABLE_DATE__]` (`Long` millis)
-| `resourceObject:activation:validTo`
-| `XMLGregorianCalendar`
+`pass:[__LOCK_OUT__]` (`Boolean`)::
+  `resourceObject:activation:lockoutStatus` — `LOCKED` / `NORMAL`
 
-| `pass:[__LOCK_OUT__]` (`Boolean`)
-| `resourceObject:activation:lockoutStatus`
-| `LOCKED` / `NORMAL`
+`pass:[__LAST_LOGIN_DATE__]` (`Long` millis)::
+  `resourceObject:behavior:lastLoginTimestamp` — `XMLGregorianCalendar`
 
-| `pass:[__LAST_LOGIN_DATE__]` (`Long` millis)
-| `resourceObject:behavior:lastLoginTimestamp`
-| `XMLGregorianCalendar`
+`pass:[__AUXILIARY_OBJECT_CLASS__]` (`String` list)::
+  `resourceObject:auxiliaryObjectClass` (QName list) — definitions of the auxiliary classes are composited into the object definition
 
-| `pass:[__AUXILIARY_OBJECT_CLASS__]` (`String` list)
-| `resourceObject:auxiliaryObjectClass` (QName list)
-| definitions of the auxiliary classes are composited into the object definition
+`pass:[__UID__]` (`Uid`)::
+  primary identifier item in `resourceObject:attributes` — added only if the same item is not already present via another attribute
 
-| `pass:[__UID__]` (`Uid`)
-| primary identifier item in `resourceObject:attributes`
-| added only if the same item is not already present via another attribute
-
-| anything else
-| regular `resourceObject:attributes` item (native name or `icfs:`/`ri:` name)
-| includes `pass:[__SHORT_NAME__]`, `pass:[__DESCRIPTION__]` when present
-|===
+anything else::
+  regular `resourceObject:attributes` item (native name or `icfs:`/`ri:` name) — includes `pass:[__SHORT_NAME__]`, `pass:[__DESCRIPTION__]` when present
 
 Value-type conversions in this direction (`convertAttributeValueFromConnId` +
 `ConnIdUtil.convertValueToConnId`):
@@ -653,41 +578,26 @@ Value-type conversions in this direction (`convertAttributeValueFromConnId` +
 updates, `UpdateModificationConverter` for full updates) converts midPoint
 model changes to ConnId deltas:
 
-[cols="2,2,2",options="header"]
-|===
-| Shadow path | ConnId attribute | Value handling
+`activation:administrativeStatus`::
+  `pass:[__ENABLE__]` — `Boolean` (`ENABLED` ⇒ `true`)
 
-| `activation:administrativeStatus`
-| `pass:[__ENABLE__]`
-| `Boolean` (`ENABLED` ⇒ `true`)
+`activation:validFrom`::
+  `pass:[__ENABLE_DATE__]` — `XMLGregorianCalendar` → `Long` millis (`XmlTypeConverter.toMillis`)
 
-| `activation:validFrom`
-| `pass:[__ENABLE_DATE__]`
-| `XMLGregorianCalendar` → `Long` millis (`XmlTypeConverter.toMillis`)
+`activation:validTo`::
+  `pass:[__DISABLE_DATE__]` — `XMLGregorianCalendar` → `Long` millis
 
-| `activation:validTo`
-| `pass:[__DISABLE_DATE__]`
-| `XMLGregorianCalendar` → `Long` millis
+`activation:lockoutStatus`::
+  `pass:[__LOCK_OUT__]` — `Boolean` (`NORMAL` ⇒ `false`)
 
-| `activation:lockoutStatus`
-| `pass:[__LOCK_OUT__]`
-| `Boolean` (`NORMAL` ⇒ `false`)
+`credentials:password:clearValue`::
+  `pass:[__PASSWORD__]` — `ProtectedStringType` → `GuardedString` via protector decrypt; setting empty ⇒ clear the password; if no cleartext is available the change is silently skipped
 
-| `credentials:password:clearValue`
-| `pass:[__PASSWORD__]`
-| `ProtectedStringType` → `GuardedString` via protector decrypt;
-  setting empty ⇒ clear the password; if no cleartext is available the
-  change is silently skipped
+`auxiliaryObjectClass`::
+  `pass:[__AUXILIARY_OBJECT_CLASS__]` — QName → object class name strings; attributes of added/removed auxiliary classes are converted to add/remove deltas in the same operation
 
-| `auxiliaryObjectClass`
-| `pass:[__AUXILIARY_OBJECT_CLASS__]`
-| QName → object class name strings; attributes of added/removed auxiliary
-  classes are converted to add/remove deltas in the same operation
-
-| `attributes:*`
-| ConnId attribute name via `ucfAttributeNameToConnId`
-| value conversion per `ConnIdUtil.convertValueToConnId`
-|===
+`attributes:*`::
+  ConnId attribute name via `ucfAttributeNameToConnId` — value conversion per `ConnIdUtil.convertValueToConnId`
 
 Self-service password change (`DeltaModificationConverter.collectPassword`):
 when a `runAs` identification is present and the delta carries estimated old
