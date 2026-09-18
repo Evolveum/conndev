@@ -6,7 +6,9 @@
  */
 package com.evolveum.polygon.conndev.schema;
 
+import com.evolveum.polygon.conndev.api.FilterSpecification;
 import com.evolveum.polygon.conndev.dev.ConnDevObjectClassSource;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.ObjectClassInfo;
@@ -145,6 +147,47 @@ public class BaseObjectClassDefinition<A extends BaseAttributeDefinition> implem
         return connIdAttributes.get(name);
     }
 
+    /**
+     * Resolves an attribute definition by its native (protocol) name, failing fast when the
+     * name does not reference a defined attribute.
+     *
+     * <p>Intended for build-phase settings (filter specifications, supported attributes,
+     * attribute resolvers) where an incorrect attribute name is a configuration error that
+     * should be reported immediately, with the list of available attributes, instead of
+     * surfacing later as a {@code NullPointerException}.</p>
+     *
+     * @param protocolName the native/remote attribute name
+     * @param context a short description of the setting being defined (used in the error message)
+     * @return the matching attribute definition
+     * @throws ConfigurationException if no attribute with the given name is defined
+     */
+    public A requireAttribute(String protocolName, String context) {
+        var attribute = attributeFromProtocolName(protocolName);
+        if (attribute == null) {
+            throw new ConfigurationException("Attribute '" + protocolName + "' not found in object class '"
+                    + name() + "' " + context + ". Available attributes: "
+                    + String.join(", ", nativeAttributes.keySet()));
+        }
+        return attribute;
+    }
+
+    /**
+     * Resolves an attribute for use in a search filter specification.
+     *
+     * <p>The returned specification matches filters on the ConnId-side name of the resolved
+     * attribute (or on the protocol name when the attribute has no ConnId definition), so it
+     * matches the filters the framework produces at runtime.</p>
+     *
+     * @param name the native/remote attribute name
+     * @param context a short description of the setting being defined (used in the error message)
+     * @return an attribute filter specification for the resolved attribute
+     * @throws ConfigurationException if no attribute with the given name is defined
+     */
+    public FilterSpecification.Attribute filterAttribute(String name, String context) {
+        var attribute = requireAttribute(name, context);
+        var connId = attribute.connId();
+        return FilterSpecification.attribute(connId != null ? connId.getName() : name);
+    }
 
     public <T extends BaseObjectClassDefinition<?>>T as(Class<T> clazz) {
         if (clazz.isInstance(this)) {

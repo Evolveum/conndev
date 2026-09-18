@@ -44,14 +44,14 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
     @Override
     @SuppressWarnings("unchecked")
     public ScriptedAttributeResolverBuilder attribute(String attributeName) {
-        attributes.add(objectClass.attributeFromProtocolName(attributeName));
+        attributes.add(objectClass.requireAttribute(attributeName, "when defining an attribute resolver"));
         return (ScriptedAttributeResolverBuilder) self();
     }
 
     @Override
     public AttributeResolverBuilder attributes(String... attributeNames) {
         for (var attributeName : attributeNames) {
-            attributes.add(objectClass.attributeFromProtocolName(attributeName));
+            attributes.add(objectClass.requireAttribute(attributeName, "when defining an attribute resolver"));
         }
         return self();
     }

@@ -57,12 +57,8 @@ public class GroovySearchScriptBuilder implements SearchScriptBuilder, FilterAwa
 
     @Override
     public FilterSpecification.Attribute attribute(String name) {
-        var connId = objectClass.attributeFromProtocolName(name).connId();
-        if (connId != null) {
-            // FIXME: Create deffered search here
-            return FilterSpecification.attribute(connId.getName());
-        }
-        return FilterSpecification.attribute(name);
+        // FIXME: Create deffered search here
+        return objectClass.filterAttribute(name, "when defining a custom search filter");
     }
 
     @Override

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.groovy.api;
 import com.evolveum.polygon.conndev.build.api.FilterBuilder;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
@@ -69,14 +70,10 @@ public interface ObjectClassScripting {
      *
      * @param protocolName the protocol name of the attribute to filter on
      * @return a filter builder for the specified attribute
-     * @throws IllegalArgumentException if the attribute is not found
+     * @throws ConfigurationException if the attribute is not found
      */
     default FilterBuilder.AttributeFilterBuilder attributeFilter(String protocolName) {
-        var attribute = definition().attributeFromProtocolName(protocolName);
-        if (attribute == null) {
-            throw new IllegalArgumentException("Unknown attribute: " + protocolName);
-        }
-
+        var attribute = definition().requireAttribute(protocolName, "when building an attribute filter");
         return FilterBuilder.forAttribute(attribute.connId().getName());
     }
 
