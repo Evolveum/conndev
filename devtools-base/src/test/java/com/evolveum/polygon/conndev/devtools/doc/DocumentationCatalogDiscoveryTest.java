@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -19,10 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -72,8 +71,8 @@ public class DocumentationCatalogDiscoveryTest {
         var beta = byConnectorId(catalogs, "beta");
 
         // Both JARs expose the identical relative path shared/topic.html.
-        var alphaTopic = alpha.topics("shared", null).get(0);
-        var betaTopic = beta.topics("shared", null).get(0);
+        var alphaTopic = alpha.topics("shared", null).getFirst();
+        var betaTopic = beta.topics("shared", null).getFirst();
         assertThat(alphaTopic.resource()).isEqualTo(betaTopic.resource());
 
         // Each catalog resolves its document from its own JAR, not the first on the classpath.
@@ -97,7 +96,7 @@ public class DocumentationCatalogDiscoveryTest {
 
         assertThat(catalog.hasOrigin()).isFalse();
         assertThat(catalog.origin()).isNull();
-        var topic = catalog.topics("k", null).get(0);
+        var topic = catalog.topics("k", null).getFirst();
         assertThatThrownBy(() -> catalog.documentUrl(topic)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> catalog.readDocument(topic)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> catalog.openDocument(topic)).isInstanceOf(IllegalStateException.class);
@@ -105,7 +104,7 @@ public class DocumentationCatalogDiscoveryTest {
 
     @Test
     public void documentUrlRejectsNonManifestLocations() throws MalformedURLException {
-        assertThatThrownBy(() -> ConndevDocFormat.documentUrl(new URL("https://example.com/x.html"), "a.html"))
+        assertThatThrownBy(() -> ConndevDocFormat.documentUrl(URI.create("https://example.com/x.html").toURL(), "a.html"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

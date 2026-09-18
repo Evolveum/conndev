@@ -98,7 +98,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        var error = errors.get(0);
+        var error = errors.getFirst();
         assertEquals(error.phase(), ScriptError.Phase.COMPILE);
         assertEquals(error.source(), "script");
         // Groovy reports "missing '}'" where the incomplete expression starts (the "return 40 +"
@@ -119,7 +119,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        var error = errors.get(0);
+        var error = errors.getFirst();
         assertEquals(error.source(), "inner.nestedScript");
         assertEquals((int) error.line(), 4, error.toString());
         // This particular error (unterminated "(") is Groovy-reported past the fragment's real
@@ -139,7 +139,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        var error = errors.get(0);
+        var error = errors.getFirst();
         assertEquals((int) error.line(), 4, error.toString());
         // Document line 4 is "    return 1 +" (4-space indent, one level deeper than a top-level
         // fragment): indent 4 + Groovy's own column 11 (one past its 10-character text) = 15.
@@ -154,7 +154,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        var error = errors.get(0);
+        var error = errors.getFirst();
         // Not a "key: |" block scalar, so there is no reliable indentation to add back — the line
         // is still reported (it's the key's own line here, not shifted like a block scalar's), but
         // the column is withheld.
@@ -173,7 +173,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        assertEquals(errors.get(0).source(), "byName.first.nestedScript");
+        assertEquals(errors.getFirst().source(), "byName.first.nestedScript");
     }
 
     @Test
@@ -218,7 +218,7 @@ public class GroovySyntaxCheckerTest {
                 """);
 
         assertEquals(errors.size(), 1, errors.toString());
-        assertEquals(errors.get(0).source(), "objectClasses.User.script");
+        assertEquals(errors.getFirst().source(), "objectClasses.User.script");
     }
 
     @Test

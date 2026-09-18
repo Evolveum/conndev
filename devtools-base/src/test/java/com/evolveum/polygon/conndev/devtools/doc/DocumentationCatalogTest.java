@@ -58,7 +58,7 @@ public class DocumentationCatalogTest {
         assertThat(manifest.connectorId()).isEqualTo("test-connector");
         assertThat(manifest.topics()).hasSize(5);
 
-        var specific = manifest.topics().get(0);
+        var specific = manifest.topics().getFirst();
         assertThat(specific.key()).isEqualTo("setup");
         assertThat(specific.protocol()).isEqualTo("scim");
         assertThat(specific.title()).isEqualTo("Setup");
