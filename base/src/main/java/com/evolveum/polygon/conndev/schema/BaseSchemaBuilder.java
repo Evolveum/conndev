@@ -79,6 +79,8 @@ public class BaseSchemaBuilder<
     protected final Map<String, OB> objectClasses = new HashMap<>();
     /** Ready-made ConnId object classes added via {@link #defineObjectClass(ObjectClassInfo)}. */
     protected final List<ObjectClassInfo> additionalObjectClasses = new ArrayList<>();
+    /** Already-built object class definitions added via {@link #defineObjectClass(BaseObjectClassDefinition)}. */
+    protected final List<OC> additionalDefinitions = new ArrayList<>();
     /** The context lookup for resolving values during schema initialization. */
     private ContextLookup contextLookup;
 
@@ -177,6 +179,23 @@ public class BaseSchemaBuilder<
     }
 
     /**
+     * Adds an already-built object class definition (e.g. one produced by a different front-end's
+     * own builder, such as the YAML schema DSL's separate, context-less {@link BaseSchemaBuilder})
+     * to this schema, alongside the ones built from registered object class builders. Unlike
+     * {@link #defineObjectClass(ObjectClassInfo)}, this preserves the definition's full
+     * protocol-specific mapping data, not just its ConnId shape - use this when the definition
+     * needs to be dispatchable by the connector's handler framework, not merely visible in the
+     * schema.
+     *
+     * @return this builder for fluent chaining
+     */
+    @SuppressWarnings("unchecked")
+    public T defineObjectClass(OC definition) {
+        additionalDefinitions.add(definition);
+        return (T) this;
+    }
+
+    /**
      * Builds the schema from all registered object classes or creates a dummy schema
      * if none have been defined.
      *
@@ -197,6 +216,10 @@ public class BaseSchemaBuilder<
         for (var info : additionalObjectClasses) {
             freshSchemaBuilder.defineObjectClass(info);
             contributeAdditionalObjectClass(info, objectClassMap);
+        }
+        for (var definition : additionalDefinitions) {
+            freshSchemaBuilder.defineObjectClass(definition.connId());
+            objectClassMap.put(definition.objectClass(), definition);
         }
         return newSchema(freshSchemaBuilder.build(), objectClassMap);
     }

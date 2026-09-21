@@ -62,6 +62,10 @@ public class YamlSchemaLoader {
     }
 
     public BaseSchema build() {
+        // Same order the Groovy front-end's own bootstrap uses (structural rules before build()) -
+        // otherwise a YAML-declared attribute never gets type resolution/coercion or the
+        // NAME-defaults-to-UID default, unlike an equivalent Groovy declaration.
+        schemaBuilder.applyStructuralRules();
         return schemaBuilder.build();
     }
 
