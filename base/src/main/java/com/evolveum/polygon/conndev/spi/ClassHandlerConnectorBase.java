@@ -6,7 +6,6 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.concepts.CheckedCallable;
 import com.evolveum.polygon.conndev.concepts.DevelopmentMode;
 import com.evolveum.polygon.conndev.groovy.*;
@@ -34,14 +33,27 @@ import java.util.Set;
  * Handlers needs to implement {@link ObjectClassHandler} interface.
  *
  */
-public abstract class ClassHandlerConnectorBase implements Connector,
+public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> implements Connector,
         AuthenticateOp, CreateOp, DeleteOp, ResolveUsernameOp,
         SchemaOp, SearchOp<Filter>, TestOp,
         UpdateDeltaOp, SyncOp, ScriptOnResourceOp {
 
-    public abstract ContextLookup context();
+    protected final boolean reinitializeOnEachCall;
+    protected C context;
+    protected boolean coreInitialized;
+    protected boolean fullyInitialized;
+
+    protected ClassHandlerConnectorBase(boolean reinitializeOnEachCall) {
+        this.reinitializeOnEachCall = reinitializeOnEachCall;
+    }
+
+    public abstract C context();
 
     public abstract ObjectClassHandler handlerFor(ObjectClass objectClass) throws UnsupportedOperationException;
+
+    protected abstract void initializeSchema(GroovySchemaLoader loader);
+
+    protected abstract void initializeObjectClassHandler(GroovyScriptLoader builder);
 
     /**
      * Logging facade bound to this connector's class, created once per connector instance so
@@ -81,8 +93,7 @@ public abstract class ClassHandlerConnectorBase implements Connector,
     }
 
     private boolean developmentMode() {
-        return context() instanceof ConnectorContext connectorContext
-                && connectorContext.getDevelopmentMode();
+        return context().getDevelopmentMode();
     }
 
     @Override

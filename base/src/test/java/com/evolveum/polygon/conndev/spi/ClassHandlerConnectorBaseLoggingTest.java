@@ -6,12 +6,13 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.devtools.log.OperationLogParser;
 import com.evolveum.polygon.conndev.devtools.log.OperationTrace;
 import com.evolveum.polygon.conndev.groovy.BaseGroovyConnectorConfiguration;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
+import com.evolveum.polygon.conndev.groovy.GroovyScriptLoader;
+import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
 import com.evolveum.polygon.conndev.logging.CapturingLogProvider;
@@ -101,19 +102,20 @@ public class ClassHandlerConnectorBaseLoggingTest {
     private static final class TestConfiguration extends BaseGroovyConnectorConfiguration {
     }
 
-    private static final class TestConnector extends ClassHandlerConnectorBase {
+    private static final class TestConnector extends ClassHandlerConnectorBase<TestContext> {
 
         private final TestContext context;
         private final TestConfiguration configuration = new TestConfiguration();
 
         private TestConnector(boolean developmentMode) {
+            super(true);
             configuration.setDevelopmentMode(developmentMode);
             // read live, like RestConnectorContext does, so runtime toggles are honored
             this.context = new TestContext(configuration::getDevelopmentMode);
         }
 
         @Override
-        public ContextLookup context() {
+        public TestContext context() {
             return context;
         }
 
@@ -138,6 +140,14 @@ public class ClassHandlerConnectorBaseLoggingTest {
         @Override
         protected ScriptValidationResult validateScript(ScriptValidationRequest request) {
             throw new UnsupportedOperationException("Not supported in this test");
+        }
+
+        @Override
+        protected void initializeSchema(GroovySchemaLoader loader) {
+        }
+
+        @Override
+        protected void initializeObjectClassHandler(GroovyScriptLoader builder) {
         }
 
         @Override

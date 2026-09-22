@@ -6,10 +6,14 @@
  */
 package com.evolveum.polygon.conndev.spi;
 
-import com.evolveum.polygon.conndev.api.ContextLookup;
+import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.groovy.BaseGroovyConnectorConfiguration;
+import com.evolveum.polygon.conndev.groovy.ConnectorContext;
+import com.evolveum.polygon.conndev.groovy.GroovyScriptLoader;
+import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
+import com.evolveum.polygon.conndev.schema.BaseSchema;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.ScriptContext;
@@ -30,15 +34,35 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
     private static class TestConfiguration extends BaseGroovyConnectorConfiguration {
     }
 
-    private static class TestConnector extends ClassHandlerConnectorBase {
+    /** Minimal stub - none of this test's TestConnector methods actually delegate to it. */
+    private static final ConnectorContext STUB_CONTEXT = new ConnectorContext() {
+        @Override public ObjectClassHandler handlerFor(ObjectClass objectClass) {
+            throw new UnsupportedOperationException("Not needed for this test");
+        }
+        @Override public BaseSchema schema() {
+            throw new UnsupportedOperationException("Not needed for this test");
+        }
+        @Override public boolean getDevelopmentMode() {
+            return false;
+        }
+        @Override public <T extends RetrievableContext> T getUnchecked(Class<T> contextType) {
+            return null;
+        }
+    };
+
+    private static class TestConnector extends ClassHandlerConnectorBase<ConnectorContext> {
         private final TestConfiguration configuration = new TestConfiguration();
         private ScriptValidationResult validateScriptResult = ScriptValidationResult.ok();
         private RuntimeException validateScriptFailure;
         private ScriptValidationRequest capturedRequest;
 
+        private TestConnector() {
+            super(true);
+        }
+
         @Override
-        public ContextLookup context() {
-            return ContextLookup.none();
+        public ConnectorContext context() {
+            return STUB_CONTEXT;
         }
 
         @Override
@@ -57,6 +81,14 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
 
         @Override
         public void dispose() {
+        }
+
+        @Override
+        protected void initializeSchema(GroovySchemaLoader loader) {
+        }
+
+        @Override
+        protected void initializeObjectClassHandler(GroovyScriptLoader builder) {
         }
 
         @Override
