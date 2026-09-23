@@ -44,6 +44,12 @@ public class BasicJsonPathFormatTest {
     }
 
     @Test
+    public void testParse_underscoreMembers() {
+        assertThat(INSTANCE.parse("$._embedded.elements")).isEqualTo(AttributePath.of("_embedded", "elements"));
+        assertThat(INSTANCE.parse("$._internal-id")).isEqualTo(AttributePath.of("_internal-id"));
+    }
+
+    @Test
     public void testParse_quotedMembers() {
         assertThat(INSTANCE.parse("$['name']['givenName']"))
                 .isEqualTo(AttributePath.of("name", "givenName"));
@@ -79,6 +85,14 @@ public class BasicJsonPathFormatTest {
                 new AttributePath.Attribute("emails"),
                 new AttributePath.SimpleValueFilter(Map.of("type", "work")),
                 new AttributePath.Attribute("value"))));
+    }
+
+    @Test
+    public void testParse_filterWithUnderscoreKey() {
+        var path = INSTANCE.parse("$.items[?(@._id == 1)]");
+        assertThat(path).isEqualTo(new AttributePath(List.of(
+                new AttributePath.Attribute("items"),
+                new AttributePath.SimpleValueFilter(Map.of("_id", 1)))));
     }
 
     @Test
@@ -138,6 +152,7 @@ public class BasicJsonPathFormatTest {
                 "",
                 ".a",
                 "a.b",
+                "$.1abc",
                 "$.a.",
                 "$.store..book",
                 "$.store.*",
@@ -173,6 +188,17 @@ public class BasicJsonPathFormatTest {
     public void testSerialize_members() {
         assertThat(INSTANCE.serialize(AttributePath.of("userName"))).isEqualTo("$.userName");
         assertThat(INSTANCE.serialize(AttributePath.of("name", "givenName"))).isEqualTo("$.name.givenName");
+    }
+
+    @Test
+    public void testSerialize_underscoreMembers() {
+        assertThat(INSTANCE.serialize(AttributePath.of("_embedded", "elements"))).isEqualTo("$._embedded.elements");
+        var values = new LinkedHashMap<String, Object>();
+        values.put("_id", 1);
+        var path = new AttributePath(List.of(
+                new AttributePath.Attribute("items"),
+                new AttributePath.SimpleValueFilter(values)));
+        assertThat(INSTANCE.serialize(path)).isEqualTo("$.items[?(@._id == 1)]");
     }
 
     @Test

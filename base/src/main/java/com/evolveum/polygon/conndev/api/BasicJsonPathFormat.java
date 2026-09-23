@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * <p>Supported syntax:</p>
  * <pre>
  * path       = "$" ( "." name | "[" element "]" )*
- * name       = [A-Za-z] [A-Za-z0-9_-]* | quoted-string
+ * name       = [A-Za-z_] [A-Za-z0-9_-]* | quoted-string
  * element    = nonNegativeInteger
  *            | quoted-string
  *            | "?" "(" predicate ")"
@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  */
 public final class BasicJsonPathFormat implements AttributePathFormat<String> {
 
-    private static final Pattern UNQUOTED_NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_-]*");
+    private static final Pattern UNQUOTED_NAME = Pattern.compile("[A-Za-z_][A-Za-z0-9_-]*");
 
     public static final BasicJsonPathFormat INSTANCE =  new BasicJsonPathFormat();
 
@@ -319,7 +319,7 @@ public final class BasicJsonPathFormat implements AttributePathFormat<String> {
         }
 
         /**
-         * Reads a member name: unquoted ([A-Za-z][A-Za-z0-9_-]*) or quoted ('...' or "...").
+         * Reads a member name: unquoted ([A-Za-z_][A-Za-z0-9_-]*) or quoted ('...' or "...").
          */
         private AttributePath.Attribute readMemberName() {
             if (isAtEnd()) {
