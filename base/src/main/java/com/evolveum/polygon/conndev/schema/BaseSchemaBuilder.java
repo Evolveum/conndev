@@ -206,20 +206,23 @@ public class BaseSchemaBuilder<
             initializeDummySchema();
         }
 
-        var freshSchemaBuilder = new org.identityconnectors.framework.common.objects.SchemaBuilder(connectorClass);
+        // Resolve name collisions in the map first, so each name reaches the ConnId schema once.
         Map<ObjectClass, OC> objectClassMap = new HashMap<>();
         for (var ocBuilder : objectClasses.values()) {
             var objectClassDef = ocBuilder.build();
-            freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
             objectClassMap.put(objectClassDef.objectClass(), objectClassDef);
+        }
+        for (var definition : additionalDefinitions) {
+            objectClassMap.put(definition.objectClass(), definition);
+        }
+
+        var freshSchemaBuilder = new org.identityconnectors.framework.common.objects.SchemaBuilder(connectorClass);
+        for (var objectClassDef : objectClassMap.values()) {
+            freshSchemaBuilder.defineObjectClass(objectClassDef.connId());
         }
         for (var info : additionalObjectClasses) {
             freshSchemaBuilder.defineObjectClass(info);
             contributeAdditionalObjectClass(info, objectClassMap);
-        }
-        for (var definition : additionalDefinitions) {
-            freshSchemaBuilder.defineObjectClass(definition.connId());
-            objectClassMap.put(definition.objectClass(), definition);
         }
         return newSchema(freshSchemaBuilder.build(), objectClassMap);
     }
