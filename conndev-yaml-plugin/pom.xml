@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) 2026 Evolveum and contributors
+  ~
+  ~ This work is licensed under European Union Public License v1.2. See LICENSE file for details.
+  ~
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.evolveum.polygon.conndev</groupId>
+        <artifactId>conndev-parent</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>conndev-yaml-plugin</artifactId>
+    <packaging>maven-plugin</packaging>
+
+    <name>Polygon ConnDev YAML Plugin</name>
+    <description>
+        Maven plugin exposing the devtools-yaml scanner/generators: scans the project's
+        @Yaml.*-annotated entry builders against its conndev-yaml shape file and writes the
+        JSONSchema and the Pydantic module into the build output (default target/conndev-yaml).
+    </description>
+
+    <prerequisites>
+        <maven>3.9.0</maven>
+    </prerequisites>
+
+    <properties>
+        <project.source.version>21</project.source.version>
+        <maven.version>3.9.9</maven.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.evolveum.polygon.conndev</groupId>
+            <artifactId>devtools-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+            <version>3.15.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>3.15.1</version>
+                <configuration>
+                    <goalPrefix>conndev-yaml</goalPrefix>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

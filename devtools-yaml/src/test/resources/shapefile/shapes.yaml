@@ -1,0 +1,53 @@
+apiVersion: conndev-yaml-shape/v1
+document: fixture
+pythonModule: fixture_yaml_schema
+
+entries:
+  - key: objectClasses
+    binding: mapOf
+    type: com.evolveum.polygon.conndev.devtools.yaml.fixtures.FixtureClassBuilder
+  - key: objectClasses
+    binding: mapOf
+    type: com.evolveum.polygon.conndev.devtools.yaml.fixtures.FixtureOperationsBuilder
+    slot: operations
+
+extraEntries:
+  relationships:
+    description: The declarative relationships of the connector.
+    shape:
+      type: map
+      value:
+        type: object
+        name: Relationship
+        properties:
+          subject:
+            type: object
+            name: Participant
+            properties:
+              class:
+                type: string
+        required: [subject]
+
+customHandlers:
+  - handler: com.evolveum.polygon.conndev.devtools.yaml.fixtures.FixtureHandler
+    shape:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [GET, POST]
+          default: POST
+        path:
+          type: string
+      required: [path]
+
+valueParsers:
+  com.evolveum.polygon.conndev.devtools.yaml.fixtures.FixtureTypeParser:
+    type: string
+    description: A fixture type name
+
+names:
+  com.evolveum.polygon.conndev.devtools.yaml.fixtures.FixtureOperationsBuilder: Operations
+
+nullable:
+  - relationships.*.subject.class

@@ -28,6 +28,8 @@
         <groovy.version>6.0.0-beta-2</groovy.version>
         <slf4j.version>2.0.18</slf4j.version>
         <jackson2.version>2.22.1</jackson2.version>
+        <jackson3.databind.version>3.1.5</jackson3.databind.version>
+        <jackson3.dataformat.version>3.1.3</jackson3.dataformat.version>
     </properties>
 
    <repositories>
@@ -58,8 +60,10 @@
 
     <modules>
         <module>devtools-base</module>
+        <module>devtools-yaml</module>
         <module>base</module>
         <module>docs</module>
+        <module>conndev-yaml-plugin</module>
     </modules>
 
     <dependencyManagement>
@@ -70,9 +74,29 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.evolveum.polygon.conndev</groupId>
+                <artifactId>devtools-yaml</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.evolveum.polygon.conndev</groupId>
+                <artifactId>conndev-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.evolveum.polygon</groupId>
                 <artifactId>connector-common</artifactId>
                 <version>${polygon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson3.databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson3.dataformat.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

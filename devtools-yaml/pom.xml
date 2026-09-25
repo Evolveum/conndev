@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) 2026 Evolveum and contributors
+  ~
+  ~ This work is licensed under European Union Public License v1.2. See LICENSE file for details.
+  ~
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.evolveum.polygon.conndev</groupId>
+        <artifactId>conndev-parent</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>devtools-yaml</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Polygon ConnDev DevTools YAML</name>
+    <description>
+        Scans the @Yaml.*-annotated entry builders of a conndev connector and generates the
+        declarative-YAML document as a JSONSchema (validation) and a Pydantic module (for
+        midpilot-connector-gen). Deliberately independent of conndev-base at compile scope:
+        annotations are resolved by class name through a caller-provided classloader, so the
+        scanned classes and their annotations may come from any realm.
+    </description>
+
+    <properties>
+        <project.source.version>21</project.source.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.27.7</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Test scope only: fixtures exercise the real @Yaml.* annotations. -->
+        <dependency>
+            <groupId>com.evolveum.polygon.conndev</groupId>
+            <artifactId>conndev-base</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
