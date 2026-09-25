@@ -14,7 +14,7 @@ import com.evolveum.polygon.conndev.devtools.log.LogSeverity;
 import com.evolveum.polygon.conndev.devtools.log.OperationLogParser;
 import com.evolveum.polygon.conndev.devtools.log.OperationTrace;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
-import com.evolveum.polygon.conndev.logging.CapturingLogProvider;
+import com.evolveum.polygon.conndev.logging.CapturingLogSpi;
 import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import com.evolveum.polygon.conndev.logging.protocol.HttpProtocolData;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
@@ -310,13 +310,13 @@ public class OperationStrategyHandlerTest {
         var operation = new UpdateOperationStrategyHandler(fixture, ACCOUNT, fixture.executor,
                 List.of(fixture.namedUpdater("name", false, "name")));
 
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         DevelopmentMode.run(true, () -> {
             operation.updateDelta(UID, Set.of(delta("name", "Alice")), OPTIONS);
             return null;
         });
 
-        assertTrue(CapturingLogProvider.lines().isEmpty());
+        assertTrue(CapturingLogSpi.messages().isEmpty());
     }
 
     @Test
@@ -328,7 +328,7 @@ public class OperationStrategyHandlerTest {
         runPlain("update", ACCOUNT, "Update account",
                 () -> operation.updateDelta(UID, Set.of(delta("name", "Alice")), OPTIONS));
 
-        var lines = CapturingLogProvider.lines();
+        var lines = CapturingLogSpi.messages();
         assertTrue(lines.stream().noneMatch(OperationLogParser::isStructuredLine));
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("update on account: Update account")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("completed:")));
@@ -343,7 +343,7 @@ public class OperationStrategyHandlerTest {
     /** Runs the work inside a dev-mode operation entry, as {@code ClassHandlerConnectorBase} does. */
     private static <V> V runTraced(String operation, ObjectClass objectClass, String message,
             Callable<V> work) throws Exception {
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         var log = ConnDevLog.of(OperationStrategyHandlerTest.class);
         return DevelopmentMode.run(true,
                 () -> log.runOperation(operation, objectClass, message, () -> work.call()));
@@ -352,7 +352,7 @@ public class OperationStrategyHandlerTest {
     /** Runs the work inside a plain (non dev-mode) operation entry. */
     private static <V> V runPlain(String operation, ObjectClass objectClass, String message,
             Callable<V> work) throws Exception {
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         var log = ConnDevLog.of(OperationStrategyHandlerTest.class);
         return DevelopmentMode.run(false,
                 () -> log.runOperation(operation, objectClass, message, () -> work.call()));
@@ -360,7 +360,7 @@ public class OperationStrategyHandlerTest {
 
     /** Parses the captured lines and asserts exactly one operation entry was reconstructed. */
     private static OperationTrace singleTrace() {
-        var traces = OperationLogParser.parse(CapturingLogProvider.lines());
+        var traces = OperationLogParser.parse(CapturingLogSpi.messages());
         assertEquals(traces.size(), 1);
         return traces.getFirst();
     }

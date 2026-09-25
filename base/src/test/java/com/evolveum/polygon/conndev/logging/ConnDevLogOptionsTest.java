@@ -21,10 +21,10 @@ import static org.testng.Assert.*;
  * resolves its default {@link LogOptions} at write time against the development mode of the
  * writing thread, and that explicitly configured options stay frozen.
  */
-public class Slf4JConnDevLogOptionsTest {
+public class ConnDevLogOptionsTest {
 
     /** Created at class-load time, when development mode is not active on this thread. */
-    private static final ConnDevLog STATIC_LOG = ConnDevLog.of(Slf4JConnDevLogOptionsTest.class);
+    private static final ConnDevLog STATIC_LOG = ConnDevLog.of(ConnDevLogOptionsTest.class);
 
     private static final String SENSITIVE_BODY = "{\"name\":\"alice\",\"password\":\"s3cret\"}";
 
@@ -34,17 +34,17 @@ public class Slf4JConnDevLogOptionsTest {
     @Test
     public void staticFacadeResolvesDefaultOptionsAtWriteTime() {
         DevelopmentMode.run(false, () -> {
-            assertEquals(sl4jLog().options(), LogOptions.production());
+            assertEquals(connIdLog().options(), LogOptions.production());
             return null;
         });
         DevelopmentMode.run(true, () -> {
-            assertEquals(sl4jLog().options(), LogOptions.development());
+            assertEquals(connIdLog().options(), LogOptions.development());
             return null;
         });
     }
 
-    private static Slf4JConnDevLog sl4jLog() {
-        return (Slf4JConnDevLog) STATIC_LOG;
+    private static ConnIdConnDevLog connIdLog() {
+        return (ConnIdConnDevLog) STATIC_LOG;
     }
 
     @Test
@@ -61,10 +61,10 @@ public class Slf4JConnDevLogOptionsTest {
 
     @Test
     public void explicitOptionsStayFrozenRegardlessOfMode() {
-        var fixed = ConnDevLog.of(Slf4JConnDevLogOptionsTest.class, LogOptions.production());
+        var fixed = ConnDevLog.of(ConnDevLogOptionsTest.class, LogOptions.production());
 
         DevelopmentMode.run(true, () -> {
-            CapturingLogProvider.clear();
+            CapturingLogSpi.clear();
             fixed.runOperation("update", new ObjectClass("account"), "Update account", () -> {
                 fixed.currentOperation()
                         .http(new HttpProtocolData.Request("PUT", "/api/account/1", SENSITIVE_BODY));
@@ -79,7 +79,7 @@ public class Slf4JConnDevLogOptionsTest {
     }
 
     private static void emitSensitiveRequest() {
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         STATIC_LOG.runOperation("update", new ObjectClass("account"), "Update account", () -> {
             STATIC_LOG.currentOperation()
                     .http(new HttpProtocolData.Request("PUT", "/api/account/1", SENSITIVE_BODY));
@@ -96,7 +96,7 @@ public class Slf4JConnDevLogOptionsTest {
     }
 
     private static OperationTrace singleTrace() {
-        var traces = OperationLogParser.parse(CapturingLogProvider.lines());
+        var traces = OperationLogParser.parse(CapturingLogSpi.messages());
         assertEquals(traces.size(), 1);
         return traces.getFirst();
     }

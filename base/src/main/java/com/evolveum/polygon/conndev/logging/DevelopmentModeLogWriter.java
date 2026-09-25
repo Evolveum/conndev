@@ -9,8 +9,7 @@ package com.evolveum.polygon.conndev.logging;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.devtools.log.*;
 import com.evolveum.polygon.conndev.logging.protocol.ProtocolData;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.identityconnectors.common.logging.Log;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -22,42 +21,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-class DevelopmentModeLogWriter implements Slf4JLogWriter {
+class DevelopmentModeLogWriter implements ConnIdLogWriter {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private static final Logger LOG = LoggerFactory.getLogger(Slf4JConnDevLog.class);
+    private static final Log LOG = Log.getLog(DevelopmentModeLogWriter.class);
 
     private static final String MASKED_VALUE = "****";
 
 
     @Override
-    public void logStandalone(Logger logger, LogSeverity severity, String message, Throwable throwable) {
+    public void logStandalone(Log log, Class<?> owner, LogSeverity severity, String message, Throwable throwable) {
         EventType eventType = severity == LogSeverity.ERROR ? EventType.ERROR : EventType.MESSAGE;
         ErrorPayload errorPayload = severity == LogSeverity.ERROR ? new ErrorPayload(message, stackTraceLines(throwable)) : null;
-        emit(logger, severity, new StructuredLogEvent(ConndevLogFormat.VERSION, null, null, null, System.currentTimeMillis(),
+        emit(log, owner, severity, new StructuredLogEvent(ConndevLogFormat.VERSION, null, null, null, System.currentTimeMillis(),
                 severity, Thread.currentThread().getName(), eventType, null, null, message,
                 SourceLocation.determineForLogging().toString(), null, null, null, errorPayload));
 
     }
 
     @Override
-    public void emitEntryEvent(Logger logger, OperationEntryState state, EventType eventType, LogSeverity severity, String message, SourceLocation location) {
+    public void emitEntryEvent(Log log, Class<?> owner, OperationEntryState state, EventType eventType, LogSeverity severity, String message, SourceLocation location) {
         var event = new StructuredLogEvent(ConndevLogFormat.VERSION, state.id(), state.parentId(),
                 state.nextSequence(), System.currentTimeMillis(), severity, Thread.currentThread().getName(),
                 eventType, state.operation(), state.objectClass(), message, location != null ? location.toString() : null, null, null, null, null);
-        logger.info(structured(event));
+        emit(log, owner, severity, event);
     }
 
     @Override
-    public void emitDetail(Logger logger, OperationEntryState state, String rendered, Map<String, Object> kvs) {
+    public void emitDetail(Log log, Class<?> owner, OperationEntryState state, String rendered, Map<String, Object> kvs) {
         var event = entryEvent(state, EventType.DETAIL, LogSeverity.DEBUG, rendered,
                 SourceLocation.determineForLogging(), kvs, null, null, null);
-        logger.debug(structured(event));
+        emit(log, owner, LogSeverity.DEBUG, event);
     }
 
     @Override
-    public void emitProtocol(Logger logger, OperationEntryState state, LogOptions options, ProtocolData data) {
+    public void emitProtocol(Log log, Class<?> owner, OperationEntryState state, LogOptions options, ProtocolData data) {
         var fields = data.fields() == null ? Map.<String, Object>of() : data.fields();
         var sql = fields.get("sql") instanceof String s ? truncate(s, options) : null;
         var payload = new ProtocolPayload(
@@ -69,58 +68,51 @@ class DevelopmentModeLogWriter implements Slf4JLogWriter {
                 renderBody(fields.get("body"), options),
                 sql,
                 fields.get("params") instanceof Map<?, ?> m ? castParams(m) : null);
-        emitProtocol(logger, state, () -> payload, "Protocol " + data.type() + " " + data.kind());
+        emitProtocol(log, owner, state, () -> payload, "Protocol " + data.type() + " " + data.kind());
     }
 
     @Override
-    public void emitResult(Logger logger, OperationEntryState state, String rendered, Object result) {
+    public void emitResult(Log log, Class<?> owner, OperationEntryState state, String rendered, Object result) {
         var event = entryEvent(state, EventType.RESULT, LogSeverity.INFO, rendered,
                 SourceLocation.determineForLogging(), null, null, new ResultPayload(true, rendered), null);
-        logger.info(structured(event));
+        emit(log, owner, LogSeverity.INFO, event);
     }
 
     @Override
-    public void emitProtocol(Logger logger, OperationEntryState state, Supplier<ProtocolPayload> payloadSupplier, String message) {
+    public void emitProtocol(Log log, Class<?> owner, OperationEntryState state, Supplier<ProtocolPayload> payloadSupplier, String message) {
         var payload = payloadSupplier.get();
         if (!ConndevLogFormat.PROTOCOL_HTTP.equals(payload.type()) || !hasBody(payload.body())) {
-            emitProtocolEvent(logger, state, payload, message, LogSeverity.DEBUG);
+            emitProtocolEvent(log, owner, state, payload, message, LogSeverity.DEBUG);
             return;
         }
         var skeleton = new ProtocolPayload(payload.type(), payload.kind(), payload.method(),
                 payload.uri(), payload.status(), null, null, null);
-        emitProtocolEvent(logger, state, skeleton, message, LogSeverity.DEBUG);
+        emitProtocolEvent(log, owner, state, skeleton, message, LogSeverity.DEBUG);
         var bodyKind = ConndevLogFormat.HTTP_REQUEST.equals(payload.kind())
                 ? ConndevLogFormat.HTTP_REQUEST_BODY
                 : ConndevLogFormat.HTTP_RESPONSE_BODY;
         var bodyPayload = new ProtocolPayload(payload.type(), bodyKind, payload.method(), payload.uri(),
                 payload.status(), payload.body(), null, null);
-        emitProtocolEvent(logger, state, bodyPayload, bodyMessage(bodyKind, payload), LogSeverity.TRACE);
+        emitProtocolEvent(log, owner, state, bodyPayload, bodyMessage(bodyKind, payload), LogSeverity.TRACE);
     }
 
     @Override
-    public void emitError(Logger logger, OperationEntryState state, String message, Throwable throwable) {
+    public void emitError(Log log, Class<?> owner, OperationEntryState state, String message, Throwable throwable) {
         var event = entryEvent(state, EventType.ERROR, LogSeverity.ERROR, message,
                 SourceLocation.determineForLogging(), null, null, null,
                 new ErrorPayload(message, stackTraceLines(throwable)));
-        logger.error(structured(event));
+        emit(log, owner, LogSeverity.ERROR, event);
     }
 
-    private void emit(Logger logger, LogSeverity severity, StructuredLogEvent event) {
-        var message = structured(event);
-        switch (severity) {
-            case TRACE -> logger.trace(message);
-            case DEBUG -> logger.debug(message);
-            case INFO -> logger.info(message);
-            case WARN -> logger.warn(message);
-            case ERROR -> logger.error(message);
-        }
+    private void emit(Log log, Class<?> owner, LogSeverity severity, StructuredLogEvent event) {
+        log.log(owner, null, ConnIdLogWriter.toConnIdLevel(severity), structured(event), null);
     }
 
-    private void emitProtocolEvent(Logger logger, OperationEntryState state, ProtocolPayload payload, String message,
-                                   LogSeverity severity) {
+    private void emitProtocolEvent(Log log, Class<?> owner, OperationEntryState state, ProtocolPayload payload, String message,
+                                    LogSeverity severity) {
         var event = entryEvent(state, EventType.PROTOCOL, severity, message,
                 SourceLocation.determineForLogging(), null, payload, null, null);
-        emit(logger, severity, event);
+        emit(log, owner, severity, event);
 
     }
 
@@ -238,7 +230,7 @@ class DevelopmentModeLogWriter implements Slf4JLogWriter {
         try {
             return JSON.writeValueAsString(value);
         } catch (Exception e) {
-            LOG.warn("Failed to serialize log event", e);
+            LOG.warn(e, "Failed to serialize log event");
             return "{}";
         }
     }

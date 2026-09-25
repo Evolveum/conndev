@@ -9,8 +9,6 @@ package com.evolveum.polygon.conndev.logging;
 import com.evolveum.polygon.conndev.concepts.CheckedCallable;
 import com.evolveum.polygon.conndev.concepts.DevelopmentMode;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Logging facade for connector operations.
@@ -21,52 +19,31 @@ import org.slf4j.LoggerFactory;
  * otherwise they fall back to regular {@code info}/{@code error} lines — protocol data is
  * emitted only in development mode.
  *
- * <p>Instances are bound to an SLF4J logger, typically of the component emitting the events:
- * {@code ConnectorLog.of(RestClient.class)}.
+ * <p>Instances are bound to the ConnId logger ({@link org.identityconnectors.common.logging.Log})
+ * of the component emitting the events: {@code ConnDevLog.of(RestClient.class)}.
  */
 public interface ConnDevLog {
 
     /**
-     * Creates a facade bound to the given logger with the default options, resolved at write
-     * time against the development mode of the writing thread.
-     *
-     * @param logger the SLF4J logger
-     * @return the facade
-     */
-    static ConnDevLog of(Logger logger) {
-        return of(logger, null);
-    }
-
-    /**
-     * Creates a facade bound to the given logger.
-     *
-     * @param logger  the SLF4J logger
-     * @param options the logging options (null for defaults resolved at write time)
-     * @return the facade
-     */
-    static ConnDevLog of(Logger logger, LogOptions options) {
-        return new Slf4JConnDevLog(logger, options);
-    }
-
-    /**
-     * Creates a facade bound to a logger of the given class with the default options.
+     * Creates a facade bound to the ConnId logger of the given class with the default options,
+     * resolved at write time against the development mode of the writing thread.
      *
      * @param owner the class the logger is bound to
      * @return the facade
      */
     static ConnDevLog of(Class<?> owner) {
-        return of(LoggerFactory.getLogger(owner));
+        return of(owner, null);
     }
 
     /**
-     * Creates a facade bound to a logger of the given class.
+     * Creates a facade bound to the ConnId logger of the given class.
      *
      * @param owner   the class the logger is bound to
-     * @param options the logging options (null for defaults)
+     * @param options the logging options (null for defaults resolved at write time)
      * @return the facade
      */
     static ConnDevLog of(Class<?> owner, LogOptions options) {
-        return of(LoggerFactory.getLogger(owner), options);
+        return new ConnIdConnDevLog(owner, options);
     }
 
     /**

@@ -13,13 +13,13 @@ import com.evolveum.polygon.conndev.logging.protocol.SqlProtocolData;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Default {@link OperationEntry} implementation delegating emission to a {@link Slf4JConnDevLog}. */
+/** Default {@link OperationEntry} implementation delegating emission to a {@link ConnIdConnDevLog}. */
 public final class OperationEntryImpl implements OperationEntry {
 
-    private final Slf4JConnDevLog log;
+    private final ConnIdConnDevLog log;
     private final OperationEntryState state;
 
-    OperationEntryImpl(Slf4JConnDevLog log, OperationEntryState state) {
+    OperationEntryImpl(ConnIdConnDevLog log, OperationEntryState state) {
         this.log = log;
         this.state = state;
     }

@@ -11,52 +11,47 @@ import com.evolveum.polygon.conndev.devtools.log.EventType;
 import com.evolveum.polygon.conndev.devtools.log.LogSeverity;
 import com.evolveum.polygon.conndev.devtools.log.ProtocolPayload;
 import com.evolveum.polygon.conndev.logging.protocol.ProtocolData;
-import org.slf4j.Logger;
+import org.identityconnectors.common.logging.Log;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
-class ProductionLogWriter implements Slf4JLogWriter {
+class ProductionLogWriter implements ConnIdLogWriter {
 
     @Override
-    public void logStandalone(Logger logger, LogSeverity severity, String message, Throwable throwable) {
-        switch (severity) {
-            case DEBUG -> logger.debug(message);
-            case INFO -> logger.info(message);
-            case WARN -> logger.warn(message);
-            case ERROR -> logger.error(message, throwable);
-            case TRACE -> logger.trace(message);
-        }
+    public void logStandalone(Log log, Class<?> owner, LogSeverity severity, String message, Throwable throwable) {
+        log.log(owner, null, ConnIdLogWriter.toConnIdLevel(severity), message,
+                severity == LogSeverity.ERROR ? throwable : null);
     }
 
     @Override
-    public void emitEntryEvent(Logger logger, OperationEntryState state, EventType eventType, LogSeverity severity, String message, SourceLocation location) {
-        logger.info(plainOperation(state, message));
+    public void emitEntryEvent(Log log, Class<?> owner, OperationEntryState state, EventType eventType, LogSeverity severity, String message, SourceLocation location) {
+        log.log(owner, null, Log.Level.INFO, plainOperation(state, message), null);
     }
 
     @Override
-    public void emitDetail(Logger logger, OperationEntryState state, String rendered, Map<String, Object> kvs) {
-        logger.debug(rendered);
+    public void emitDetail(Log log, Class<?> owner, OperationEntryState state, String rendered, Map<String, Object> kvs) {
+        log.log(owner, null, Log.Level.OK, rendered, null);
     }
 
     @Override
-    public void emitProtocol(Logger logger, OperationEntryState state, LogOptions options, ProtocolData data) {
+    public void emitProtocol(Log log, Class<?> owner, OperationEntryState state, LogOptions options, ProtocolData data) {
         // Noop
     }
 
     @Override
-    public void emitResult(Logger logger, OperationEntryState state, String rendered, Object result) {
-        logger.info(plainCompleted(state, rendered));
+    public void emitResult(Log log, Class<?> owner, OperationEntryState state, String rendered, Object result) {
+        log.log(owner, null, Log.Level.INFO, plainCompleted(state, rendered), null);
     }
 
     @Override
-    public void emitProtocol(Logger logger, OperationEntryState state, Supplier<ProtocolPayload> payload, String message) {
+    public void emitProtocol(Log log, Class<?> owner, OperationEntryState state, Supplier<ProtocolPayload> payload, String message) {
         // Noop
     }
 
     @Override
-    public void emitError(Logger logger, OperationEntryState state, String message, Throwable throwable) {
-        logger.error(plainFailed(state, message), throwable);
+    public void emitError(Log log, Class<?> owner, OperationEntryState state, String message, Throwable throwable) {
+        log.log(owner, null, Log.Level.ERROR, plainFailed(state, message), throwable);
     }
 
     static String plainOperation(OperationEntryState state, String message) {

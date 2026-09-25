@@ -15,7 +15,7 @@ import com.evolveum.polygon.conndev.groovy.GroovyScriptLoader;
 import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
-import com.evolveum.polygon.conndev.logging.CapturingLogProvider;
+import com.evolveum.polygon.conndev.logging.CapturingLogSpi;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.spi.Configuration;
@@ -40,13 +40,13 @@ public class ClassHandlerConnectorBaseLoggingTest {
     @Test
     public void developmentModeEnabledEmitsStructuredOperationEntries() {
         var connector = new TestConnector(true);
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         var uid = connector.create(ACCOUNT, Set.of(AttributeBuilder.build("name", "Alice")), OPTIONS);
         var updated = connector.updateDelta(ACCOUNT, uid,
                 Set.of(new AttributeDeltaBuilder().setName("title").addValueToReplace("Engineer").build()), OPTIONS);
 
         assertEquals(updated.size(), 1);
-        var lines = CapturingLogProvider.lines();
+        var lines = CapturingLogSpi.messages();
         assertTrue(lines.stream().allMatch(OperationLogParser::isStructuredLine));
         var traces = OperationLogParser.parse(lines);
         assertEquals(traces.size(), 2);
@@ -59,10 +59,10 @@ public class ClassHandlerConnectorBaseLoggingTest {
     @Test
     public void developmentModeDisabledEmitsPlainLinesWithoutMarker() {
         var connector = new TestConnector(false);
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         connector.create(ACCOUNT, Set.of(AttributeBuilder.build("name", "Alice")), OPTIONS);
 
-        var lines = CapturingLogProvider.lines();
+        var lines = CapturingLogSpi.messages();
         assertTrue(lines.stream().noneMatch(OperationLogParser::isStructuredLine));
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("create on account: Create account")));
         assertTrue(lines.stream().anyMatch(line -> line.contains("completed")));
@@ -74,17 +74,17 @@ public class ClassHandlerConnectorBaseLoggingTest {
         var configuration = (TestConfiguration) connector.getConfiguration();
 
         // instantiated with development mode off: plain lines
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         var uid = connector.create(ACCOUNT, Set.of(AttributeBuilder.build("name", "Alice")), OPTIONS);
-        assertTrue(CapturingLogProvider.lines().stream().noneMatch(OperationLogParser::isStructuredLine));
+        assertTrue(CapturingLogSpi.messages().stream().noneMatch(OperationLogParser::isStructuredLine));
 
         // enable development mode on the live configuration, no re-instantiation
         configuration.setDevelopmentMode(true);
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         connector.updateDelta(ACCOUNT, uid,
                 Set.of(new AttributeDeltaBuilder().setName("title").addValueToReplace("Engineer").build()),
                 OPTIONS);
-        var lines = CapturingLogProvider.lines();
+        var lines = CapturingLogSpi.messages();
         assertTrue(lines.stream().allMatch(OperationLogParser::isStructuredLine));
         var traces = OperationLogParser.parse(lines);
         assertEquals(traces.size(), 1);
@@ -94,9 +94,9 @@ public class ClassHandlerConnectorBaseLoggingTest {
 
         // disable again: plain lines resume
         configuration.setDevelopmentMode(false);
-        CapturingLogProvider.clear();
+        CapturingLogSpi.clear();
         connector.create(ACCOUNT, Set.of(AttributeBuilder.build("name", "Bob")), OPTIONS);
-        assertTrue(CapturingLogProvider.lines().stream().noneMatch(OperationLogParser::isStructuredLine));
+        assertTrue(CapturingLogSpi.messages().stream().noneMatch(OperationLogParser::isStructuredLine));
     }
 
     private static final class TestConfiguration extends BaseGroovyConnectorConfiguration {

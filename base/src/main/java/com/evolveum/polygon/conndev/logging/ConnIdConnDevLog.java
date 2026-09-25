@@ -16,8 +16,8 @@ import com.evolveum.polygon.conndev.devtools.log.ProtocolPayload;
 import com.evolveum.polygon.conndev.logging.protocol.HttpProtocolData;
 import com.evolveum.polygon.conndev.logging.protocol.ProtocolData;
 import com.evolveum.polygon.conndev.logging.protocol.SqlProtocolData;
+import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -26,23 +26,24 @@ import static com.evolveum.polygon.conndev.logging.DevelopmentModeLogWriter.rend
 import static com.evolveum.polygon.conndev.logging.DevelopmentModeLogWriter.truncate;
 
 /**
- * SLF4J-backed {@link ConnDevLog} implementation.
+ * ConnId-{@link Log}-backed {@link ConnDevLog} implementation.
  *
  * <p>Every event is routed through this class: in development mode it is emitted as a
  * structured log line (human-readable message, then the format marker and the JSON payload),
- * otherwise as a regular SLF4J line — protocol events are dropped entirely.
+ * otherwise as a regular line — protocol events are dropped entirely.
  *
  * <p>When no explicit {@link LogOptions} is configured, the safety rails (truncation,
  * redaction) are resolved at write time against the development mode of the writing thread,
  * so a facade created outside any operation still honors the mode in effect when the line is
  * actually written.
  */
-public final class Slf4JConnDevLog implements ConnDevLog {
+public final class ConnIdConnDevLog implements ConnDevLog {
 
 
-    private static final Supplier<Slf4JLogWriter> BACKEND = DevelopmentMode.register(Slf4JLogWriter.class, new DevelopmentModeLogWriter(), new ProductionLogWriter());
+    private static final Supplier<ConnIdLogWriter> BACKEND = DevelopmentMode.register(ConnIdLogWriter.class, new DevelopmentModeLogWriter(), new ProductionLogWriter());
 
-    private final Logger logger;
+    private final Class<?> owner;
+    private final Log log;
 
     /**
      * Options in effect for this facade: the explicitly configured options if given, otherwise
@@ -50,18 +51,10 @@ public final class Slf4JConnDevLog implements ConnDevLog {
      */
     private final Supplier<LogOptions> optionsSupplier;
 
-    public Slf4JConnDevLog(Logger logger, LogOptions options) {
-        this.logger = logger;
+    public ConnIdConnDevLog(Class<?> owner, LogOptions options) {
+        this.owner = owner;
+        this.log = Log.getLog(owner);
         this.optionsSupplier = options == null ? LogOptions::defaults : () -> options;
-    }
-
-    /**
-     * Returns the bound SLF4J logger.
-     *
-     * @return the logger
-     */
-    public Logger logger() {
-        return logger;
     }
 
     /**
@@ -90,7 +83,7 @@ public final class Slf4JConnDevLog implements ConnDevLog {
                 System.currentTimeMillis());
         OperationEntryContext.push(state);
         var entry = new OperationEntryImpl(this, state);
-        BACKEND.get().emitEntryEvent(logger, state, EventType.OPERATION, LogSeverity.INFO, message, state.location());
+        BACKEND.get().emitEntryEvent(log, owner, state, EventType.OPERATION, LogSeverity.INFO, message, state.location());
         return entry;
     }
 
@@ -120,22 +113,22 @@ public final class Slf4JConnDevLog implements ConnDevLog {
 
     @Override
     public void debug(String message) {
-        BACKEND.get().logStandalone(logger, LogSeverity.DEBUG, message, null);
+        BACKEND.get().logStandalone(log, owner, LogSeverity.DEBUG, message, null);
     }
 
     @Override
     public void info(String message) {
-        BACKEND.get().logStandalone(logger, LogSeverity.INFO, message, null);
+        BACKEND.get().logStandalone(log, owner, LogSeverity.INFO, message, null);
     }
 
     @Override
     public void warn(String message) {
-        BACKEND.get().logStandalone(logger, LogSeverity.WARN, message, null);
+        BACKEND.get().logStandalone(log, owner, LogSeverity.WARN, message, null);
     }
 
     @Override
     public void error(String message, Throwable throwable) {
-        BACKEND.get().logStandalone(logger, LogSeverity.ERROR, message, throwable);
+        BACKEND.get().logStandalone(log, owner, LogSeverity.ERROR, message, throwable);
     }
 
     // ========================================================================
@@ -144,12 +137,12 @@ public final class Slf4JConnDevLog implements ConnDevLog {
 
     void emitDetail(OperationEntryState state, Map<String, Object> kvs) {
         var rendered = renderDetail(kvs);
-        BACKEND.get().emitDetail(logger, state, rendered, kvs);
+        BACKEND.get().emitDetail(log, owner, state, rendered, kvs);
     }
 
     void emitHttp(OperationEntryState state, HttpProtocolData.Request request) {
         var options = optionsSupplier.get();
-        BACKEND.get().emitProtocol(logger, state, () -> new ProtocolPayload(
+        BACKEND.get().emitProtocol(log, owner, state, () -> new ProtocolPayload(
                         ConndevLogFormat.PROTOCOL_HTTP, ConndevLogFormat.HTTP_REQUEST,
                         request.method(), request.uri(), null, renderBody(request.body(), options), null, null),
                 "HTTP " + request.method() + " " + request.uri());
@@ -157,7 +150,7 @@ public final class Slf4JConnDevLog implements ConnDevLog {
 
     void emitHttpResponse(OperationEntryState state, HttpProtocolData.Response response) {
         var options = optionsSupplier.get();
-        BACKEND.get().emitProtocol(logger, state, () -> new ProtocolPayload(
+        BACKEND.get().emitProtocol(log, owner, state, () -> new ProtocolPayload(
                         ConndevLogFormat.PROTOCOL_HTTP, ConndevLogFormat.HTTP_RESPONSE,
                         null, response.uri(), response.status(), renderBody(response.body(), options), null, null),
                 "HTTP response " + response.status() + " " + response.uri());
@@ -165,28 +158,28 @@ public final class Slf4JConnDevLog implements ConnDevLog {
 
     void emitSql(OperationEntryState state, SqlProtocolData.Query query) {
         var options = optionsSupplier.get();
-        BACKEND.get().emitProtocol(logger, state, () -> new ProtocolPayload(
+        BACKEND.get().emitProtocol(log, owner, state, () -> new ProtocolPayload(
                         ConndevLogFormat.PROTOCOL_SQL, ConndevLogFormat.SQL_QUERY,
-                    null, null, null, null, truncate(query.sql(), options), query.params()),
-            "SQL query");
+                        null, null, null, null, truncate(query.sql(), options), query.params()),
+                "SQL query");
     }
 
     void emitProtocol(OperationEntryState state, ProtocolData data) {
-        BACKEND.get().emitProtocol(logger, state, optionsSupplier.get(), data);
+        BACKEND.get().emitProtocol(log, owner, state, optionsSupplier.get(), data);
     }
 
     void emitResult(OperationEntryState state, Object result) {
         state.markCompleted();
         OperationEntryContext.restore(state);
         var rendered = renderValue(result);
-        BACKEND.get().emitResult(logger, state, rendered, result);
+        BACKEND.get().emitResult(log, owner, state, rendered, result);
 
     }
 
     void emitError(OperationEntryState state, String message, Throwable throwable) {
         state.markCompleted();
         OperationEntryContext.restore(state);
-        BACKEND.get().emitError(logger, state, message, throwable);
+        BACKEND.get().emitError(log, owner, state, message, throwable);
     }
 
 
