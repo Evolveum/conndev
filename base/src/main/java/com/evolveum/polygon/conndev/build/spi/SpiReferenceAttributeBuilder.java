@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.build.spi;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
  * SPI-level reference attribute builder base interface.
@@ -25,10 +26,10 @@ public interface SpiReferenceAttributeBuilder<B extends SpiReferenceAttributeBui
     /**
      * Specifies the target ConnId object class for the reference.
      *
-     * @param objectClass the target object class definition
+     * @param objectClass the target object class
      * @return the current instance for method chaining
      */
-    B objectClass(DefinitionValue<String> objectClass);
+    B objectClass(DefinitionValue<ObjectClass> objectClass);
 
     /**
      * Specifies a subtype qualifier for the reference attribute.

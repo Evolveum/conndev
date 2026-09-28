@@ -17,6 +17,7 @@ import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.Name;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
@@ -302,7 +303,7 @@ public class YamlSchemaLoadingTest {
         String capturedName;
         JsonNode capturedBlock;
 
-        StubProtocolAwareObjectClass(BaseSchemaBuilder schemaBuilder, DefinitionValue<String> name) {
+        StubProtocolAwareObjectClass(BaseSchemaBuilder schemaBuilder, DefinitionValue<ObjectClass> name) {
             super(schemaBuilder, name);
         }
 

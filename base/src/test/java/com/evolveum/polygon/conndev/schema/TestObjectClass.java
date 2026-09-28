@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /** Minimal object class builder pairing with {@link TestAttributeBuilder}. */
 public final class TestObjectClass extends BaseObjectClassDefinitionBuilder<
@@ -17,7 +18,7 @@ public final class TestObjectClass extends BaseObjectClassDefinitionBuilder<
         TestAttributeBuilder,
         BaseAttributeDefinition> {
 
-    TestObjectClass(BaseSchemaBuilder parent, DefinitionValue<String> name) {
+    TestObjectClass(BaseSchemaBuilder parent, DefinitionValue<ObjectClass> name) {
         super(parent, name);
     }
 

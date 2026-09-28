@@ -75,8 +75,8 @@ public class BaseSchemaBuilder<
 
     /** The connector class for which this schema is being built. */
     protected final Class<? extends Connector> connectorClass;
-    /** The registered object class builders, keyed by name. */
-    protected final Map<String, OB> objectClasses = new HashMap<>();
+    /** The registered object class builders, keyed by ConnId ObjectClass (case-insensitive). */
+    protected final Map<ObjectClass, OB> objectClasses = new HashMap<>();
     /** Ready-made ConnId object classes added via {@link #defineObjectClass(ObjectClassInfo)}. */
     protected final List<ObjectClassInfo> additionalObjectClasses = new ArrayList<>();
     /** Already-built object class definitions added via {@link #defineObjectClass(BaseObjectClassDefinition)}. */
@@ -104,12 +104,12 @@ public class BaseSchemaBuilder<
      */
     @Override
     public OA objectClass(String name) {
-        var definitionName = DefinitionValue.from(name, SourceLocation.capture());
+        var definitionName = DefinitionValue.from(new ObjectClass(name), SourceLocation.capture());
         return objectClass(definitionName);
     }
 
     @Override
-    public OA objectClass(DefinitionValue<String> name) {
+    public OA objectClass(DefinitionValue<ObjectClass> name) {
         return objectClasses.computeIfAbsent(name.value(), k -> newObjectClass(name)).self();
     }
 
@@ -122,10 +122,10 @@ public class BaseSchemaBuilder<
      * Creates a new object class builder instance. Override this method to provide a custom
      * object class builder implementation.
      *
-     * @param name the object class name
+     * @param name the object class
      * @return a new object class builder
      */
-    protected OB newObjectClass(DefinitionValue<String> name) {
+    protected OB newObjectClass(DefinitionValue<ObjectClass> name) {
         return (OB) new BaseObjectClassDefinitionBuilder(BaseSchemaBuilder.this, name);
     }
 
@@ -206,7 +206,8 @@ public class BaseSchemaBuilder<
             initializeDummySchema();
         }
 
-        // Resolve name collisions in the map first, so each name reaches the ConnId schema once.
+        // Merge built definitions with the ready-made ones; the ObjectClass keying
+        // (case-insensitive) guarantees each object class reaches the ConnId schema once.
         Map<ObjectClass, OC> objectClassMap = new HashMap<>();
         for (var ocBuilder : objectClasses.values()) {
             var objectClassDef = ocBuilder.build();

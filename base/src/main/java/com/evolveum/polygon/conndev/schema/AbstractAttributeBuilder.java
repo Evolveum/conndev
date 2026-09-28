@@ -26,6 +26,7 @@ import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import tools.jackson.databind.JsonNode;
 
 import java.util.Collection;
@@ -90,9 +91,9 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     DefinitionValue<String> remoteName;
 
     /**
-     * The complex type (referenced object class name) for embedded objects.
+     * The complex type (referenced object class) for embedded objects.
      */
-    DefinitionValue<String> complexType = DefinitionValue.emptyDefault();
+    DefinitionValue<ObjectClass> complexType = DefinitionValue.emptyDefault();
 
     /**
      * Creates a new attribute builder for the given name within the specified object class.
@@ -130,19 +131,19 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
      * @return this builder for chaining
      */
     @Override
-    public A complexType(DefinitionValue<String> objectClass) {
+    public A complexType(DefinitionValue<ObjectClass> objectClass) {
         this.complexType = complexType.moreSpecific(objectClass);
         return self();
     }
 
     /**
-     * Returns the complex type (referenced object class name) for embedded objects, as set via
+     * Returns the complex type (referenced object class) for embedded objects, as set via
      * {@link #complexType(DefinitionValue)}. Used by {@link AttributeTypeResolutionRule} and
      * {@link ComplexTypeImpliesEmbeddedReferenceRule} to read this attribute's already-set state.
      *
      * @return the complex type, or an absent {@link DefinitionValue} if none was set
      */
-    public DefinitionValue<String> complexType() {
+    public DefinitionValue<ObjectClass> complexType() {
         return complexType;
     }
 
@@ -294,8 +295,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         private DefinitionValue<Boolean> updatable = DefinitionValue.DEFAULT_TRUE;
         /** The role within a reference relationship (e.g., SUBJECT, REFERENCED). */
         private DefinitionValue<String> roleInReference = DefinitionValue.emptyDefault();
-        /** The referenced object class name for reference relationships. */
-        private DefinitionValue<String> referencedObjectClassName = DefinitionValue.emptyDefault();
+        /** The referenced object class for reference relationships. */
+        private DefinitionValue<ObjectClass> referencedObjectClassName = DefinitionValue.emptyDefault();
         /** The ConnId attribute subtype. */
         private DefinitionValue<String> subtype = DefinitionValue.emptyDefault();
 
@@ -391,7 +392,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         @Override
-        public ConnIdMapping referencedObjectClassName(DefinitionValue<String> complexType) {
+        public ConnIdMapping referencedObjectClassName(DefinitionValue<ObjectClass> complexType) {
             this.referencedObjectClassName = this.referencedObjectClassName.moreSpecific(complexType);
             return self();
         }
@@ -434,7 +435,8 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             builder.setCreateable(creatable.value());
             builder.setUpdateable(updatable.value());
             builder.setRoleInReference(roleInReference.value());
-            builder.setReferencedObjectClassName(referencedObjectClassName.value());
+            builder.setReferencedObjectClassName(
+                    referencedObjectClassName.value() == null ? null : referencedObjectClassName.value().getObjectClassValue());
             builder.setSubtype(subtype.value());
             return builder.build();
         }

@@ -89,9 +89,9 @@ public class BaseObjectClassDefinitionBuilder<
     }
 
     /**
-     * The canonical name (display name) of this object class in the DSL.
+     * The canonical name (display name) of this object class in the DSL, as a ConnId ObjectClass.
      */
-    private final DefinitionValue<String> name;
+    private final DefinitionValue<ObjectClass> name;
 
     /**
      * ConnId ObjectClassInfo builder used to produce the ConnId {@link ObjectClass} definition.
@@ -126,7 +126,7 @@ public class BaseObjectClassDefinitionBuilder<
      * @param restSchemaBuilder the parent schema builder that owns this object class
      * @param name              the display name of the object class
      */
-    public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, DefinitionValue<String> name) {
+    public BaseObjectClassDefinitionBuilder(BaseSchemaBuilder restSchemaBuilder, DefinitionValue<ObjectClass> name) {
         this.name = name;
         this.parent = restSchemaBuilder;
     }
@@ -263,6 +263,15 @@ public class BaseObjectClassDefinitionBuilder<
      * @return the name as a String
      */
     public String name() {
+        return name.value().getObjectClassValue();
+    }
+
+    /**
+     * Returns the ConnId ObjectClass identity of this object class.
+     *
+     * @return the object class
+     */
+    public ObjectClass objectClass() {
         return name.value();
     }
 
@@ -311,7 +320,7 @@ public class BaseObjectClassDefinitionBuilder<
      * @return the fully built object class definition
      */
     public O build() {
-        connIdBuilder.setType(name.value());
+        connIdBuilder.setType(name.value().getObjectClassValue());
         connIdBuilder.setEmbedded(embedded.value());
 
         // Freeze phase: only now is anything actually built.

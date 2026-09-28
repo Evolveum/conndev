@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.build.spi;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.FluentBuilder;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
  * SPI-level attribute builder base interface.
@@ -62,10 +63,10 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
      * {@link org.identityconnectors.framework.common.objects.ConnectorObjectReference}
      * and the JSON mapping is set to an {@link com.evolveum.polygon.conndev.spi.EmbeddedObjectJsonMapping}.
      *
-     * @param objectClass the referenced object class name with metadata, or {@code null} to clear
+     * @param objectClass the referenced object class with metadata, or {@code null} to clear
      * @return this builder for chaining
      */
-    B complexType(DefinitionValue<String> objectClass);
+    B complexType(DefinitionValue<ObjectClass> objectClass);
 
     /**
      * Builds the final attribute definition.
@@ -178,12 +179,12 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
         F roleInReference(DefinitionValue<String> detected);
 
         /**
-         * Sets the name of the referenced object class.
+         * Sets the referenced object class.
          *
          * @param complexType the referenced object class with metadata
          * @return this mapping instance for chaining
          */
-        F referencedObjectClassName(DefinitionValue<String> complexType);
+        F referencedObjectClassName(DefinitionValue<ObjectClass> complexType);
 
         /**
          * Sets a subtype qualifier for this attribute.

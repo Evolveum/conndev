@@ -13,6 +13,7 @@ import com.evolveum.polygon.conndev.concepts.MappingAction;
 import com.evolveum.polygon.conndev.concepts.MappingRule;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.groovy.BaseObjectOperationSupportBuilder;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.testng.annotations.Test;
 
@@ -47,7 +48,7 @@ public class MappingRuleTest {
             TestAttributeBuilder,
             BaseAttributeDefinition> {
 
-        TestObjectClass(BaseSchemaBuilder parent, DefinitionValue<String> name) {
+        TestObjectClass(BaseSchemaBuilder parent, DefinitionValue<ObjectClass> name) {
             super(parent, name);
         }
 
@@ -59,7 +60,7 @@ public class MappingRuleTest {
 
     private static TestObjectClass newObjectClass() {
         var schemaBuilder = new BaseSchemaBuilder(StubConnector.class, ContextLookup.none());
-        return new TestObjectClass(schemaBuilder, DefinitionValue.from("Test", SourceLocation.capture()));
+        return new TestObjectClass(schemaBuilder, DefinitionValue.from(new ObjectClass("Test"), SourceLocation.capture()));
     }
 
     /** A connector fixes the context/builder types via its own narrower rule interface, e.g. this

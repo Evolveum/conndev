@@ -1,0 +1,676 @@
+= conndev Connector Framework: Design and Code Style
+
+== 1. Project Architecture
+
+=== Module Hierarchy
+
+[source]
+----
+connid/java/           → ConnId SPI (connector-framework-contract)
+        ↓
+conndev/devtools-base/ → Structured log parser/correlator (leaf module; JDK + Jackson 2 only)
+        ↓
+conndev/base/          → Core low-code connector framework
+    ├──_spi/            → Connector SPI (ClassHandlerConnectorBase, ObjectClassHandler, operations)
+    ├──_build/api/      → Fluent builder interfaces (Groovy DSL-facing)
+    ├──_build/spi/      → SPI builder interfaces (DefinitionValue-aware)
+    ├──_concepts/       → Foundation abstractions (DefinitionValue, Fluent, Deferred, GroovyClosures)
+    ├──_groovy/         → Groovy integration (GroovyContext, GroovySchemaLoader)
+    ├──_logging/        → Logging facade (ConnectorLog, OperationEntry, LogOptions)
+    ├──_schema/         → Schema types (BaseSchema, BaseObjectClassDefinition)
+    └──_json/           → JSON value mappings
+        ↓
+scimrest-connector/common/  → SCIM/REST connector library
+    ├──_groovy/         → AbstractGroovyRestConnector, handlers, builders
+    ├──_impl/rest/      → REST handlers (pagination, HTTP)
+    ├──_impl/scim/      → SCIM handlers (UnboundID SDK)
+    └──_spi/            → SCIM/REST-specific SPI
+        ↓
+scimrest-connector/connector/*/  → Concrete connectors (Forgejo, OpenProject, etc.)
+
+sql-connector/base/    → SQL connector library (parallel to scimrest)
+----
+
+`conndev/devtools-base` must stay a leaf module (no dependency on `base` in any scope) so it can
+be reused outside this project (e.g. MidPoint) to parse and correlate conndev structured log
+lines; `base` depends on it at compile scope for the shared wire contract.
+
+[[runtime-flow]]
+=== Runtime Flow
+
+[source]
+----
+MidPoint → loads connector JAR → Connector.init(Configuration)
+    → AbstractGroovyRestConnector.initialize0()
+        → loads Groovy schema scripts → RestSchemaBuilder → RestSchema
+        → loads Groovy/YAML operation scripts → RestHandlerBuilder → ObjectClassHandler map
+    → ConnId operation request
+        → ClassHandlerConnectorBase → handlerFor(ObjectClass) → CompositeObjectClassHandler
+        → checkSupported(OperationType) → specific operation handler
+        → HTTP request via RestContext → response → ConnectorObject
+----
+
+== 2. Code Style Choices
+
+=== Naming Conventions
+
+Classes::
+  PascalCase — e.g. `AbstractGroovyRestConnector`, `RestSchemaBuilder`
+
+Interfaces::
+  PascalCase, suffix for role — e.g. `Builder`, `Handler`, `Operation`
+
+Methods::
+  camelCase — e.g. `initializeSchema`, `handlerFor`
+
+Variables::
+  camelCase — e.g. `objectClasses`, `attributeBuilder`
+
+Packages::
+  lowercase dot-separated — e.g. `com.evolveum.polygon.conndev.spi`
+
+Groovy DSL methods::
+  Sometimes uppercase first letter for Groovy ergonomics — e.g. `Name()`, `Type()`
+
+Connector resources::
+  Dot-separated naming convention — e.g. `User.native.schema.groovy`, `User.connid.schema.groovy`
+
+=== Java-Specific Style
+
+* **Java 17** (scimrest), **Java 21** (conndev base)
+* **Records** for data carriers: `DefinitionValue<T>`, `Capability<R,H>`, `Impl(String,int,int)`
+* **Virtual extension methods** extensively in interfaces for default implementations
+* **F-bounded polymorphism** everywhere: `Fluent<F extends Fluent<F>>`, `FluentBuilder<B extends FluentBuilder<B,P>, P>`
+* **`var`** used pervasively for local variables
+* **No Checkstyle** configured — IDE and code reviews enforce style
+* **4-space indentation**, 120-char line limit
+
+=== Groovy-Specific Style
+
+* **Builder pattern with closures** as the primary DSL mechanism
+* **Multiple scripts per object class** for separation of concerns:
+ ** `*.native.schema.groovy` — native attributes and types
+ ** `*.connid.schema.groovy` — ConnId attribute mapping
+ ** `*.associations.schema.groovy` — references and relationships
+ ** `*.search.groovy` — search operations
+ ** `*.attribute.resolver.groovy` — attribute resolvers
+* **US/UK alternate spellings** accepted via `@Groovy.AlternateSpelling`
+
+== 3. Code Patterns
+
+[[pattern-definitionvalue]]
+=== Pattern 1: DefinitionValue Provenance Tracking
+
+The most distinctive pattern in this codebase. Every configurable value is wrapped in a `DefinitionValue<T>` that tracks **what value**, **where it came from**, and **where in source code it was declared**:
+
+[source,java]
+----
+record DefinitionValue<T>(T value, Origin origin, SourceLocation location)
+----
+
+Three origins with strict precedence:
+
+`DEFAULT` (0)::
+  Framework defaults (e.g., `String.class` for type)
+
+`DETECTED` (1)::
+  Auto-detected from remote system (JDBC metadata, OpenAPI, SCIM schema)
+
+`DECLARED` (2)::
+  Explicitly declared by developer in scripts
+
+Conflict resolution via `moreSpecific()`:
+
+`DEFAULT`::
+  `IllegalStateException` — two defaults is a bug
+
+`DETECTED`::
+  Last value wins silently
+
+`DECLARED`, same value::
+  Returns `this` (idempotent)
+
+`DECLARED`, different values::
+  `IllegalArgumentException` with source locations
+
+Usage in every builder — every metadata field is a `DefinitionValue`:
+
+[source,java]
+----
+// In AbstractAttributeBuilder.ConnIdBuilder:
+private DefinitionValue<Class<?>> type = DefinitionValue.defaultFrom(String.class);
+private DefinitionValue<Boolean> readable = DefinitionValue.DEFAULT_TRUE;
+private DefinitionValue<Boolean> required = DefinitionValue.DEFAULT_FALSE;
+// ... 15+ similar fields
+
+// Setting with provenance:
+public ConnIdMapping type(DefinitionValue<Class<?>> connIdType) {
+    this.type = this.type.moreSpecific(connIdType);
+    return self();
+}
+----
+
+API to SPI bridge — API layer wraps plain values into `DefinitionValue` before delegating:
+
+[source,java]
+----
+// API layer (Groovy-facing, takes plain values):
+default B readable(boolean readable) {
+    connId().readable(DefinitionValue.from(readable, SourceLocation.capture()));
+    return self();
+}
+
+// SPI layer (framework-facing, takes DefinitionValue):
+B readable(DefinitionValue<Boolean> readable);
+----
+
+[[pattern-closure-lifecycle]]
+=== Pattern 2: Two-Layer Closure Lifecycle
+
+Groovy closures have exactly two lifecycle paths, annotated and processed differently:
+
+[cols="3,4,4,4"]
+|===
+| Annotation | Execution | Method | Purpose
+
+| `@Script.Initialization`
+| Immediately at config time
+| `GroovyClosures.callAndReturnDelegate()`
+| Configure builders
+
+| `@Script.Runtime`
+| Cloned and executed at runtime
+| `GroovyClosures.copyAndCall()`
+| Operation logic
+|===
+
+Key implementation difference:
+
+[source,java]
+----
+// Initialization — returns the delegate (builder), closure return value discarded
+public static <T> T callAndReturnDelegate(Closure<?> closure, T delegate) {
+    closure.setDelegate(delegate);
+    closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+    performClosureCall(closure, delegate);
+    return delegate;  // NOT closure's return value
+}
+
+// Runtime — returns the closure's result, prototype is cloned
+public static <T> T copyAndCall(Closure<T> prototype, Object delegate) {
+    var closure = (Closure<?>) prototype.clone();  // Clone prevents state leakage
+    closure.setDelegate(delegate);
+    closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+    return performClosureCall(closure, delegate);  // Returns closure's result
+}
+----
+
+[[pattern-crrtp]]
+=== Pattern 3: F-Bounded Fluent Builders (CRTP)
+
+Every builder uses self-referencing generics for type-safe chaining:
+
+[source,java]
+----
+interface Fluent<F extends Fluent<F>> {
+    default F self() { return (F) this; }  // No casting boilerplate needed
+}
+
+interface FluentBuilder<B extends FluentBuilder<B,P>, P> extends Fluent<B>, Builder<P> {
+    P build();
+}
+
+// Usage in a concrete builder:
+class MappedAttributeBuilderImpl
+    implements AttributeBuilder<MappedAttributeBuilderImpl, MappedAttribute> {
+
+    @Override public MappedAttributeBuilderImpl readable(boolean readable) {
+        ...
+        return self();
+    }
+
+    @Override public MappedAttribute build() { ... }
+}
+----
+
+[[pattern-strategy-composition]]
+=== Pattern 4: Strategy Pattern via Composition
+
+Per-object-class dispatch:
+
+[source]
+----
+ClassHandlerConnectorBase
+    → handlerFor(ObjectClass) → ObjectClassHandler
+        → checkSupported(OperationClass) → Operation
+----
+
+Composite handler uses a Map instead of implementing every operation interface:
+
+[source,java]
+----
+class CompositeObjectClassHandler implements ObjectClassHandler {
+    private final Map<Class<? extends ObjectClassOperation>, ObjectClassOperation> handlers;
+
+    public <T extends ObjectClassOperation> T checkSupported(Class<T> operationType) {
+        var raw = handlers.get(operationType);
+        if (raw == null) throw new UnsupportedOperationException(...);
+        return operationType.cast(raw);
+    }
+}
+----
+
+Capability negotiation for multi-handler operations:
+
+[source,java]
+----
+interface AttributeAwareOperationHandler<R, H> {
+    Capability<R,H> canHandle(Collection<R> request, OperationOptions options);
+}
+
+record Capability<R,H>(H handler, Collection<R> supported) {
+    boolean isUnsupported() { return supported == null || supported.isEmpty(); }
+}
+----
+
+[[pattern-deferred]]
+=== Pattern 5: Deferred Non-Blocking Values
+
+No blocking primitives, no `Future` — lightweight lazy evaluation:
+
+[source,java]
+----
+abstract class Deferred<T> { abstract T get(); }
+  class Completed<T> extends Deferred<T>  // Immediate value — Deferred.ready(value)
+  class Settable<T> extends Deferred<T>   // Single-assignment promise — Deferred.settable()
+  class Searchable<T> extends Deferred<T> // Lazy computation — Deferred.searchable(supplier)
+----
+
+[[pattern-source-location]]
+=== Pattern 6: Source Location Capture
+
+Stack trace inspection to track where DSL declarations originate (only when `DevelopmentMode` is enabled):
+
+[source,java]
+----
+interface SourceLocation {
+    String name(); int line(); int column();
+}
+
+class SourceLocation {
+    static SourceLocation capture(String... extensions) {
+        // Walks stack trace looking for frames in .groovy files
+        // Returns UNKNOWN if DevelopmentMode is disabled
+    }
+}
+----
+
+[[pattern-multi-script]]
+=== Pattern 7: Multi-Script Schema Composition
+
+Multiple Groovy scripts can contribute to the same object class:
+
+[source,java]
+----
+// BaseSchemaBuilder.objectClass():
+public OA objectClass(String name) {
+    return objectClasses.computeIfAbsent(name, k -> newObjectClass(name));
+}
+----
+
+Scripts are loaded sequentially, each adding attributes to the same builder instance. The `computeIfAbsent` pattern ensures scripts can be loaded in any order.
+
+[[pattern-manifest]]
+=== Pattern 8: Manifest-Based Connectors
+
+`ManifestBasedConnector` enables fully declarative connectors — no custom Java code needed. All configuration comes from classpath resources loaded by name convention:
+
+[source]
+----
+resources/
+    User.native.schema.groovy
+    User.connid.schema.groovy
+    User.search.groovy
+    User.create.groovy
+    ...
+----
+
+[[pattern-lifecycle-hooks]]
+=== Pattern 9: ClosureExecutionAware Lifecycle Hooks
+
+Delegates can implement lifecycle hooks that fire around closure execution:
+
+[source,java]
+----
+interface ClosureExecutionAware {
+    default void beforeExecution() { }
+    default void afterExecution() { }
+}
+----
+
+Used by builders that need post-configuration processing (e.g., `AbstractRelationshipBuilder` configures cross-references after both sides are defined).
+
+[[pattern-dev-mode]]
+=== Pattern 10: Thread-Local Development Mode
+
+[source,java]
+----
+class DevelopmentMode {
+    private static final ThreadLocal<Boolean> mode = ThreadLocal.withInitial(() -> false);
+
+    static <V,E> V run(boolean developmentMode, CheckedCallable<V,E> runnable) throws E {
+        boolean old = isEnabled();
+        try {
+            set(developmentMode);
+            return runnable.call();
+        } finally {
+            set(old);  // Guaranteed restoration
+        }
+    }
+}
+----
+
+Controls source location capture without production overhead.
+
+=== Pattern 11: Structured Dev-Mode Logging
+
+[source,java]
+----
+// Emitter side (base, package com.evolveum.polygon.conndev.logging)
+public interface ConnectorLog {
+    static ConnectorLog of(Class<?> owner);              // bound to the ConnId Log of the given class
+    OperationEntry operation(String op, ObjectClass oc, String message);  // starts an entry
+    OperationEntry currentOperation();                  // thread-local active entry
+    <V,E> V runOperation(String op, ObjectClass oc, String message, CheckedCallable<V,E> work);
+    // plus standalone debug/info/warn/error
+}
+
+public interface OperationEntry {                       // chainable, bound to the emitter's logger
+    String id();
+    OperationEntry http(HttpProtocolData.Request req);  // method, uri, body
+    OperationEntry http(HttpProtocolData.Response resp); // status, uri, body
+    OperationEntry sql(SqlProtocolData.Query query);    // sql, params
+    OperationEntry detail(String key, Object value);    // key/value only
+    OperationEntry result(Object result);               // completes the entry
+    void error(String message, Throwable t);            // completes the entry
+}
+
+// Parser side (devtools-base, package com.evolveum.polygon.conndev.devtools.log)
+List<OperationTrace> traces = OperationLogParser.parse(reader);  // lines → correlated entries
+----
+
+All connector logging flows through the facade (no plain log calls). ConnId operations are
+auto-wrapped by `ClassHandlerConnectorBase` (`log().runOperation(...)`); the entry state is
+registered thread-locally (`OperationEntryContext`) so nested components attach their events
+(HTTP calls, SQL queries, script details) to the same entry via `currentOperation()`.
+
+Development mode ON — every event is one structured line, human-readable message first, then
+the marker and a self-contained JSON payload (so consumers parse only the payload):
+
+----
+REST failed conndev-log/v1 {"v":1,"id":"…","seq":2,"ts":…,"severity":"ERROR","event":"ERROR",…}
+----
+
+Wire contract (v1) fields: `v`, `id` (null = standalone message), `parentId`, `seq`, `ts`,
+`severity` (DEBUG|INFO|WARN|ERROR), `thread`, `event` (OPERATION|DETAIL|PROTOCOL|RESULT|ERROR|MESSAGE),
+`operation`, `objectClass`, `message`, `location` (Java: class/method/file/line, Groovy:
+file/line), `detail` (map), `protocol` (`type` http|sql, `kind` request|response|query, method,
+uri, status, body, sql, params), `result` (ok, value), `error` (message, stacktrace).
+
+Development mode OFF — plain `info`/`error` lines (`search on User: …`, `detail k=v`,
+`search on User completed: …`); protocol events are dropped entirely. Truncation (default
+64 KB) and redaction of sensitive fields (`LogOptions`: production redacts, development does
+not) are applied to emitted bodies in both modes.
+
+The parser reconstructs the UI's view: `EntryCorrelator` groups events by `id`, orders by
+`seq`, marks entries complete on RESULT/ERROR; `OperationTrace` (start/end ts, max severity,
+first location, protocol events, details, outcome, childIds) is the list row and the event
+view (Protocol/Details/Stack-trace tabs).
+
+== 4. Groovy-to-Builder Interface Mappings
+
+=== Schema Builders
+
+`objectClass("User") { ... }`::
+  `SchemaBuilder.objectClass(String, Closure)` — creates/returns `ObjectClassSchemaBuilder`
+
+`relationship("Membership") { ... }`::
+  `SchemaBuilder.relationship(String, Closure)` — creates relationship definition
+
+`attribute("id") { ... }`::
+  `ObjectClassSchemaBuilder.attribute(String, Closure)` — creates `AttributeBuilder`
+
+`reference("teams") { ... }`::
+  `ObjectClassSchemaBuilder.reference(String, Closure)` — creates `ReferenceAttributeBuilder`
+
+`connIdAttribute("UID", "id")`::
+  `ObjectClassSchemaBuilder.connIdAttribute(String, String)` — maps ConnId attribute
+
+`description("...")`::
+  `ObjectClassSchemaBuilder.description(String)` — sets description
+
+=== Attribute Configuration
+
+`jsonType "string"`::
+  `AttributeBuilder.jsonType(String)` — `JsonMapping`
+
+`json { name("x"); type("int") }`::
+  `AttributeBuilder.json(Closure)` — `JsonMapping`
+
+`scim { path(...); name(...); type(...) }`::
+  `RestAttributeBuilder.scim(Closure)` — `ScimMapping`
+
+`connId { type(String.class); required true }`::
+  `SpiAttributeBuilder.connId()` — `ConnIdMapping`
+
+`openApiFormat "date-time"`::
+  `JsonMapping.openApiFormat(String)` — date/time format
+
+`multiValued true`::
+  `AttributeBuilder.multiValued(boolean)` — multi-value flag
+
+=== Operation Builders
+
+`search { ... }`::
+  `ObjectOperationSupportBuilder.search(Closure)` → `SearchOperationBuilder`
+
+`create { ... }`::
+  `ObjectOperationSupportBuilder.create(Closure)` → `CreateOperationBuilder`
+
+`update { ... }`::
+  `ObjectOperationSupportBuilder.update(Closure)` → `UpdateOperationBuilder`
+
+`delete { ... }`::
+  `ObjectOperationSupportBuilder.delete(Closure)` → `DeleteOperationBuilder`
+
+`endpoint "/users" { ... }`::
+  `SearchOperationBuilder.endpoint(Closure)`
+
+`custom { implementation { ... } }`::
+  `SpiSearchScriptBuilder.implementation(Closure)`
+
+=== REST/SCIM Extensions
+
+`scim { path(...); name(...); type(...) }`::
+  `RestAttributeBuilder.ScimMapping` — SCIM protocol path mapping
+
+RestSchemaBuilder extends SchemaBuilder::
+  `RestSchemaBuilder` — adds `RestObjectClassSchemaBuilder` with SCIM mapping
+
+ConnectorBuilder = OperationBuilder + RestSchemaBuilder::
+  `ConnectorBuilder` — unified interface: schema + operations
+
+ObjectClassBuilder = RestObjectClassSchemaBuilder + ObjectOperationSupportBuilder::
+  `ObjectClassBuilder` — unified interface: schema + operations per object class
+
+== 5. Interface Structure Philosophy
+
+[[design-declarative]]
+=== Declarative over Imperative
+
+The framework treats connector development as a *configuration/declaration* problem. Builders accumulate declarations; `build()` materializes immutable definition objects. The Groovy DSL is purely configuration — no control flow, no state mutation beyond the builder.
+
+[[design-two-layer]]
+=== Two-Layer Abstraction (API/SPI)
+
+Every concept has an API interface (Groovy-facing, takes plain values) and an SPI interface (framework-facing, takes `DefinitionValue`). The API layer wraps plain values in provenance metadata before delegating to SPI. This keeps developer-facing APIs simple while the framework has full provenance.
+
+[[design-composition]]
+=== Composition over Inheritance
+
+* `ConnectorBuilder` composes `OperationSupportBuilder` + `RestSchemaBuilder`
+* `ObjectClassBuilder` composes schema + operations
+* `CompositeObjectClassHandler` uses a Map of operation handlers rather than implementing every interface
+
+This avoids deep inheritance hierarchies and diamond problems.
+
+[[design-provenance]]
+=== Full Provenance via DefinitionValue
+
+Every configuration decision can be traced back to its origin. The three-tier system (`DEFAULT < DETECTED < DECLARED`) allows auto-discovery and developer override to coexist cleanly. Conflict errors reference exact source locations. See <<pattern-definitionvalue>>.
+
+[[design-closure-lifecycle]]
+=== Explicit Closure Lifecycle
+
+The `@Script.Initialization` / `@Script.Runtime` split with distinct processing methods (`callAndReturnDelegate` vs `copyAndCall`) prevents a fundamental class of bugs: runtime closures accidentally capturing initialization-time state. See <<pattern-closure-lifecycle>>.
+
+[[design-type-safety]]
+=== Type Safety via CRTP
+
+F-bounded generics (`Fluent<F extends Fluent<F>>`) eliminate cast operations and enable compile-time verification of fluent chains. The `self()` method in `Fluent` eliminates casting boilerplate in every builder method. See <<pattern-crrtp>>.
+
+[[design-markers]]
+=== Marker Interfaces for Contracts
+
+`@Groovy` annotations formally acknowledge that the Java API makes deliberate concessions for Groovy ergonomics. `@Groovy.AlternateSpelling` explicitly supports AI-generated code as a legitimate consumer.
+
+[[design-zero-overhead]]
+=== Zero Overhead in Production
+
+* `DevelopmentMode` controls source location capture
+* `Deferred` avoids blocking primitives
+* Closure cloning is done only at runtime boundaries, not during configuration
+* The provenance system adds no runtime cost beyond a record wrapper
+
+[[design-single-resp]]
+=== Single Responsibility per Script
+
+The resource naming convention (`*.native.schema.groovy`, `*.connid.schema.groovy`, `*.search.groovy`) enforces separation of concerns. Schema definition, ConnId mapping, relationships, operations, and resolvers each have their own file.
+
+[[design-infrastructure]]
+=== Framework as Infrastructure, Not Framework
+
+The SPI is designed to be implemented by connector-specific code (SCIM, REST, SQL). `ClassHandlerConnectorBase` provides the ConnId contract implementation but delegates everything else. Connectors contribute handlers via composition, not subclassing.
+
+== 6. Key Files Reference
+
+=== Foundation
+
+`concepts/DefinitionValue.java`::
+  Provenance tracking record
+
+`concepts/SourceLocation.java`::
+  Source code position tracking
+
+`concepts/GroovyClosures.java`::
+  Java-Groovy closure bridge
+
+`concepts/Fluent.java`::
+  CRTP base for fluent builders
+
+`concepts/FluentBuilder.java`::
+  Fluent + Builder combination
+
+`concepts/Deferred.java`::
+  Non-blocking lazy values
+
+`concepts/DevelopmentMode.java`::
+  Thread-local feature flag
+
+=== SPI
+
+`spi/ClassHandlerConnectorBase.java`::
+  Core connector base class (ConnId SPI implementation)
+
+`spi/ObjectClassHandler.java`::
+  Per-object-class handler interface
+
+`spi/CompositeObjectClassHandler.java`::
+  Composition-based handler implementation
+
+`spi/AttributeAwareOperationHandler.java`::
+  Capability negotiation interface
+
+=== Logging
+
+`logging/ConnectorLog.java`::
+  Logging facade interface (static factories, operation entries, standalone messages)
+
+`logging/ConnIdConnDevLog.java`::
+  ConnId `Log` implementation: structured line emission, plain fallback, truncation/redaction
+
+`logging/OperationEntry.java` / `OperationEntryImpl.java`::
+  Chainable entry view (protocol/detail/result/error events)
+
+`logging/OperationEntryState.java` / `OperationEntryContext.java`::
+  Shared entry state + thread-local registration
+
+`logging/CallerLocationCapture.java`::
+  Dev-mode caller location capture (Java class/method/file/line, Groovy file/line)
+
+`logging/LogOptions.java` / `logging/protocol/*`::
+  Body safety rails (truncation, redaction); HTTP/SQL/generic protocol data types
+
+`devtools-base/.../devtools/log/OperationLogParser.java`::
+  Line-level parser (`isStructuredLine`/`parseLine`/`parse`)
+
+`devtools-base/.../devtools/log/EntryCorrelator.java`::
+  Stateful entry correlation (`drainComplete`/`drain` → `OperationTrace`)
+
+`devtools-base/.../devtools/log/ConndevLogFormat.java`::
+  Wire contract constants (marker, protocol type/kind names, defaults)
+
+=== Builder SPI
+
+`build/spi/SpiSchemaBuilder.java`::
+  SPI schema builder interface
+
+`build/spi/SpiObjectClassSchemaBuilder.java`::
+  SPI object class builder interface
+
+`build/spi/SpiAttributeBuilder.java`::
+  SPI attribute builder (DefinitionValue-aware)
+
+=== Groovy Integration
+
+`scimrest/.../groovy/AbstractGroovyRestConnector.java`::
+  Main connector base class
+
+`scimrest/.../groovy/ConnectorContext.java`::
+  Runtime context
+
+`scimrest/.../groovy/RestHandlerBuilder.java`::
+  Operation handler builder
+
+`conndev/.../groovy/GroovyContext.java`::
+  GroovyShell factory
+
+`conndev/.../groovy/GroovySchemaLoader.java`::
+  Groovy file loader
+
+=== SCIM/REST Specific
+
+`scimrest/.../schema/RestSchemaBuilderImpl.java`::
+  REST schema builder implementation
+
+`scimrest/.../impl/rest/RestContext.java`::
+  HTTP client with retry
+
+`scimrest/.../impl/rest/RestPagingAwareObjectRetriever.java`::
+  Paginated search
+
+`scimrest/.../ObjectClassHandler.java`::
+  SCIM/REST handler interface
+
+`scimrest/.../CompositeObjectClassHandler.java`::
+  SCIM/REST composite handler

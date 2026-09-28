@@ -20,6 +20,7 @@ import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdTypeParser;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import tools.jackson.databind.JsonNode;
 
 /**
@@ -285,7 +286,7 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
      */
     @Yaml.Key
     default B complexType(String objectClass) {
-        return complexType(DefinitionValue.from(objectClass, SourceLocation.capture()));
+        return complexType(DefinitionValue.from(new ObjectClass(objectClass), SourceLocation.capture()));
     }
 
     /**

@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.groovy.api;
 import com.evolveum.polygon.conndev.groovy.ConnectorContext;
 import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.filter.Filter;
@@ -59,7 +60,7 @@ public interface SearchScriptContext extends BaseScriptContext {
 
         @Override
         public ObjectClassScripting objectClass(String name) {
-            return ObjectClassScriptingFacade.from(context, name);
+            return ObjectClassScriptingFacade.from(context, new ObjectClass(name));
         }
 
 

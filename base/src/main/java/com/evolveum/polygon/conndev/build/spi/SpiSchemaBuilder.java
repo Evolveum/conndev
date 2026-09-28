@@ -13,6 +13,7 @@ import com.evolveum.polygon.conndev.concepts.Fluent;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -34,20 +35,20 @@ public interface SpiSchemaBuilder<SB extends SpiSchemaBuilder<SB, OB>, OB extend
     /**
      * Creates or gets an object class schema builder by name.
      *
-     * @param name the object class name definition (used as the ConnId object class value)
+     * @param name the object class definition (used as the ConnId object class value)
      * @return the object class schema builder for further configuration
      */
-    OB objectClass(DefinitionValue<String> name);
+    OB objectClass(DefinitionValue<ObjectClass> name);
 
     /**
      * Creates or gets an object class schema builder by name, applying a closure to configure it.
      *
-     * @param name the object class name
+     * @param name the object class
      * @param closure a closure that configures the {@link SpiObjectClassSchemaBuilder} instance
      * @return the configured object class schema builder
      */
     default OB objectClass(
-            DefinitionValue<String> name,
+            DefinitionValue<ObjectClass> name,
             @DelegatesTo(value = SpiObjectClassSchemaBuilder.class, strategy = Closure.DELEGATE_ONLY)
             @Script.Initialization
             Closure<?> closure) {
@@ -72,11 +73,11 @@ public interface SpiSchemaBuilder<SB extends SpiSchemaBuilder<SB, OB>, OB extend
      * resulting builder is returned.
      *
      * @param lookup a predicate used to search for an existing object class
-     * @param newName the definition value containing the name for a newly created object class
+     * @param newName the definition value containing the object class for a newly created object class
      * @param newCustomizer a consumer function to configure a newly created object class builder
      * @return the correlated existing object class builder, or the newly created and configured object class builder
      */
-    default OB correlateObjectClass(Predicate<OB> lookup, DefinitionValue<String> newName, Consumer<OB> newCustomizer) {
+    default OB correlateObjectClass(Predicate<OB> lookup, DefinitionValue<ObjectClass> newName, Consumer<OB> newCustomizer) {
         var maybe = lookupObjectClass(lookup);
         if (maybe.isPresent()) {
             return maybe.get();

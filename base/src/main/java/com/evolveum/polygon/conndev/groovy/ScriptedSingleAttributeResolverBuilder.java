@@ -15,18 +15,19 @@ import com.evolveum.polygon.conndev.spi.AttributeResolver;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.util.Set;
 
 public class ScriptedSingleAttributeResolverBuilder implements AttributeResolverBuilder {
 
-    private final String objectClass;
+    private final ObjectClass objectClass;
     private final Deferred<BaseAttributeDefinition> attribute;
     private ResolutionType resolutionType = ResolutionType.PER_OBJECT;
     private Implementation implementation;
 
-    public ScriptedSingleAttributeResolverBuilder(String objectClass, Deferred<BaseAttributeDefinition> attribute) {
+    public ScriptedSingleAttributeResolverBuilder(ObjectClass objectClass, Deferred<BaseAttributeDefinition> attribute) {
         this.objectClass = objectClass;
         this.attribute = attribute;
     }
@@ -84,7 +85,7 @@ public class ScriptedSingleAttributeResolverBuilder implements AttributeResolver
         AttributeResolver build() {
            var attrDef = attribute.get();
             if (ConnectorObjectReference.class.equals(attrDef.connId().getType())) {
-                var targetObjectClass = attrDef.connId().getReferencedObjectClassName();
+                var targetObjectClass = new ObjectClass(attrDef.connId().getReferencedObjectClassName());
                 return new ScriptedAttributeResolverBuilder.GroovySearchBasedReference(
                         attrDef, targetObjectClass, closure);
             }

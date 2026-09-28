@@ -13,6 +13,7 @@ import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
  * Abstract base implementation of {@link RelationshipBuilder.Participant} for building
@@ -121,12 +122,12 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
     }
 
     /**
-     * Returns the name of the object class associated with this participant.
+     * Returns the object class associated with this participant.
      *
-     * @return the object class name
+     * @return the participant's object class
      */
-    public String objectClass() {
-        return objectClass.name();
+    public ObjectClass objectClass() {
+        return objectClass.objectClass();
     }
 
     /**

@@ -17,6 +17,7 @@ import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.groovy.ScriptedSingleAttributeResolverBuilder;
 import groovy.lang.Closure;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
  * Attribute builder that handles reference attributes in the connector framework.
@@ -69,9 +70,9 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
     }
 
     /**
-     * The object class name referenced by this reference attribute.
+     * The object class referenced by this reference attribute.
      */
-    private DefinitionValue<String> referencedObjectClass = DefinitionValue.emptyDefault();
+    private DefinitionValue<ObjectClass> referencedObjectClass = DefinitionValue.emptyDefault();
 
     /**
      * Flag indicating whether this attribute is a reference attribute.
@@ -94,7 +95,7 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
     }
 
     /**
-     * Sets the referenced object class name for this reference attribute.
+     * Sets the referenced object class for this reference attribute.
      * This links the attribute to objects in another object class.
      *
      * @param objectClass the name of the referenced object class
@@ -102,7 +103,7 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
      */
     @Override
     public R objectClass(String objectClass) {
-        var definition = DefinitionValue.from(objectClass, SourceLocation.capture());
+        var definition = DefinitionValue.from(new ObjectClass(objectClass), SourceLocation.capture());
         isReference = true;
         this.referencedObjectClass = this.referencedObjectClass.moreSpecific(definition);
         this.connId().referencedObjectClassName(definition);
@@ -188,7 +189,7 @@ public class BaseAttributeBuilder<B extends BaseAttributeBuilder<B, A, R, P>,
      */
     public AttributeResolverBuilder resolver(@Script.Initialization Closure<?> closure) {
         this.emulated = DefinitionValue.detected(true);
-        this.resolverBuilder = new ScriptedSingleAttributeResolverBuilder(objectClass.name(), deffered);
+        this.resolverBuilder = new ScriptedSingleAttributeResolverBuilder(objectClass.objectClass(), deffered);
         GroovyClosures.callAndReturnDelegate(closure, resolverBuilder);
         return resolverBuilder;
     }

@@ -14,6 +14,7 @@ import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -24,13 +25,13 @@ import java.util.Set;
 public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, JsonNode> {
 
     private final ContextLookup lookup;
-    private final String name;
+    private final ObjectClass objectClass;
     private BaseObjectClassDefinition<BaseAttributeDefinition> schema;
 
 
-    public EmbeddedObjectJsonMapping(ContextLookup contextLookup, String objectClassName) {
+    public EmbeddedObjectJsonMapping(ContextLookup contextLookup, ObjectClass objectClass) {
         this.lookup = contextLookup;
-        this.name = objectClassName;
+        this.objectClass = objectClass;
     }
 
     @Override
@@ -50,7 +51,7 @@ public class EmbeddedObjectJsonMapping implements ValueMapping<EmbeddedObject, J
 
     BaseObjectClassDefinition<BaseAttributeDefinition> schema() {
         if (this.schema == null) {
-            this.schema = lookup.get(ConnectorContext.class).schema().objectClass(name);
+            this.schema = lookup.get(ConnectorContext.class).schema().objectClass(objectClass);
         }
         return this.schema;
     }

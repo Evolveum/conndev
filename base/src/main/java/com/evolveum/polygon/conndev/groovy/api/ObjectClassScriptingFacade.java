@@ -12,6 +12,7 @@ import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
 import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
 import com.evolveum.polygon.conndev.spi.ObjectClassHandler;
 import com.evolveum.polygon.conndev.spi.ObjectSearchOperation;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.filter.Filter;
@@ -19,10 +20,10 @@ import org.identityconnectors.framework.common.objects.filter.Filter;
 
 public record ObjectClassScriptingFacade(ContextLookup rest, BaseObjectClassDefinition<BaseAttributeDefinition> schema, ObjectClassHandler handler) implements ObjectClassScripting {
 
-    public static ObjectClassScriptingFacade from(ConnectorContext context, String objectClass) {
+    public static ObjectClassScriptingFacade from(ConnectorContext context, ObjectClass objectClass) {
         var schema = context.schema().objectClass(objectClass);
         if (schema == null) {
-            throw new IllegalArgumentException("No such object class: " + objectClass);
+            throw new IllegalArgumentException("No such object class: " + objectClass.getObjectClassValue());
         }
         var handler = context.handlerFor(schema.objectClass());
         return new ObjectClassScriptingFacade(context, schema, handler);

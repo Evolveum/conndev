@@ -12,6 +12,7 @@ import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.Name;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.testng.annotations.Test;
 import tools.jackson.databind.JsonNode;
@@ -60,14 +61,14 @@ public class ForcedConnIdTypeTest {
         }
 
         @Override
-        protected TestObjectClass newObjectClass(DefinitionValue<String> name) {
+        protected TestObjectClass newObjectClass(DefinitionValue<ObjectClass> name) {
             return new TestObjectClass(this, name);
         }
     }
 
     private static TestObjectClass newObjectClass() {
         schema = new TestSchemaBuilder();
-        return schema.objectClass(DefinitionValue.from("Test", SourceLocation.capture()));
+        return schema.objectClass(DefinitionValue.from(new ObjectClass("Test"), SourceLocation.capture()));
     }
 
     private static TestAttributeBuilder newUidAttribute() {

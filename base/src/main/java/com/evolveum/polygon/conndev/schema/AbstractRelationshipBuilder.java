@@ -88,10 +88,10 @@ public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.
     public void afterExecution() {
         if (subject != null && object != null) {
             // configure side mappings.
-            subject.attribute().objectClass(object.objectClass());
+            subject.attribute().objectClass(object.objectClass().getObjectClassValue());
             subject.attribute().role(AttributeInfo.RoleInReference.SUBJECT);
 
-            object.attribute().objectClass(subject.objectClass());
+            object.attribute().objectClass(subject.objectClass().getObjectClassValue());
             object.attribute().role(AttributeInfo.RoleInReference.OBJECT);
 
         }

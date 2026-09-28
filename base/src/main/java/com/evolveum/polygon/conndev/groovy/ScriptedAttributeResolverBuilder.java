@@ -21,6 +21,7 @@ import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
+import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.util.ArrayList;
@@ -100,7 +101,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
             if (attributes.size() == 1) {
                 var attribute = attributes.iterator().next();
                 if (ConnectorObjectReference.class.equals(attribute.connId().getType())) {
-                    var targetObjectClass = attribute.connId().getReferencedObjectClassName();
+                    var targetObjectClass = new ObjectClass(attribute.connId().getReferencedObjectClassName());
                     return new GroovySearchBasedReference(attribute, targetObjectClass, closure);
                 }
             }
@@ -117,7 +118,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
 
         @Override
         AttributeResolver build() {
-            return new GroovySingleResolver(objectClass.name(), Set.copyOf(attributes), closure);
+            return new GroovySingleResolver(objectClass.objectClass(), Set.copyOf(attributes), closure);
         }
     }
 
@@ -137,7 +138,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
     }
 
     record GroovySearchBasedReference(BaseAttributeDefinition attribute,
-                                      String targetObjectClass,
+                                      ObjectClass targetObjectClass,
                                       Closure<Filter> implementation) implements AttributeResolver {
 
         @Override
@@ -153,7 +154,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
 
             Filter filter = GroovyClosures.copyAndCall(implementation, scriptContext);
             var results = new ArrayList<ConnectorObject>();
-            scriptContext.objectClass(targetObjectClass).search(filter, results::add, skipAttributeResolution());
+            scriptContext.objectClass(targetObjectClass.getObjectClassValue()).search(filter, results::add, skipAttributeResolution());
             var attrValues = new ArrayList<ConnectorObjectReference>();
             for (var result : results) {
                 attrValues.add(new ConnectorObjectReference(result));
@@ -167,7 +168,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
         }
     }
 
-    record GroovySingleResolver(String objectClass,
+    record GroovySingleResolver(ObjectClass objectClass,
             Set<BaseAttributeDefinition> supportedAttributes,
     Closure<?> implementation) implements AttributeResolver {
 
@@ -198,7 +199,7 @@ public class ScriptedAttributeResolverBuilder implements AttributeResolverBuilde
 
         @Override
         public ObjectClassScripting objectClass(String name) {
-            return ObjectClassScriptingFacade.from(context, name);
+            return ObjectClassScriptingFacade.from(context, new ObjectClass(name));
         }
     }
 
