@@ -13,7 +13,8 @@ import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 
 /**
  * Object class identity is the ConnId {@link ObjectClass}: registration and lookup are

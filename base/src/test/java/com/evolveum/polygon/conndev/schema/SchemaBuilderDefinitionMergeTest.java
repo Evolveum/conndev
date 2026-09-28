@@ -61,7 +61,7 @@ public class SchemaBuilderDefinitionMergeTest {
                 .toList();
         assertThat(userClasses).hasSize(1);
 
-        var attributeNames = userClasses.get(0).getAttributeInfo().stream()
+        var attributeNames = userClasses.getFirst().getAttributeInfo().stream()
                 .map(AttributeInfo::getName)
                 .toList();
         assertThat(attributeNames).contains(Name.NAME, Uid.NAME);
