@@ -1,0 +1,39 @@
+= Connector Information
+
+The *Connector Information* screen sets the coordinates of the connector that will be generated.
+The wizard builds a connector bundle (a JAR that MidPoint installs as a connector) under these
+coordinates, and they identify the connector everywhere afterwards — in the generated code, in
+the bundle manifest, and when the bundle is installed or updated.
+
+== Fields
+
+`Group`::
+  The Maven group of the generated connector. Use a reverse-domain name that identifies your
+  organization or project (e.g. `com.example.it`).
+
+`Artifact`::
+  The name of the connector bundle artifact. The convention is `connector-<name>`, where
+  `<name>` is a short lowercase identifier of the target system (e.g. `connector-forgejo`).
+
+`Version`::
+  The version of the generated connector, starting at `0.1.0`. Every regenerated connector that
+  is installed on top of a previous one must carry a higher version.
+
+`Integration type`::
+  The protocol family (SCIM, REST, SQL) the connector is built for. If the *Application
+  Information* screen already carries an integration type, this value overrides it — the
+  connector-side value wins when both are set.
+
+== What the generated connector contains
+
+The generated bundle is a self-contained connector JAR:
+
+* the connector class and its handler definitions,
+* the schema and operation scripts (Groovy and/or declarative YAML) for every configured object
+  class,
+* the connector documentation rendered into `META-INF/conndev-doc/` (the same pages you see in
+  this wizard's help drawer), and
+* its dependencies, bundled in `lib/`.
+
+Install the generated bundle to make the connector available to MidPoint; a later regeneration
+with the same coordinates and a higher version replaces the previous one.

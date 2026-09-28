@@ -1,0 +1,49 @@
+= Application Information
+
+The *Application Information* screen identifies the target application the generated connector
+will communicate with. The wizard uses this information to locate and process the application's
+documentation (API reference, OpenAPI definition, database documentation) and to select the
+connector flow.
+
+== Fields
+
+`Application name`::
+  The name of the target application (required). Together with the version and the integration
+  type, it drives the documentation discovery — changing any of the three restarts the
+  discovery, since the previously discovered documentation may belong to a different application.
+
+`Description`::
+  Free-text description of the application.
+
+`Version`::
+  The version of the application when known. Different application versions often expose
+  different APIs, so providing the version helps the wizard pick documentation that matches the
+  system you are integrating with.
+
+`Integration type`::
+  The protocol family of the target system. This choice determines the whole connector
+  development flow — which screens the wizard shows and which connector framework the generated
+  connector is built on:
+
+  `SCIM`::
+    The application exposes a SCIM 2.0 API (typically an identity provider or a directory). The
+    connector communicates with the SCIM endpoints; the object schemas are discovered from the
+    SCIM schema documents.
+
+  `REST`::
+    The application exposes an HTTP/JSON API of any shape (OpenAPI-described or not). The
+    connector maps the API's resources and fields onto ConnId object classes and attributes.
+
+  `SQL`::
+    The application is a relational database accessed through JDBC. The connector maps database
+    tables and columns onto ConnId object classes and attributes.
+
+  The integration type may be changed later on the *Connector Information* screen; when both
+  screens carry a value, the connector-side value wins.
+
+== Notes
+
+* The application name becomes the display name of the connector development and of the
+  generated connector; pick a stable, recognizable name.
+* If documentation discovery fails, the most common causes are a misspelled application name or
+  a version that does not match any published documentation — see the *Documentation* screen.

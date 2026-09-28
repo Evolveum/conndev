@@ -4,10 +4,34 @@ apiVersion: conndev-doc/v1
 # domain directory, mirroring the src/main/asciidoc layout).
 # protocol tags a topic as protocol-specific; topics without a protocol are generic and
 # are served after the protocol-specific topics of the same key. The framework docs here
-# are generic on purpose (they describe conndev itself, not a single protocol).
+# are generic on purpose (they describe conndev itself, not a single protocol) — this JAR
+# ships with MidPoint itself, so these pages are visible to every connector wizard.
 connectorId: conndev
 topics:
+  # --- framework-general wizard screens ---
+  - key: application-identification
+    title: Application Information
+    resource: general/application-information.html
+    order: 10
+  - key: connector-coordinates
+    title: Connector Information
+    resource: general/connector-information.html
+    order: 10
+  - key: select-object-class
+    title: Object Classes
+    resource: general/object-classes.html
+    order: 50
+
+  # --- reference material for the schema screens (served after the protocol-specific intro) ---
   - key: connid-builtin-attributes
     title: ConnId Built-in Attributes
     resource: general/connid-builtin-attributes.html
     order: 20
+  - key: native-schema
+    title: ConnId Built-in Attributes
+    resource: general/connid-builtin-attributes.html
+    order: 100
+  - key: native-schema
+    title: JSON Types and Formats
+    resource: general/json-types.html
+    order: 110

@@ -1,0 +1,43 @@
+= Object Classes
+
+An *object class* is a type of object the connector manages on the target system. In ConnId
+terms every connector works with object classes: each one has a name, a set of attributes, and
+the operations it supports (search, create, update, delete). A single connector can manage
+several object classes — the wizard configures one object class at a time and you can add more
+later.
+
+The object class you select here is the object the connector will be *generated around*: its
+attributes are discovered (or customized), and the search/create/update/delete scripts are
+written for it.
+
+== Which object classes are interesting
+
+Most connector projects revolve around a small set of object types. Typical candidates:
+
+`Users (accounts)`::
+  The most common case — people or service accounts in the target system. Usually the natural
+  first object class of any identity integration.
+
+`Groups`::
+  Collections of users (or of other groups). Together with a membership relationship, group
+  management is the backbone of access provisioning.
+
+`Projects`::
+  Projects, workspaces, teams, or similar containers in project-management or SaaS systems.
+
+`Organizational structure`::
+  Organizations, departments, cost centers, locations — the hierarchy an identity structure is
+  built on.
+
+`Issues / work packages`::
+  Tickets, issues, work items, or cases. This is the object class of choice when integrating
+  ITSM / helpdesk or issue-tracking systems, where identities are synchronized against the
+  people responsible for (or assigned to) work items.
+
+== What makes a good first object class
+
+* It has a *stable unique identifier* on the target system (the attribute the connector will map
+  to `__UID__`) — a database primary key, a UUID, or a natural key.
+* It has a *readable name* to map to `__NAME__` (a display name, a username, an email address).
+* It is actually manageable through the target system's API or schema — objects the system only
+  exposes read-only are usually not good candidates.
