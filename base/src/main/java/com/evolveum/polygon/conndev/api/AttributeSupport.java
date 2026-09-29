@@ -39,7 +39,8 @@ public record AttributeSupport(BaseAttributeDefinition attributeInfo, Collection
             // Supports only transitions
             return false;
         }
-        return values.containsAll(attribute.getValue());
+        // A null value list means the attribute carries no values — nothing to check against
+        return attribute.getValue() == null || values.containsAll(attribute.getValue());
     }
 
     public boolean isSupported(AttributeDelta delta) {
@@ -52,7 +53,7 @@ public record AttributeSupport(BaseAttributeDefinition attributeInfo, Collection
         if (values == null && transitions == null) {
             return true;
         }
-        if (values != null && values.containsAll(delta.getValuesToAdd()) && values.containsAll(delta.getValuesToReplace())) {
+        if (values != null && allWithinSupported(delta.getValuesToAdd()) && allWithinSupported(delta.getValuesToReplace())) {
             return true;
         }
         if (transitions != null) {
@@ -63,6 +64,14 @@ public record AttributeSupport(BaseAttributeDefinition attributeInfo, Collection
 
         }
         return false;
+    }
+
+    /**
+     * A null delta value list means there is no modification of that kind in the delta (see
+     * {@code AttributeDelta} javadoc) — vacuously within the supported values.
+     */
+    private boolean allWithinSupported(Collection<?> deltaValues) {
+        return deltaValues == null || values.containsAll(deltaValues);
     }
 
 
