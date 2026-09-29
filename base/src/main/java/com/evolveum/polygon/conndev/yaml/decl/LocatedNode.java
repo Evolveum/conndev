@@ -7,8 +7,6 @@
 package com.evolveum.polygon.conndev.yaml.decl;
 
 import tools.jackson.core.JsonToken;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -151,56 +149,6 @@ public final class LocatedNode {
             }
         }
         return null;
-    }
-
-    /**
-     * Converts this node back into a plain Jackson {@link JsonNode} (dropping the location
-     * information). Used to hand a protocol-specific block (e.g. {@code sql:}, {@code scim:}) to a
-     * {@code YamlProtocolBlockConsumer}, which deserializes it with the shared fail-fast mapper.
-     */
-    public JsonNode toJacksonNode() {
-        var factory = JsonNodeFactory.instance;
-        switch (kind) {
-            case OBJECT: {
-                var node = factory.objectNode();
-                for (Entry entry : entries) {
-                    node.set(entry.key, entry.value.toJacksonNode());
-                }
-                return node;
-            }
-            case ARRAY: {
-                var node = factory.arrayNode();
-                for (LocatedNode element : elements) {
-                    node.add(element.toJacksonNode());
-                }
-                return node;
-            }
-            default:
-                return scalarToJacksonNode(factory);
-        }
-    }
-
-    private JsonNode scalarToJacksonNode(JsonNodeFactory factory) {
-        if (scalarToken == JsonToken.VALUE_NULL) {
-            return factory.nullNode();
-        }
-        if (scalarToken == JsonToken.VALUE_TRUE || scalarToken == JsonToken.VALUE_FALSE) {
-            return factory.booleanNode(scalarToken == JsonToken.VALUE_TRUE);
-        }
-        if (scalarToken == JsonToken.VALUE_NUMBER_INT) {
-            BigInteger bigInteger = new BigInteger(scalarText);
-            if (bigInteger.bitLength() <= 31) {
-                return factory.numberNode(bigInteger.intValue());
-            }
-            if (bigInteger.bitLength() <= 63) {
-                return factory.numberNode(bigInteger.longValue());
-            }
-            return factory.numberNode(bigInteger);
-        }
-        if (scalarToken == JsonToken.VALUE_NUMBER_FLOAT) {
-            return factory.numberNode(new BigDecimal(scalarText));
-        }
-        return factory.stringNode(scalarText);
     }
 
     /**

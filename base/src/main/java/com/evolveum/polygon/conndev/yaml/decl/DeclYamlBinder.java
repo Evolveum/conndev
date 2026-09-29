@@ -9,7 +9,6 @@ package com.evolveum.polygon.conndev.yaml.decl;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.yaml.GroovyScriptCompiler;
-import com.evolveum.polygon.conndev.yaml.YamlProtocolBlockConsumer;
 import groovy.lang.Closure;
 
 import java.util.List;
@@ -55,16 +54,6 @@ public final class DeclYamlBinder {
         for (LocatedNode.Entry entry : entries) {
             DeclYamlBinding binding = bindings.get(entry.key());
             if (binding == null) {
-                // A protocol-specific block (e.g. sql:/scim:) is an unknown key to the generic
-                // engine; route it to the object-class consumer if there is one, else fail fast.
-                if (target instanceof YamlProtocolBlockConsumer consumer) {
-                    // Run the handler under the block key's source location so SourceLocation.capture()
-                    // calls made inside the handler are forced to the block's YAML position (the bare
-                    // JsonNode payload still carries no per-key locations).
-                    document.location(entry.keyLine(), entry.keyCol())
-                            .<RuntimeException>run(() -> consumer.applyProtocolBlock(entry.key(), entry.value().toJacksonNode()));
-                    continue;
-                }
                 throw unknownKey(target, entry);
             }
             apply(binding, entry, target);
