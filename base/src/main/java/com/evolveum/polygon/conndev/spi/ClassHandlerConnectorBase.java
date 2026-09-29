@@ -192,7 +192,7 @@ public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> impl
         try {
             return validateScript(validationRequest).toMap();
         } catch (Exception e) {
-            return GroovyScriptValidator.error(ScriptError.Phase.INITIALIZATION, e).toMap();
+            return GroovyScriptValidator.error(ScriptError.Phase.INITIALIZATION, GroovyExceptionSanitizer.sanitize(e)).toMap();
         }
     }
 

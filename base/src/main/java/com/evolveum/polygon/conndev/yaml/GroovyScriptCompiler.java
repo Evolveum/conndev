@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.yaml;
 
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
+import com.evolveum.polygon.conndev.groovy.GroovyExceptionSanitizer;
 import groovy.lang.Closure;
 
 /**
@@ -47,6 +48,10 @@ public final class GroovyScriptCompiler {
         Closure<?> closure = compile(groovySource);
         closure.setDelegate(delegate);
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        return closure.call();
+        try {
+            return closure.call();
+        } catch (RuntimeException e) {
+            throw GroovyExceptionSanitizer.sanitize(e);
+        }
     }
 }

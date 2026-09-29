@@ -28,11 +28,19 @@ public class GroovySchemaLoader {
     }
 
     public void load(String groovyScript) {
-        shell.evaluate(groovyScript);
+        try {
+            shell.evaluate(groovyScript);
+        } catch (RuntimeException e) {
+            throw GroovyExceptionSanitizer.sanitize(e);
+        }
     }
 
     public Script parse(String groovyScript) {
-        return shell.parse(groovyScript);
+        try {
+            return shell.parse(groovyScript);
+        } catch (RuntimeException e) {
+            throw GroovyExceptionSanitizer.sanitize(e);
+        }
     }
 
     public BaseSchema build() {
@@ -40,6 +48,10 @@ public class GroovySchemaLoader {
     }
 
     public void loadFromResource(String s) {
-        shell.evaluate(new InputStreamReader(this.getClass().getResourceAsStream(s)), s);
+        try {
+            shell.evaluate(new InputStreamReader(this.getClass().getResourceAsStream(s)), s);
+        } catch (RuntimeException e) {
+            throw GroovyExceptionSanitizer.sanitize(e);
+        }
     }
 }

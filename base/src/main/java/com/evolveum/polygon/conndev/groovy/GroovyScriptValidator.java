@@ -57,12 +57,12 @@ public final class GroovyScriptValidator {
         try {
             script.run();
         } catch (Exception e) {
-            return error(ScriptError.Phase.EVALUATE, e);
+            return error(ScriptError.Phase.EVALUATE, GroovyExceptionSanitizer.sanitize(e));
         }
         try {
             build.run();
         } catch (Exception e) {
-            return error(ScriptError.Phase.BUILD, e);
+            return error(ScriptError.Phase.BUILD, GroovyExceptionSanitizer.sanitize(e));
         }
         return ScriptValidationResult.ok();
     }
@@ -78,12 +78,12 @@ public final class GroovyScriptValidator {
         try {
             load.run();
         } catch (Exception e) {
-            return error(ScriptError.Phase.EVALUATE, e);
+            return error(ScriptError.Phase.EVALUATE, GroovyExceptionSanitizer.sanitize(e));
         }
         try {
             build.run();
         } catch (Exception e) {
-            return error(ScriptError.Phase.BUILD, e);
+            return error(ScriptError.Phase.BUILD, GroovyExceptionSanitizer.sanitize(e));
         }
         return ScriptValidationResult.ok();
     }
@@ -96,7 +96,7 @@ public final class GroovyScriptValidator {
             try {
                 result = validation.call();
             } catch (Exception e) {
-                result = error(ScriptError.Phase.INITIALIZATION, e);
+                result = error(ScriptError.Phase.INITIALIZATION, GroovyExceptionSanitizer.sanitize(e));
             }
             errors.addAll(result.errors());
         }

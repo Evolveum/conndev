@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.yaml.decl;
 
 import com.evolveum.polygon.conndev.concepts.CheckedRunnable;
+import com.evolveum.polygon.conndev.groovy.GroovyExceptionSanitizer;
 import com.evolveum.polygon.conndev.groovy.GroovyScriptValidator;
 import com.evolveum.polygon.conndev.groovy.ScriptError;
 import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
@@ -52,12 +53,12 @@ public final class YamlScriptValidator {
         try {
             loadCandidate.run();
         } catch (Exception e) {
-            return GroovyScriptValidator.error(ScriptError.Phase.EVALUATE, e);
+            return GroovyScriptValidator.error(ScriptError.Phase.EVALUATE, GroovyExceptionSanitizer.sanitize(e));
         }
         try {
             build.run();
         } catch (Exception e) {
-            return GroovyScriptValidator.error(ScriptError.Phase.BUILD, e);
+            return GroovyScriptValidator.error(ScriptError.Phase.BUILD, GroovyExceptionSanitizer.sanitize(e));
         }
         return ScriptValidationResult.ok();
     }

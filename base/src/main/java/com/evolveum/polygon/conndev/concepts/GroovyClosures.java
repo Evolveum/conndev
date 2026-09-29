@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.concepts;
 
 import com.evolveum.polygon.conndev.annotations.Script;
+import com.evolveum.polygon.conndev.groovy.GroovyExceptionSanitizer;
 import groovy.lang.Closure;
 
 import java.util.function.Function;
@@ -54,11 +55,17 @@ public class GroovyClosures {
         if (delegate instanceof ClosureExecutionAware executionAware) {
             executionAware.beforeExecution();
         }
-        @SuppressWarnings("unchecked")
-        var ret = (T) closure.call();
+        Object result;
+        try {
+            result = closure.call();
+        } catch (RuntimeException e) {
+            throw GroovyExceptionSanitizer.sanitize(e);
+        }
         if (delegate instanceof ClosureExecutionAware executionAware) {
             executionAware.afterExecution();
         }
+        @SuppressWarnings("unchecked")
+        T ret = (T) result;
         return ret;
     }
 
@@ -66,7 +73,11 @@ public class GroovyClosures {
         return (T input) -> {
             @SuppressWarnings("unchecked")
             var copy = (Closure<R>) closure.clone();
-            return copy.call(input);
+            try {
+                return copy.call(input);
+            } catch (RuntimeException e) {
+                throw GroovyExceptionSanitizer.sanitize(e);
+            }
         };
 
     }
