@@ -137,6 +137,14 @@ public final class GroovySyntaxChecker {
                 case DeclYamlBinding.MapBinding mb -> walkMap(entry.value(), mb.method.type().returnType(), childPath);
                 case DeclYamlBinding.Custom c -> c.handler().checkGroovySyntax(entry.value(), childPath, this);
                 case DeclYamlBinding.Property ignored -> { }
+                case DeclYamlBinding.ShortcutProperty sp -> {
+                    // A non-shortcut scalar is the Groovy-block form of the key (the shortcut names
+                    // themselves are constants, not fragments).
+                    if (sp.hasClosureFallback() && entry.value() != null && entry.value().isValue()
+                            && !sp.shortcutNames().contains(entry.value().text())) {
+                        checkFragment(entry.value(), childPath);
+                    }
+                }
             }
         }
     }

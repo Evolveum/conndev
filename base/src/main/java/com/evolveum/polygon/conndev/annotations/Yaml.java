@@ -38,6 +38,12 @@ import java.lang.annotation.Target;
  *   <li>{@link Sub} — a no-arg accessor returning a sub-builder; the value sub-map is bound into it.</li>
  *   <li>{@link ValueParser} — override the auto-inferred scalar coercion with a specialised
  *       {@link DeclYamlValueParser}.</li>
+ *   <li>{@link Shortcut} — convenience constants for a leaf binding: a scalar equal to the name of
+ *       one of the listed {@code public static final} fields (declared anywhere in the binding's
+ *       type hierarchy) is replaced by the field's value — the same constant spellings the Groovy
+ *       DSL resolves from the delegate; any other value is coerced by the binding's usual parser.
+ *       If a same-named {@code @Script.Runtime} {@code Closure} method exists on the target it is
+ *       used for the values that are not shortcut names (the Groovy-block form of the key).</li>
  *   <li>{@link Path} — a leaf value that is an attribute path: the YAML scalar (or {@code {type, value}}
  *       mapping) is wrapped into an {@code AttributePathDeclaration} in the declared
  *       {@link AttributePathFormat} and passed to the method.</li>
@@ -106,6 +112,34 @@ public final class Yaml {
     @Target(ElementType.METHOD)
     public @interface ValueParser {
         Class<? extends DeclYamlValueParser> value();
+    }
+
+    /**
+     * Declares convenience shortcut constants for a leaf ({@link Key}) value binding. The listed
+     * names are the names of {@code public static final} fields declared somewhere in the
+     * binding's type hierarchy (the interface the annotated method is declared in and its
+     * super-interfaces); a YAML document may write a constant's <em>name</em> in place of its
+     * <em>value</em> — the same spelling the Groovy DSL resolves from the delegate (e.g.
+     * {@code contentType: APPLICATION_JSON} for the {@code application/json} media type).
+     *
+     * <p>A value that is not a shortcut name is coerced by the binding's usual parser
+     * ({@link ValueParser} or the default), so literals keep working
+     * ({@code contentType: application/json}). If the target has a same-named method taking a
+     * single {@code @Script.Runtime} {@code Closure} parameter, it is invoked with the
+     * (compiled) value instead — the Groovy-block form of the key (e.g. {@code body: EMPTY}
+     * resolves the no-body constant while {@code body: |} a Groovy block keeps the closure form).
+     *
+     * <p>The constants are resolved when the binding is scanned, so a missing or
+     * type-incompatible constant is a connector-configuration error that surfaces on the first
+     * document of the type. The annotation is a modifier — the method still needs
+     * {@link Key} to be a binding at all.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Shortcut {
+
+        /** The names of the {@code public static final} constants a YAML document may use in place of their values. */
+        String[] value();
     }
 
     /** Routes a structural YAML shape to the named {@link CustomYamlHandler}. */

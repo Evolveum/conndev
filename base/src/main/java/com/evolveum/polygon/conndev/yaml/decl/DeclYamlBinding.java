@@ -166,6 +166,79 @@ abstract sealed class DeclYamlBinding {
         }
     }
 
+    /**
+     * A {@code @Yaml.Key} leaf binding that declares {@code @Yaml.Shortcut} constants: a scalar
+     * equal to a constant name is replaced by the constant's value; a non-matching scalar is
+     * compiled to a {@code Closure} and handed to the same-named {@code @Script.Runtime} closure
+     * method (the Groovy-block form of the key) when one exists, else coerced by the binding's
+     * usual parser.
+     */
+    static final class ShortcutProperty extends DeclYamlBinding {
+
+        private final MethodHandle dvMethod;
+        private final Class<?> paramType;
+        private final DeclYamlValueParser coercer;
+        private final Map<String, Object> shortcuts;
+        private final MethodHandle closureFallback;
+
+        ShortcutProperty(String bindingKey, MethodHandle resolved, MethodHandle dvOverload, Class<?>[] params,
+                DeclYamlValueParser coercer, Map<String, Object> shortcuts, MethodHandle closureFallback) {
+            super(bindingKey, resolved);
+            dvMethod = dvOverload;
+            paramType = params[0];
+            this.coercer = coercer;
+            this.shortcuts = shortcuts;
+            this.closureFallback = closureFallback;
+        }
+
+        @Override
+        void apply(DeclYamlBinder binder, Object target, LocatedNode value, SourceLocation location) {
+            if (value.isNull()) {
+                return; // an explicit/empty null leaves the builder default untouched
+            }
+            String text = value.text();
+            if (text != null) {
+                Object shortcut = shortcuts.get(text);
+                if (shortcut != null) {
+                    invokeValue(target, shortcut, location);
+                    return;
+                }
+                if (closureFallback != null) {
+                    wrapThrowable(() -> closureFallback.bindTo(target).invoke(binder.compileClosure(text)));
+                    return;
+                }
+            } else if (closureFallback != null) {
+                throw new IllegalArgumentException("Expected a Groovy block or one of the shortcuts "
+                        + shortcuts.keySet() + " for '" + key() + "' at " + location);
+            }
+            Object coerced = coercer.coerce(value, location, paramType);
+            if (coerced != null && !boxed(paramType).isAssignableFrom(boxed(coerced.getClass()))) {
+                throw new IllegalArgumentException("Invalid value '" + text + "' for '" + key()
+                        + "' — expected one of the shortcuts " + shortcuts.keySet() + " or a value of type "
+                        + paramType.getName() + " at " + location);
+            }
+            invokeValue(target, coerced, location);
+        }
+
+        private void invokeValue(Object target, Object value, SourceLocation location) {
+            if (dvMethod != null) {
+                wrapThrowable(() -> dvMethod.bindTo(target).invokeWithArguments(DefinitionValue.from(value, location)));
+            } else {
+                invoke(method, target, value);
+            }
+        }
+
+        /** The shortcut constant names — used by the static, non-executing syntax-check walk. */
+        Set<String> shortcutNames() {
+            return shortcuts.keySet();
+        }
+
+        /** Whether a non-matching scalar is compiled to the Groovy-block (closure) form. */
+        boolean hasClosureFallback() {
+            return closureFallback != null;
+        }
+    }
+
     private static Map<String, DeclYamlBinding> scan(Class<?> clazz) {
         Map<String, DeclYamlBinding> map = new LinkedHashMap<>();
         for (Method method : bindingMethods(clazz)) {
@@ -301,6 +374,12 @@ abstract sealed class DeclYamlBinding {
             }
             Method dvMethod = findDefinitionValueOverload(targetClass, method.getName(), params[0]);
             MethodHandle dvOverload = dvMethod != null ? unreflect(dvMethod) : null;
+            Yaml.Shortcut shortcut = method.getAnnotation(Yaml.Shortcut.class);
+            if (shortcut != null) {
+                return new ShortcutProperty(bindingKey, resolved, dvOverload, params, coercer,
+                        resolveShortcutValues(method, targetClass, params[0], shortcut),
+                        resolveClosureFallback(targetClass, method));
+            }
             return new Property(bindingKey, resolved, dvOverload, params, coercer);
         }
         return null;
@@ -324,6 +403,61 @@ abstract sealed class DeclYamlBinding {
                 + " must expose a 'public static final INSTANCE' field");
     }
 
+    /**
+     * The {@code @Yaml.Shortcut} constants of a leaf method, resolved against the concrete target
+     * type: each name must name a {@code public static final} field in the type's hierarchy (the
+     * field lookup walks super-interfaces, so a constant declared on a super-interface of the
+     * annotated method is found) whose value is assignable to the method's parameter type. The
+     * names keep their declaration order (the error messages list them). Fail-fast — a misnamed
+     * or mistyped constant is a connector-configuration error, surfaced on the first document of
+     * the type, not a document error.
+     */
+    private static Map<String, Object> resolveShortcutValues(Method method, Class<?> targetClass,
+            Class<?> paramType, Yaml.Shortcut shortcut) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        for (String name : shortcut.value()) {
+            Field field;
+            try {
+                field = accessible(targetClass.getField(name));
+            } catch (NoSuchFieldException e) {
+                throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
+                        + method.getName() + "' is not a public field of " + targetClass.getName(), e);
+            }
+            if (!Modifier.isStatic(field.getModifiers()) || !Modifier.isFinal(field.getModifiers())) {
+                throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
+                        + method.getName() + "' must be a static final field");
+            }
+            if (!boxed(paramType).isAssignableFrom(boxed(field.getType()))) {
+                throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
+                        + method.getName() + "' is of type " + field.getType().getName()
+                        + ", not assignable to the parameter type " + paramType.getName());
+            }
+            try {
+                values.put(name, field.get(null));
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("Cannot read @Yaml.Shortcut constant '" + name + "'", e);
+            }
+        }
+        return values;
+    }
+
+    /**
+     * The same-named {@code @Script.Runtime} single-{@code Closure}-parameter method of the target
+     * (the Groovy-DSL form of a {@code @Yaml.Shortcut} leaf key), unreflected — or {@code null}
+     * when the key has no Groovy-block form.
+     */
+    private static MethodHandle resolveClosureFallback(Class<?> targetClass, Method leafMethod) {
+        for (Method method : targetClass.getMethods()) {
+            if (!method.getName().equals(leafMethod.getName()) || method.getParameterCount() != 1
+                    || method.getParameterTypes()[0] != Closure.class
+                    || method.getParameters()[0].getAnnotation(Script.Runtime.class) == null) {
+                continue;
+            }
+            return unreflect(accessible(method));
+        }
+        return null;
+    }
+
     /** The most-derived public method matching the annotated method's signature. */
     private static Method resolve(Class<?> targetClass, Method annotated) {
         Class<?>[] params = annotated.getParameterTypes();
@@ -339,6 +473,12 @@ abstract sealed class DeclYamlBinding {
     private static Method accessible(Method method) {
         method.setAccessible(true);
         return method;
+    }
+
+    /** Shortcut constants are read reflectively across packages, so open the field (a no-op if public). */
+    private static Field accessible(Field field) {
+        field.setAccessible(true);
+        return field;
     }
 
     /**
