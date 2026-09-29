@@ -58,7 +58,11 @@ public final class DeclYamlBinder {
                 // A protocol-specific block (e.g. sql:/scim:) is an unknown key to the generic
                 // engine; route it to the object-class consumer if there is one, else fail fast.
                 if (target instanceof YamlProtocolBlockConsumer consumer) {
-                    consumer.applyProtocolBlock(entry.key(), entry.value().toJacksonNode());
+                    // Run the handler under the block key's source location so SourceLocation.capture()
+                    // calls made inside the handler are forced to the block's YAML position (the bare
+                    // JsonNode payload still carries no per-key locations).
+                    document.location(entry.keyLine(), entry.keyCol())
+                            .<RuntimeException>run(() -> consumer.applyProtocolBlock(entry.key(), entry.value().toJacksonNode()));
                     continue;
                 }
                 throw unknownKey(target, entry);
@@ -97,7 +101,11 @@ public final class DeclYamlBinder {
         LocatedNode value = entry.value();
         SourceLocation location = document.location(entry.keyLine(), entry.keyCol());
 
-        binding.apply(this, target, value, location);
+        // Run the builder invocation under this key's source location so that SourceLocation.capture()
+        // calls made by the builder (or nested in it) are forced to the YAML key's position; the
+        // <RuntimeException> witness pins the generic exception type (a non-throwing lambda would
+        // otherwise infer the Throwable bound, which this method cannot declare).
+        location.<RuntimeException>run(() -> binding.apply(this, target, value, location));
     }
 
     private IllegalArgumentException unknownKey(Object target, LocatedNode.Entry entry) {

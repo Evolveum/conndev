@@ -6,6 +6,7 @@
  */
 package com.evolveum.polygon.conndev.yaml;
 
+import com.evolveum.polygon.conndev.concepts.CheckedCallable;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
@@ -94,7 +95,13 @@ public class YamlSchemaLoader {
 
     private void applyObjectClasses(DeclYamlBinder binder, LocatedNode node) {
         for (LocatedNode.Entry entry : requireMap(node, "objectClasses").entries()) {
-            binder.bind(entry.value(), schemaBuilder.objectClass(entry.key()));
+            // Run the object-class factory under this map entry's own key location (the class
+            // name's YAML position) so SourceLocation.capture() calls inside it are forced there.
+            // The lambda is cast to the value-returning run(...) overload — a non-void expression
+            // body is otherwise ambiguous between the two overloads.
+            binder.bind(entry.value(),
+                    binder.locationOf(entry).run((CheckedCallable<Object, RuntimeException>)
+                            () -> schemaBuilder.objectClass(entry.key())));
         }
     }
 

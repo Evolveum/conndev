@@ -133,7 +133,13 @@ abstract sealed class DeclYamlBinding {
         @Override
         void apply(DeclYamlBinder binder, Object target, LocatedNode value, SourceLocation location) {
             for (LocatedNode.Entry entry : StructuralSupport.mapEntries(value, key())) {
-                Object subBuilder = invoke(method, target, entry.key());
+                // Run the sub-builder factory under this map entry's own key location (e.g. the
+                // 'password:' key, not the enclosing 'attributes:' block) so SourceLocation.capture()
+                // calls inside the factory are forced to the entry's YAML position. The lambda is
+                // cast to the value-returning overload — a non-void expression body is otherwise
+                // ambiguous between the two run(...) overloads.
+                Object subBuilder = binder.locationOf(entry)
+                        .run((CheckedCallable<Object, RuntimeException>) () -> invoke(method, target, entry.key()));
                 binder.bind(entry.value(), subBuilder);
             }
         }

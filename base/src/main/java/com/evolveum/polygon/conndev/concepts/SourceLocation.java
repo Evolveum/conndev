@@ -14,6 +14,14 @@ package com.evolveum.polygon.conndev.concepts;
 public interface SourceLocation {
 
     /**
+     * A thread-local override consulted by {@link #capture()} and {@link #capture(String...)}:
+     * when set, the capture returns it instead of inspecting the stack trace. Set by
+     * {@link #run(CheckedCallable)} / {@link #run(CheckedRunnable)} for the duration of a
+     * wrapped block (e.g. the YAML binding engine, which forces the driving key's location).
+     */
+    ThreadLocal<SourceLocation> CURRENT_OVERRIDE = new ThreadLocal<>();
+
+    /**
      * A predefined source location identifier for in-memory execution.
      * This constant is used to represent code that does not originate from
      * a physical source file, typically serving as a fallback location
@@ -101,11 +109,19 @@ public interface SourceLocation {
      * Captures the current source location by inspecting the stack trace when development mode is enabled.
      * It looks for frames whose file name ends with the framework declarative scripts.
      *
-     * Returns UNKNOWN if development mode is disabled or no matching source file is detected.
+     * Returns the {@link #CURRENT_OVERRIDE thread-local override} when one is in effect (set by
+     * {@link #run(CheckedCallable)} / {@link #run(CheckedRunnable)}), regardless of the
+     * development mode; otherwise returns UNKNOWN if development mode is disabled or no
+     * matching source file is detected.
      *
-     * @return a SourceLocation instance containing the source, or UNKNOWN if development mode is disabled or no match is found
+     * @return a SourceLocation instance containing the source, the current override if one is set,
+     *         or UNKNOWN if development mode is disabled or no match is found
      */
     static SourceLocation capture() {
+        SourceLocation override = CURRENT_OVERRIDE.get();
+        if (override != null) {
+            return override;
+        }
         if (DevelopmentMode.isEnabled()) {
             return forceCapture(1, "groovy");
         }
@@ -115,12 +131,20 @@ public interface SourceLocation {
     /**
      * Captures the current source location by inspecting the stack trace when development mode is enabled.
      * Iterates through the call stack to find a frame whose file name ends with any of the specified extensions.
-     * Returns UNKNOWN if development mode is disabled or no matching source file is detected.
+     * Returns the {@link #CURRENT_OVERRIDE thread-local override} when one is in effect (set by
+     * {@link #run(CheckedCallable)} / {@link #run(CheckedRunnable)}), regardless of the
+     * development mode; otherwise returns UNKNOWN if development mode is disabled or no
+     * matching source file is detected.
      *
      * @param sourceExtension the file extensions to match against source file names
-     * @return a SourceLocation instance containing the matched file name and line number, or UNKNOWN if no match is found or development mode is disabled
+     * @return a SourceLocation instance containing the matched file name and line number, the current
+     *         override if one is set, or UNKNOWN if no match is found or development mode is disabled
      */
     static SourceLocation capture(String... sourceExtension) {
+        SourceLocation override = CURRENT_OVERRIDE.get();
+        if (override != null) {
+            return override;
+        }
         if (DevelopmentMode.isEnabled()) {
             return forceCapture(1, sourceExtension);
         }
@@ -150,6 +174,50 @@ public interface SourceLocation {
             }
         }
         return UNKNOWN;
+    }
+
+    /**
+     * Runs the callable with this source location attached as the source: for its duration,
+     * {@link #capture()} / {@link #capture(String...)} return this location instead of
+     * inspecting the stack trace, so builder calls made by (or nested in) the callable carry
+     * this location. The previous override, if any, is restored when the callable completes,
+     * including on failure.
+     *
+     * @param callable the work to execute under this source location
+     * @param <R> the result type
+     * @param <E> the exception type the callable may throw
+     * @return the result of the callable
+     * @throws E if the callable throws
+     */
+    default <R,E extends Throwable> R run(CheckedCallable<R,E> callable) throws E {
+        var previous = CURRENT_OVERRIDE.get();
+        try {
+            CURRENT_OVERRIDE.set(this);
+            return callable.call();
+        } finally {
+            CURRENT_OVERRIDE.set(previous);
+        }
+    }
+
+    /**
+     * Runs the runnable with this source location attached as the source: for its duration,
+     * {@link #capture()} / {@link #capture(String...)} return this location instead of
+     * inspecting the stack trace, so builder calls made by (or nested in) the runnable carry
+     * this location. The previous override, if any, is restored when the runnable completes,
+     * including on failure.
+     *
+     * @param runnable the work to execute under this source location
+     * @param <E> the exception type the runnable may throw
+     * @throws E if the runnable throws
+     */
+    default <E extends Throwable> void run(CheckedRunnable<E> runnable) throws E {
+        var previous = CURRENT_OVERRIDE.get();
+        try {
+            CURRENT_OVERRIDE.set(this);
+            runnable.run();
+        } finally {
+            CURRENT_OVERRIDE.set(previous);
+        }
     }
 
     record Impl(String name, int line, int column) implements SourceLocation {

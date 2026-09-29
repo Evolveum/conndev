@@ -72,6 +72,7 @@ public class SourceLocationTest {
     @AfterMethod
     public void clearDevelopmentMode() {
         DevelopmentMode.unset();
+        SourceLocation.CURRENT_OVERRIDE.remove();
     }
 
     // ========================================================================
@@ -283,5 +284,89 @@ public class SourceLocationTest {
                 loadSchema(USER_GROOVY, USER_GROOVY_FILE).objectClass("User").attributeFromProtocolName("email")).line();
 
         assertThat(firstLoad).isEqualTo(secondLoad);
+    }
+
+    // ========================================================================
+    // 5. run(...) — the thread-local override forces capture()
+    // ========================================================================
+
+    @Test
+    public void run_forcesOverrideInCapture_developmentModeDisabled() {
+        assertThat(DevelopmentMode.isEnabled()).isFalse();
+
+        var location = SourceLocation.from("schema.yaml", 5, 3);
+        SourceLocation captured = location.run((CheckedCallable<SourceLocation, RuntimeException>) SourceLocation::capture);
+
+        assertThat(captured).isSameAs(location);
+    }
+
+    @Test
+    public void run_forcesOverrideInCaptureWithExtensions_developmentModeEnabled() {
+        DevelopmentMode.set(true);
+
+        var location = SourceLocation.from("User.yaml", 12, 9);
+        SourceLocation captured = location.run((CheckedCallable<SourceLocation, RuntimeException>)
+                () -> SourceLocation.capture("groovy"));
+
+        // The override wins over the stack-trace capture regardless of the development mode.
+        assertThat(captured).isSameAs(location);
+    }
+
+    @Test
+    public void run_nestedRunRestoresTheOuterOverride() {
+        var outer = SourceLocation.from("outer.yaml", 1, 1);
+        var inner = SourceLocation.from("inner.yaml", 2, 2);
+        var captured = new SourceLocation[2]; // [0] during the inner run, [1] after it
+
+        outer.<RuntimeException>run(() -> {
+            assertThat(SourceLocation.capture()).isSameAs(outer);
+            inner.<RuntimeException>run(() -> {
+                captured[0] = SourceLocation.capture();
+            });
+            captured[1] = SourceLocation.capture();
+        });
+
+        assertThat(captured[0]).isSameAs(inner);
+        assertThat(captured[1]).isSameAs(outer);
+    }
+
+    @Test
+    public void run_clearsOverrideAfterCompletion() {
+        var location = SourceLocation.from("doc.yaml", 7, 4);
+
+        location.<RuntimeException>run(() -> {
+            assertThat(SourceLocation.capture()).isSameAs(location);
+        });
+
+        assertThat(SourceLocation.capture()).isSameAs(SourceLocation.UNKNOWN);
+    }
+
+    @Test
+    public void run_returnsTheCallableResult() {
+        var location = SourceLocation.from("doc.yaml", 7, 4);
+
+        int result = location.<Integer, RuntimeException>run(() -> {
+            assertThat(SourceLocation.capture()).isSameAs(location);
+            return 42;
+        });
+
+        assertThat(result).isEqualTo(42);
+    }
+
+    @Test
+    public void run_propagatesTheExceptionAndRestoresThePreviousOverride() {
+        var location = SourceLocation.from("doc.yaml", 7, 4);
+
+        try {
+            location.<RuntimeException>run(() -> {
+                assertThat(SourceLocation.capture()).isSameAs(location);
+                throw new IllegalArgumentException("boom");
+            });
+            org.testng.Assert.fail("Expected the IllegalArgumentException to propagate");
+        } catch (IllegalArgumentException expected) {
+            assertThat(expected.getMessage()).isEqualTo("boom");
+        }
+
+        assertThat(SourceLocation.capture()).isSameAs(SourceLocation.UNKNOWN);
     }
 }
