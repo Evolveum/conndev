@@ -8,9 +8,10 @@ connector flow.
 == Fields
 
 `Application name`::
-  The name of the target application (required). Together with the version and the integration
-  type, it drives the documentation discovery — changing any of the three restarts the
-  discovery, since the previously discovered documentation may belong to a different application.
+  The name of the target application (required). Together with the version and the intended
+  integration type, it drives the documentation discovery — changing any of the three restarts
+  the discovery, since the previously discovered documentation may belong to a different
+  application.
 
 `Description`::
   Free-text description of the application.
@@ -20,10 +21,13 @@ connector flow.
   different APIs, so providing the version helps the wizard pick documentation that matches the
   system you are integrating with.
 
-`Integration type`::
-  The protocol family of the target system. This choice determines the whole connector
-  development flow — which screens the wizard shows and which connector framework the generated
-  connector is built on:
+`Intended integration type`::
+  The protocol you intend to use to integrate with the target system (SCIM, REST, or SQL).
+  It is the *intended* protocol of the application: it drives the whole connector development
+  flow — which screens the wizard shows — and is used to locate and search the application's
+  documentation. The *actual* protocol the generated connector is built on is the
+  *Implementation type* set on the *Connector Information* screen, which defaults to this
+  value and overrides it when set:
 
   `SCIM`::
     The application exposes a SCIM 2.0 API (typically an identity provider or a directory). The
@@ -38,8 +42,7 @@ connector flow.
     The application is a relational database accessed through JDBC. The connector maps database
     tables and columns onto ConnId object classes and attributes.
 
-  The integration type may be changed later on the *Connector Information* screen; when both
-  screens carry a value, the connector-side value wins.
+The implementation type may be changed later on the *Connector Information* screen.
 
 == Notes
 

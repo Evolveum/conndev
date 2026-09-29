@@ -19,10 +19,11 @@ the bundle manifest, and when the bundle is installed or updated.
   The version of the generated connector, starting at `0.1.0`. Every regenerated connector that
   is installed on top of a previous one must carry a higher version.
 
-`Integration type`::
-  The protocol family (SCIM, REST, SQL) the connector is built for. If the *Application
-  Information* screen already carries an integration type, this value overrides it — the
-  connector-side value wins when both are set.
+`Implementation type`::
+  The actual implementation type of the generated connector — the protocol family (SCIM, REST,
+  SQL) the connector is built on and will implement. It defaults to the intended integration
+  type from the *Application Information* screen and overrides it — the connector-side value
+  wins when both are set.
 
 == What the generated connector contains
 
