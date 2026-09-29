@@ -103,12 +103,49 @@ public class YamlShortcutBindingTest {
         }
     }
 
+    enum Kind { A, B }
+
+    interface KindConstants {
+        Kind A = Kind.A;
+        Kind B = Kind.B;
+    }
+
+    /**
+     * A leaf {@code name(String)} whose shortcut constants are of a *different* type ({@code Kind});
+     * a same-named {@code name(Kind)} overload performs the conversion. Mirrors the ConnId
+     * {@code connId.name} shape (keyword {@code UID} → {@code name(ConnIdBuiltInAttribute)}).
+     */
+    static final class ShortcutOverloadToy implements KindConstants {
+        String name;    // set only by the plain String leaf
+        Kind kind;      // set only by the enum overload (the conversion target)
+
+        @Yaml.Key
+        @Yaml.Shortcut({"A", "B"})
+        public ShortcutOverloadToy name(String value) {
+            this.name = value;
+            return this;
+        }
+
+        public ShortcutOverloadToy name(Kind value) {
+            this.kind = value;
+            return this;
+        }
+    }
+
     private final GroovyScriptCompiler compiler = new GroovyScriptCompiler(new GroovyContext());
 
     private ShortcutToy bind(String yaml) {
         var document = LocatedDocument.parse("toy.yaml", yaml);
         var binder = new DeclYamlBinder(document, compiler);
         var toy = new ShortcutToy();
+        binder.bind(document.root(), toy);
+        return toy;
+    }
+
+    private ShortcutOverloadToy bindOverload(String yaml) {
+        var document = LocatedDocument.parse("toy.yaml", yaml);
+        var binder = new DeclYamlBinder(document, compiler);
+        var toy = new ShortcutOverloadToy();
         binder.bind(document.root(), toy);
         return toy;
     }
@@ -148,6 +185,53 @@ public class YamlShortcutBindingTest {
         assertNotNull(toy.form, "the shortcut constant must be bound onto the leaf method");
         assertEquals(toy.form.apply("x"), "X");
         assertNull(toy.formScript, "the closure form must not be used for a shortcut name");
+    }
+
+    @Test
+    public void mismatchedTypeConstantRoutesToTheSameNamedOverload() {
+        var toy = bindOverload("name: A\n");
+
+        assertEquals(toy.kind, Kind.A, "the enum constant must be routed to the same-named enum overload");
+        assertNull(toy.name, "the plain String leaf must not be called for a mismatched-type constant");
+    }
+
+    @Test
+    public void nonShortcutLiteralStillReachesThePlainLeaf() {
+        var toy = bindOverload("name: custom\n");
+
+        assertEquals(toy.name, "custom", "a non-shortcut literal must still be coerced to the String leaf");
+        assertNull(toy.kind, "the enum overload must not be called for a literal");
+    }
+
+    @Test
+    public void mismatchedTypeConstantWithoutAnOverloadFailsFast() {
+        var document = LocatedDocument.parse("toy.yaml", "name: A\n");
+        var binder = new DeclYamlBinder(document, compiler);
+
+        IllegalStateException exception;
+        try {
+            binder.bind(document.root(), new NoOverloadToy());
+            fail("expected IllegalStateException for a mismatched-type constant with no same-named overload");
+            exception = null;
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertTrue(exception.getMessage().contains("A"), exception.getMessage());
+        assertTrue(exception.getMessage().contains(Kind.class.getName()), exception.getMessage());
+        assertTrue(exception.getMessage().contains("java.lang.String"), exception.getMessage());
+    }
+
+    /** A {@code name(String)} leaf with an enum shortcut constant but no {@code name(Kind)} overload. */
+    static final class NoOverloadToy implements KindConstants {
+        String name;
+
+        @Yaml.Key
+        @Yaml.Shortcut({"A", "B"})
+        public NoOverloadToy name(String value) {
+            this.name = value;
+            return this;
+        }
     }
 
     @Test

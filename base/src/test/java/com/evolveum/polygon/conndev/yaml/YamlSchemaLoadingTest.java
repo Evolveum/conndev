@@ -67,6 +67,49 @@ public class YamlSchemaLoadingTest {
     }
 
     @Test
+    public void connIdNameKeywordsAreNormalisedToCanonicalNames() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        // the attribute-level connId name uses the built-in convenience keywords (not the canonical
+        // __-names); they must resolve to the canonical ConnId names
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      id:
+                        jsonType: integer
+                        connId:
+                          name: UID
+                      login:
+                        jsonType: string
+                        connId:
+                          name: NAME
+                      active:
+                        jsonType: boolean
+                        connId:
+                          name: ENABLE
+                      last_login:
+                        jsonType: string
+                        connId:
+                          name: LAST_LOGIN_DATE
+                """);
+        builder.applyStructuralRules();
+        var user = loader.build().objectClass("User");
+
+        // the keywords resolve to the canonical ConnId names
+        assertEquals(user.attributeFromConnIdName(Uid.NAME).remoteName(), "id");
+        assertEquals(user.attributeFromConnIdName(Name.NAME).remoteName(), "login");
+        assertEquals(user.attributeFromConnIdName(OperationalAttributes.ENABLE_NAME).remoteName(), "active");
+        // a non-keyword value is a literal ConnId attribute name, left as-is
+        assertEquals(user.attributeFromConnIdName("LAST_LOGIN_DATE").remoteName(), "last_login");
+
+        // the stored ConnId names carry the canonical values
+        assertEquals(user.attributeFromProtocolName("id").connId().getName(), Uid.NAME);
+        assertEquals(user.attributeFromProtocolName("active").connId().getName(), OperationalAttributes.ENABLE_NAME);
+        assertEquals(user.attributeFromProtocolName("last_login").connId().getName(), "LAST_LOGIN_DATE");
+    }
+
+    @Test
     public void attributeTypesAndFormatsAreApplied() {
         var user = loadTestSchema().objectClass("User");
 

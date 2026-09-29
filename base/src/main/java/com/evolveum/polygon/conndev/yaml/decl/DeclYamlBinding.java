@@ -173,26 +173,37 @@ abstract sealed class DeclYamlBinding {
     }
 
     /**
+     * The scan-time resolution of one {@code @Yaml.Shortcut} constant: its {@code value} and the
+     * method to invoke it with. When the constant's type fits the leaf's parameter type the leaf
+     * is used (with its {@code DefinitionValue} overload preferred, carried in {@code dv}); when it
+     * does not, the same-named overload taking the constant's type exactly is used and {@code dv}
+     * is {@code null} (that overload performs the conversion, e.g. normalising a built-in keyword).
+     */
+    private record ShortcutInvocation(Object value, MethodHandle target, MethodHandle dv) {
+    }
+
+    /**
      * A {@code @Yaml.Key} leaf binding that declares {@code @Yaml.Shortcut} constants: a scalar
-     * equal to a constant name is replaced by the constant's value; a non-matching scalar is
-     * compiled to a {@code Closure} and handed to the same-named {@code @Script.Runtime} closure
-     * method (the Groovy-block form of the key) when one exists, else coerced by the binding's
-     * usual parser.
+     * equal to a constant name is replaced by the constant's value — passed to the leaf when the
+     * constant's type fits its parameter, else to the same-named overload taking that type exactly
+     * (which performs the conversion). A non-matching scalar is compiled to a {@code Closure} and
+     * handed to the same-named {@code @Script.Runtime} closure method (the Groovy-block form of the
+     * key) when one exists, else coerced by the binding's usual parser (a free-form literal).
      */
     static final class ShortcutProperty extends DeclYamlBinding {
 
-        private final MethodHandle dvMethod;
         private final Class<?> paramType;
         private final DeclYamlValueParser coercer;
-        private final Map<String, Object> shortcuts;
+        private final MethodHandle leafDvMethod;
+        private final Map<String, ShortcutInvocation> shortcuts;
         private final MethodHandle closureFallback;
 
         ShortcutProperty(String bindingKey, MethodHandle resolved, MethodHandle dvOverload, Class<?>[] params,
-                DeclYamlValueParser coercer, Map<String, Object> shortcuts, MethodHandle closureFallback) {
+                DeclYamlValueParser coercer, Map<String, ShortcutInvocation> shortcuts, MethodHandle closureFallback) {
             super(bindingKey, resolved);
-            dvMethod = dvOverload;
             paramType = params[0];
             this.coercer = coercer;
+            leafDvMethod = dvOverload;
             this.shortcuts = shortcuts;
             this.closureFallback = closureFallback;
         }
@@ -204,9 +215,9 @@ abstract sealed class DeclYamlBinding {
             }
             String text = value.text();
             if (text != null) {
-                Object shortcut = shortcuts.get(text);
-                if (shortcut != null) {
-                    invokeValue(target, shortcut, location);
+                ShortcutInvocation invocation = shortcuts.get(text);
+                if (invocation != null) {
+                    invokeInvocation(target, invocation, location);
                     return;
                 }
                 if (closureFallback != null) {
@@ -223,12 +234,25 @@ abstract sealed class DeclYamlBinding {
                         + "' — expected one of the shortcuts " + shortcuts.keySet() + " or a value of type "
                         + paramType.getName() + " at " + location);
             }
-            invokeValue(target, coerced, location);
+            invokeLeaf(target, coerced, location);
         }
 
-        private void invokeValue(Object target, Object value, SourceLocation location) {
-            if (dvMethod != null) {
-                wrapThrowable(() -> dvMethod.bindTo(target).invokeWithArguments(DefinitionValue.from(value, location)));
+        /** Invokes a resolved shortcut constant — via the leaf's {@code DefinitionValue} overload
+         *  when it was routed to the leaf (preserving the location), else via the same-named
+         *  overload that takes the constant's type. */
+        private void invokeInvocation(Object target, ShortcutInvocation invocation, SourceLocation location) {
+            if (invocation.dv() != null) {
+                wrapThrowable(() -> invocation.dv().bindTo(target)
+                        .invokeWithArguments(DefinitionValue.from(invocation.value(), location)));
+            } else {
+                invoke(invocation.target(), target, invocation.value());
+            }
+        }
+
+        /** Invokes the leaf with a (coerced) non-shortcut value, preferring the {@code DefinitionValue} overload. */
+        private void invokeLeaf(Object target, Object value, SourceLocation location) {
+            if (leafDvMethod != null) {
+                wrapThrowable(() -> leafDvMethod.bindTo(target).invokeWithArguments(DefinitionValue.from(value, location)));
             } else {
                 invoke(method, target, value);
             }
@@ -383,7 +407,7 @@ abstract sealed class DeclYamlBinding {
             Yaml.Shortcut shortcut = method.getAnnotation(Yaml.Shortcut.class);
             if (shortcut != null) {
                 return new ShortcutProperty(bindingKey, resolved, dvOverload, params, coercer,
-                        resolveShortcutValues(method, targetClass, params[0], shortcut),
+                        resolveShortcuts(method, targetClass, params[0], resolved, dvOverload, shortcut),
                         resolveClosureFallback(targetClass, method));
             }
             return new Property(bindingKey, resolved, dvOverload, params, coercer);
@@ -413,38 +437,72 @@ abstract sealed class DeclYamlBinding {
      * The {@code @Yaml.Shortcut} constants of a leaf method, resolved against the concrete target
      * type: each name must name a {@code public static final} field in the type's hierarchy (the
      * field lookup walks super-interfaces, so a constant declared on a super-interface of the
-     * annotated method is found) whose value is assignable to the method's parameter type. The
-     * names keep their declaration order (the error messages list them). Fail-fast — a misnamed
-     * or mistyped constant is a connector-configuration error, surfaced on the first document of
-     * the type, not a document error.
+     * annotated method is found). Each constant's value is passed to:
+     * <ul>
+     *   <li>the leaf method (its {@code DefinitionValue} overload preferred) when the constant's
+     *       type is assignable to the leaf's parameter type; or</li>
+     *   <li>when it is not, the same-named single-argument overload taking the constant's type
+     *       <em>exactly</em> — which performs the conversion (e.g. {@code name(ConnIdBuiltInAttribute)}
+     *       normalises the {@code UID} keyword to {@code __UID__}).</li>
+     * </ul>
+     * The names keep their declaration order (the error messages list them). Fail-fast — a misnamed
+     * constant, or a mistyped one with no matching overload, is a connector-configuration error,
+     * surfaced on the first document of the type, not a document error.
      */
-    private static Map<String, Object> resolveShortcutValues(Method method, Class<?> targetClass,
-            Class<?> paramType, Yaml.Shortcut shortcut) {
-        Map<String, Object> values = new LinkedHashMap<>();
+    private static Map<String, ShortcutInvocation> resolveShortcuts(Method leaf, Class<?> targetClass,
+            Class<?> leafParam, MethodHandle leafHandle, MethodHandle leafDvOverload, Yaml.Shortcut shortcut) {
+        Map<String, ShortcutInvocation> invocations = new LinkedHashMap<>();
         for (String name : shortcut.value()) {
             Field field;
             try {
                 field = accessible(targetClass.getField(name));
             } catch (NoSuchFieldException e) {
                 throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
-                        + method.getName() + "' is not a public field of " + targetClass.getName(), e);
+                        + leaf.getName() + "' is not a public field of " + targetClass.getName(), e);
             }
             if (!Modifier.isStatic(field.getModifiers()) || !Modifier.isFinal(field.getModifiers())) {
                 throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
-                        + method.getName() + "' must be a static final field");
+                        + leaf.getName() + "' must be a static final field");
             }
-            if (!boxed(paramType).isAssignableFrom(boxed(field.getType()))) {
-                throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
-                        + method.getName() + "' is of type " + field.getType().getName()
-                        + ", not assignable to the parameter type " + paramType.getName());
-            }
+            Object value;
             try {
-                values.put(name, field.get(null));
+                value = field.get(null);
             } catch (IllegalAccessException e) {
                 throw new IllegalStateException("Cannot read @Yaml.Shortcut constant '" + name + "'", e);
             }
+            Class<?> constantType = field.getType();
+            if (boxed(leafParam).isAssignableFrom(boxed(constantType))) {
+                invocations.put(name, new ShortcutInvocation(value, leafHandle, leafDvOverload));
+            } else {
+                Method overload = findExactOverload(targetClass, leaf.getName(), constantType);
+                if (overload == null) {
+                    throw new IllegalStateException("@Yaml.Shortcut constant '" + name + "' of method '"
+                            + leaf.getName() + "' is of type " + constantType.getName()
+                            + ", not assignable to the parameter type " + leafParam.getName()
+                            + ", and no " + leaf.getName() + "(...) overload takes " + constantType.getName());
+                }
+                invocations.put(name, new ShortcutInvocation(value, unreflect(accessible(overload)), null));
+            }
         }
-        return values;
+        return invocations;
+    }
+
+    /**
+     * The same-named single-argument public method of {@code targetClass} whose parameter type is
+     * <em>exactly</em> {@code constantType} (modulo primitive/wrapper boxing) — the overload a
+     * mismatched-type {@code @Yaml.Shortcut} constant is routed to. The leaf's own parameter and the
+     * {@code DefinitionValue} overload never match (the constant is not that type). Returns
+     * {@code null} when no such overload exists.
+     */
+    private static Method findExactOverload(Class<?> targetClass, String name, Class<?> constantType) {
+        Class<?> boxedConstant = boxed(constantType);
+        for (Method method : targetClass.getMethods()) {
+            if (method.getName().equals(name) && method.getParameterCount() == 1
+                    && boxed(method.getParameterTypes()[0]) == boxedConstant) {
+                return method;
+            }
+        }
+        return null;
     }
 
     /**

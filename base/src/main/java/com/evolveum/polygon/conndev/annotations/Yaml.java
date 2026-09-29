@@ -122,6 +122,14 @@ public final class Yaml {
      * <em>value</em> — the same spelling the Groovy DSL resolves from the delegate (e.g.
      * {@code contentType: APPLICATION_JSON} for the {@code application/json} media type).
      *
+     * <p>When a constant's value type fits the leaf method's parameter type it is passed to the
+     * leaf (its {@code DefinitionValue} overload preferred); when it does not, the constant is
+     * instead passed to a same-named single-argument method taking that type <em>exactly</em>,
+     * which performs the conversion (e.g. a built-in attribute keyword whose value is an
+     * {@code enum} constant is routed to the overload taking that enum, which normalises it to the
+     * canonical name). Such a constant is a connector-configuration error if no such overload
+     * exists.
+     *
      * <p>A value that is not a shortcut name is coerced by the binding's usual parser
      * ({@link ValueParser} or the default), so literals keep working
      * ({@code contentType: application/json}). If the target has a same-named method taking a

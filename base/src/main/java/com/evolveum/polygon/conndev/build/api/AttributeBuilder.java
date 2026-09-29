@@ -517,10 +517,18 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          */
         @SuppressWarnings("java:S1845")
         @Yaml.Key
+        @Yaml.Shortcut({"UID", "NAME", "PASSWORD", "ENABLE", "ENABLE_DATE", "DISABLE_DATE", "LOCK_OUT"})
         default ConnIdMapping name(String name) {
             return name(DefinitionValue.from(name, SourceLocation.capture()));
         }
 
+        /**
+         * Sets the ConnId attribute name from a built-in attribute, normalised to its canonical
+         * ConnId name (e.g. {@code UID} → {@code __UID__}).
+         *
+         * @param builtIn the built-in ConnId attribute
+         * @return this ConnId mapping instance
+         */
         @SuppressWarnings("java:S1845")
         default ConnIdMapping name(ConnIdBuiltInAttribute builtIn) {
             return name(builtIn.getConnIdName());
