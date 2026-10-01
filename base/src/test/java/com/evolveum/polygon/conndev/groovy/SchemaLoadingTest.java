@@ -737,6 +737,20 @@ public class SchemaLoadingTest {
     }
 
     @Test
+    public void openApiFormat_date_mapsToZonedDateTime() {
+        var schema = schemaForScript("""
+            objectClass("Test") {
+                attribute("date") {
+                    jsonType "string";
+                    openApiFormat "date";
+                };
+            }
+            """);
+
+        assertThat(schema.attribute("Test", "date").connId().getType()).isEqualTo(ZonedDateTime.class);
+    }
+
+    @Test
     public void openApiFormat_uuid_mapsToString() {
         var schema = schemaForScript("""
             objectClass("Test") {

@@ -13,6 +13,9 @@ import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -151,6 +154,39 @@ public class JsonAttributeMappingTest {
         assertThat(result).isNull();
     }
 
+    @Test
+    public void testValuesFromAttribute_dateFormat_parsesFullDate() {
+        var mapper = new ObjectMapper();
+        var textNode = (StringNode) mapper.createObjectNode()
+                .put("date", "2026-04-21")
+                .get("date");
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("date"),
+                OpenApiValueMapping.Date
+        );
+
+        List<Object> result = mapping.valuesFromAttribute(textNode);
+
+        assertThat(result).isNotNull();
+        assertThat(result.size()).isEqualTo(1);
+        var converted = (ZonedDateTime) result.getFirst();
+        assertThat(converted.toLocalDate()).isEqualTo(LocalDate.of(2026, 4, 21));
+        assertThat(converted.getOffset()).isEqualTo(ZoneOffset.UTC);
+    }
+
+    @Test
+    public void testValuesFromAttribute_dateFormat_nullValue() {
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("date"),
+                OpenApiValueMapping.Date
+        );
+
+        var result = mapping.valuesFromAttribute(JsonNodeFactory.instance.nullNode());
+
+        assertThat(result).isNull();
+    }
+
     // === To JSON Node ===
 
     @Test
@@ -205,6 +241,23 @@ public class JsonAttributeMappingTest {
         mapping.toJsonNode(attr, parent);
 
         assertThat(parent.size()).isEqualTo(0);
+    }
+
+    @Test
+    public void testToJsonNode_dateFormat() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("date"),
+                OpenApiValueMapping.Date
+        );
+
+        Attribute attr = AttributeBuilder.build("date", ZonedDateTime.of(2026, 4, 21, 0, 0, 0, 0, ZoneOffset.UTC));
+        mapping.toJsonNode(attr, parent);
+
+        assertThat(parent.has("date")).isTrue();
+        assertThat(parent.get("date").asString()).isEqualTo("2026-04-21");
     }
 
     // === Value Filters ===

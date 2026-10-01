@@ -11,13 +11,19 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 public class OpenApiValueMappingTest {
 
@@ -47,6 +53,79 @@ public class OpenApiValueMappingTest {
         assertThat(converted.getOffset()).isEqualTo(original.getOffset());
         // Verify they represent the same instant
         assertThat(converted.toInstant()).isEqualTo(original.toInstant());
+    }
+
+    // === Date ===
+
+    @Test
+    public void testDate_toWireValue() {
+        var original = ZonedDateTime.of(2026, 4, 21, 0, 0, 0, 0, ZoneOffset.UTC);
+        var wireValue = OpenApiValueMapping.Date.toWireValue(original);
+        assertThat(wireValue.asText()).isEqualTo("2026-04-21");
+    }
+
+    @Test
+    public void testDate_toWireValue_usesLocalDateOfItsOwnZone() {
+        var original = ZonedDateTime.of(2026, 4, 21, 23, 30, 0, 0, ZoneId.of("Europe/Bratislava"));
+        var wireValue = OpenApiValueMapping.Date.toWireValue(original);
+        assertThat(wireValue.asText()).isEqualTo("2026-04-21");
+    }
+
+    @Test
+    public void testDate_toConnIdValue() {
+        var mapper = new ObjectMapper();
+        var textNode = (StringNode) mapper.createObjectNode()
+                .put("x", "2026-04-21")
+                .get("x");
+
+        var result = OpenApiValueMapping.Date.toConnIdValue(textNode);
+
+        assertThat(result).isNotNull().isInstanceOf(ZonedDateTime.class);
+        var converted = (ZonedDateTime) result;
+        assertThat(converted.toLocalDate()).isEqualTo(LocalDate.of(2026, 4, 21));
+        assertThat(converted.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT);
+        assertThat(converted.getOffset()).isEqualTo(ZoneOffset.UTC);
+    }
+
+    @Test
+    public void testDate_toConnIdValue_nullNode() {
+        var result = OpenApiValueMapping.Date.toConnIdValue(JsonNodeFactory.instance.nullNode());
+        assertThat(result).isNull();
+    }
+
+    @Test
+    public void testDate_roundTrip() {
+        var mapper = new ObjectMapper();
+        var textNode = (StringNode) mapper.createObjectNode()
+                .put("x", "2026-04-21")
+                .get("x");
+        var converted = (ZonedDateTime) OpenApiValueMapping.Date.toConnIdValue(textNode);
+        assertThat(OpenApiValueMapping.Date.toWireValue(converted).asText()).isEqualTo("2026-04-21");
+    }
+
+    @Test
+    public void testDate_toConnIdValue_rejectsDateTime() {
+        var mapper = new ObjectMapper();
+        var textNode = (StringNode) mapper.createObjectNode()
+                .put("x", "2026-04-21T00:00:00Z")
+                .get("x");
+        assertThatExceptionOfType(DateTimeParseException.class)
+                .isThrownBy(() -> OpenApiValueMapping.Date.toConnIdValue(textNode));
+    }
+
+    @Test
+    public void testDate_toConnIdValue_rejectsNonString() {
+        var mapper = new ObjectMapper();
+        var numberNode = (NumericNode) mapper.createObjectNode()
+                .put("x", 20260421)
+                .get("x");
+        assertThatIllegalArgumentException().isThrownBy(() -> OpenApiValueMapping.Date.toConnIdValue(numberNode));
+    }
+
+    @Test
+    public void test_from_date() {
+        Object result = OpenApiValueMapping.from("string", "date");
+        assertThat(result).isEqualTo(OpenApiValueMapping.Date);
     }
 
     // === Byte ===

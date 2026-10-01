@@ -11,6 +11,8 @@ import tools.jackson.databind.node.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -103,18 +105,23 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             return null;
         }
     },
+    // A full-date carries no zone; the ConnId value is the date at start-of-day in UTC.
     Date("date","date as defined by full-date - RFC3339", ZonedDateTime.class, STRING) {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
-            // FIXME: Implement later
+            if (value instanceof ZonedDateTime zonedDateTimeVal) {
+                return JsonNodeFactory.instance.stringNode(DateTimeFormatter.ISO_LOCAL_DATE.format(zonedDateTimeVal.toLocalDate()));
+            }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
-
         }
 
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
             if (value instanceof StringNode stringVal) {
-                return ZonedDateTime.parse(stringVal.asText());
+                return LocalDate.parse(stringVal.asText()).atStartOfDay(ZoneOffset.UTC);
+            }
+            if (value instanceof NullNode) {
+                return null;
             }
             throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + this.getClass().getSimpleName());
         }
