@@ -29,7 +29,7 @@ public abstract class BaseGroovyConnectorConfiguration implements Configuration,
         this.messages = messages;
     }
 
-    @ConfigurationProperty(groupMessageKey = "rest.developmentMode", required = false)
+    @ConfigurationProperty(groupMessageKey = "conndev.developmentMode", required = false, order=5000)
     public Boolean getDevelopmentMode() {
         return developmentMode;
     }
