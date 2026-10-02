@@ -82,7 +82,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             return super.toConnIdValue(value);
         }
     },
-    BINARY("binary", "A binary value", BinaryNode.class, StringNode.class) {
+    BINARY("binary", "A binary value", byte[].class, BinaryNode.class, StringNode.class) {
         @Override
         public JsonNode toWireValue(Object value) throws IllegalArgumentException {
             if (value instanceof byte[] byteArrayVal) {

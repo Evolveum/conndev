@@ -370,11 +370,11 @@ public class JsonAttributeMappingTest {
         );
     assertThat(numberMapping.connIdType()).isEqualTo(Number.class);
 
-        // BINARY.connIdType() follows the source definition where BinaryNode.class is the third parameter
+        // BINARY resolves to the byte[] ConnId type (BinaryNode is a wire node type, not a ConnId type)
         var binaryMapping = new JsonAttributeMapping(
                 AttributePath.of("data"),
                 JsonSchemaValueMapping.BINARY
         );
-    assertThat(binaryMapping.connIdType()).isEqualTo(BinaryNode.class);
+    assertThat(binaryMapping.connIdType()).isEqualTo(byte[].class);
     }
 }

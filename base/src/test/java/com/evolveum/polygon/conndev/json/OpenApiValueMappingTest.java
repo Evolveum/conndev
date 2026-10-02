@@ -332,7 +332,7 @@ public class OpenApiValueMappingTest {
         var binaryMapping = OpenApiValueMapping.Binary;
 
         assertThat(binaryMapping.baseMapping).isEqualTo(JsonSchemaValueMapping.BINARY);
-        assertThat(binaryMapping.primaryWireType()).isEqualTo(StringNode.class);
+        assertThat(binaryMapping.primaryWireType()).isEqualTo(BinaryNode.class);
         assertThat(binaryMapping.connIdType()).isEqualTo(byte[].class);
     }
 
