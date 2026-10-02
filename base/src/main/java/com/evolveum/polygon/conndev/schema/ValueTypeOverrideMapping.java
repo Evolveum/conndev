@@ -60,6 +60,33 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
     }
 
     /**
+     * Wraps a mapping so that it exposes the given ConnId type without inserting any
+     * value conversion.
+     * <p>
+     * Used for custom implementations (a user-supplied value mapping or
+     * {@code serialize}/{@code deserialize} closures) whose conversion functions already
+     * work with the attribute's final ConnId type — taken from the connId section —
+     * rather than with the native type of a default mapping. In contrast to
+     * {@link #of(Class, ValueMapping)}, no bridging conversion is inserted and no
+     * combination is rejected: the mapping is re-labeled only.
+     *
+     * @param <P> the protocol (wire) value type
+     * @param connIdType the ConnId type to expose (the attribute's final ConnId type)
+     * @param valueMapping the underlying value mapping to re-label
+     * @return a value mapping that exposes {@code connIdType} and passes values through unchanged
+     */
+    public static <P> ValueMapping<Object, P> asConnIdType(Class<?> connIdType, ValueMapping<?, P> valueMapping) {
+        if (Objects.equals(connIdType, valueMapping.connIdType())) {
+            return cast(Object.class, valueMapping);
+        }
+        @SuppressWarnings("unchecked")
+        Class<Object> type = (Class<Object>) connIdType;
+        @SuppressWarnings("unchecked")
+        ValueMapping<Object, P> impl = (ValueMapping<Object, P>) valueMapping;
+        return new ValueTypeOverrideMapping<>(type, impl, Function.identity(), Function.identity());
+    }
+
+    /**
      * Creates a String-typed override mapping by inserting conversions between the original
      * ConnId type (Integer, Long, or Number) and String.
      *

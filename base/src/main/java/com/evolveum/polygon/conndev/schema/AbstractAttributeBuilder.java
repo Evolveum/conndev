@@ -586,15 +586,22 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
 
         /**
          * Builds the {@link JsonAttributeMapping}. If no implementation is set, creates
-         * one from the JSON type and OpenAPI format. Applies a {@link ValueTypeOverrideMapping}
-         * if the attribute's final ConnId type (recorded via
-         * {@link #applyConnIdTypeOverride(Class)}) differs from the implementation's native type.
+         * one from the JSON type and OpenAPI format. If the attribute's final ConnId type
+         * (recorded via {@link #applyConnIdTypeOverride(Class)}) differs from the
+         * implementation's native type, a default implementation is bridged with a
+         * {@link ValueTypeOverrideMapping} that inserts the value conversion, while a
+         * custom implementation (explicit mapping or closure) is only re-labeled to the
+         * final ConnId type — its closures own the conversion and produce the type from
+         * the connId section, not from the default JSON mapping.
          *
          * @return the built JsonAttributeMapping
          */
         @Override
         public AttributeProtocolMapping<?,?> build() {
             ValueMapping<Object, JsonNode> implementation;
+            // a custom implementation's values come from the connid section, so it is
+            // never bridged against the default JSON mapping's native type
+            var customImplementation = this.implementation != null || implementationClosure != null;
 
             if (this.implementation != null) {
                 implementation = this.implementation;
@@ -609,8 +616,14 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             }
 
             if (connIdTypeOverride != null && !connIdTypeOverride.equals(implementation.connIdType())) {
-                // apply the ConnId type override decided by AttributeTypeCoercionRule
-                implementation = ValueTypeOverrideMapping.of(connIdTypeOverride, implementation);
+                if (customImplementation) {
+                    // re-label the custom implementation to the ConnId type decided by
+                    // AttributeTypeCoercionRule without converting values
+                    implementation = ValueTypeOverrideMapping.asConnIdType(connIdTypeOverride, implementation);
+                } else {
+                    // apply the ConnId type override decided by AttributeTypeCoercionRule
+                    implementation = ValueTypeOverrideMapping.of(connIdTypeOverride, implementation);
+                }
             }
             if (path == null) {
                 path = AttributePathDeclaration.of(
