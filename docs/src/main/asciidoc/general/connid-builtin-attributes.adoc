@@ -430,6 +430,12 @@ attributes through a dedicated enum and type-resolution rules:
   the protocol framework, not to the conndev base. `FilterBasedSearchDispatcher`
   gives single-value `pass:[__UID__]`-equals filters special treatment
   (rewriting them via the `nameHint` when no filter implementation matches).
+* Same attribute for both: when the object's identifier doubles as its name,
+  the same protocol attribute may be mapped to both `UID` and `NAME`
+  (`connId: {UID: id, NAME: id}` in the class-level alias map, or
+  `pass:[__UID__]` / `pass:[__NAME__]` on the same attribute). The attribute
+  keeps `pass:[__UID__]` and `pass:[__NAME__]` is satisfied by the
+  `NameDefaultsToUidRule` derivation — no failure, no double mapping.
 
 NOTE:: *Known DSL gap* — `ConnIdBuiltInAttribute` exposes UID, NAME, PASSWORD,
 CURRENT_PASSWORD, ENABLE, ENABLE_DATE, DISABLE_DATE and LOCK_OUT.
@@ -445,7 +451,10 @@ the type explicitly (per the catalog above).
 
 * *UID ≡ NAME*: connectors whose object has no separate internal id may use the
   same value for both. midPoint then reuses one attribute definition for the
-  primary identifier and does not double-map it.
+  primary identifier and does not double-map it. The DSL supports this directly:
+  mapping the same attribute to both `UID` and `NAME` is legal — `pass:[__UID__]`
+  keeps the attribute and `pass:[__NAME__]` is derived from it (see the
+  "Same attribute for both" note in the Low-Code DSL section above).
 * *Native name preference*: always declare `nativeName` for
   `pass:[__UID__]`/`pass:[__NAME__]` (and other specials) — otherwise midPoint
   falls back to the generic `icfs:uid`/`icfs:name` items, which the documentation

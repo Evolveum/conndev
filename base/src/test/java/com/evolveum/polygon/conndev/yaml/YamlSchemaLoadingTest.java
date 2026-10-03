@@ -110,6 +110,80 @@ public class YamlSchemaLoadingTest {
         assertEquals(user.attributeFromProtocolName("last_login").connId().getName(), "LAST_LOGIN_DATE");
     }
 
+    /**
+     * WP #12419: the same attribute mapped to both {@code UID} and {@code NAME} in the
+     * class-level alias map must not fail validation — the attribute keeps {@code __UID__}
+     * and {@code __NAME__} is derived from it by {@code NameDefaultsToUidRule}.
+     */
+    @Test
+    public void uidAndNameMayShareOneAttributeViaClassLevelAlias() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  membership:
+                    connId:
+                      UID: id
+                      NAME: id
+                    attributes:
+                      id:
+                        required: true
+                        json:
+                          type: integer
+                      createdAt:
+                        json:
+                          type: string
+                          openApiFormat: date-time
+                """);
+
+        var membership = loader.build().objectClass("membership");
+
+        assertEquals(membership.attributeFromConnIdName(Uid.NAME).remoteName(), "id");
+        var nameMapping = membership.attributeFromConnIdName(Name.NAME).json();
+        // the derived NAME reads the same wire field as the UID
+        assertEquals(nameMapping.path().onlyAttribute().name(), "id");
+        var sample = JsonNodeFactory.instance.objectNode().set("id", JsonNodeFactory.instance.numberNode(42));
+        assertEquals(nameMapping.singleValueFromAttribute(nameMapping.attributeFromObject(sample)), "42");
+        // the UID is forced to the ConnId String type, the derived NAME as well
+        assertEquals(membership.attributeFromConnIdName(Uid.NAME).connId().getType(), String.class);
+        assertEquals(membership.attributeFromConnIdName(Name.NAME).connId().getType(), String.class);
+    }
+
+    /**
+     * WP #12419, two-file form: an attribute-level {@code name: UID} claim and an attribute-level
+     * {@code name: NAME} claim on the same attribute (merged from separate documents onto one
+     * builder) must not conflict.
+     */
+    @Test
+    public void uidAndNameMayShareOneAttributeViaAttributeLevelClaims() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      id:
+                        jsonType: string
+                        connId:
+                          name: UID
+                """);
+        loader.load("""
+                objectClasses:
+                  User:
+                    attributes:
+                      id:
+                        connId:
+                          name: NAME
+                """);
+
+        var user = loader.build().objectClass("User");
+
+        // __UID__ wins the slot; __NAME__ is the derived copy
+        assertEquals(user.attributeFromProtocolName("id").connId().getName(), Uid.NAME);
+        assertNotNull(user.attributeFromConnIdName(Name.NAME));
+        assertEquals(user.attributeFromConnIdName(Name.NAME).remoteName(), Name.NAME);
+    }
+
     @Test
     public void attributeTypesAndFormatsAreApplied() {
         var user = loadTestSchema().objectClass("User");

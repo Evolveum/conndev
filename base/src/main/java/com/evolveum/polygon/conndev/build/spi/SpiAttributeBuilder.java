@@ -93,6 +93,12 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
         /**
          * Sets the ConnId attribute name.
          *
+         * <p>One protocol attribute may serve as both {@code __UID__} and {@code __NAME__}:
+         * when both are explicitly claimed for the same attribute, {@code __UID__} wins the
+         * ConnId slot and {@code __NAME__} is satisfied by the default derivation from
+         * {@code __UID__} (see {@code NameDefaultsToUidRule}). Any other conflicting pair of
+         * declarations fails.
+         *
          * @param name the attribute name with metadata
          * @return this mapping instance for chaining
          */

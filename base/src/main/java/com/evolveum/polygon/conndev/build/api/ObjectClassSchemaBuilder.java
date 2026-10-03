@@ -116,6 +116,11 @@ public interface ObjectClassSchemaBuilder<
      * Maps a ConnId builtin attribute name (like "UID", "NAME") to a protocol attribute.
      * Supported built-in names: "UID", "NAME".
      *
+     * <p>The same protocol attribute may be mapped to both {@code UID} and {@code NAME}
+     * (objects whose identifier doubles as their name): {@code __UID__} keeps the attribute
+     * and {@code __NAME__} is satisfied by the default derivation from {@code __UID__}
+     * (see {@code NameDefaultsToUidRule}).
+     *
      * @param connIdName the ConnId attribute name (must be "UID" or "NAME")
      * @param attributeName the protocol (JSON) attribute name to bind it to
      * @return this builder for chaining

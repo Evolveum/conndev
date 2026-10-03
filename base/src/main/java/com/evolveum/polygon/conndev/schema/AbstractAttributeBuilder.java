@@ -26,7 +26,9 @@ import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.EmbeddedObject;
+import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.identityconnectors.framework.common.objects.Uid;
 import tools.jackson.databind.JsonNode;
 
 import java.util.Collection;
@@ -316,10 +318,43 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             return this;
         }
 
+        /**
+         * Sets the ConnId attribute name.
+         *
+         * <p>One protocol attribute may serve as both {@code __UID__} and {@code __NAME__}
+         * (objects whose identifier doubles as their name): when an explicitly declared
+         * {@code __UID__} and an explicitly declared {@code __NAME__} are claimed for the same
+         * attribute, {@code __UID__} wins the ConnId slot and the {@code __NAME__} claim is
+         * dropped — it is satisfied by the default derivation of {@code __NAME__} from
+         * {@code __UID__} (see {@code NameDefaultsToUidRule}). Any other conflicting pair of
+         * declarations still fails via {@link DefinitionValue#moreSpecific}.
+         */
         @Override
         public ConnIdMapping name(DefinitionValue<String> name) {
+            if (sharesUidNameSlot(this.name, name)) {
+                if (Uid.NAME.equals(name.value())) {
+                    this.name = name;
+                }
+                return self();
+            }
             this.name = this.name.moreSpecific(name);
             return self();
+        }
+
+        /**
+         * Whether the two claims are the {@code __UID__}/{@code __NAME__} pair — both explicitly
+         * declared on the same attribute. That combination is legal (see
+         * {@link #name(DefinitionValue)}); everything else is a plain conflict.
+         */
+        private static boolean sharesUidNameSlot(DefinitionValue<String> existing, DefinitionValue<String> incoming) {
+            if (existing.origin() != DefinitionValue.Origin.DECLARED
+                    || incoming.origin() != DefinitionValue.Origin.DECLARED) {
+                return false;
+            }
+            var existingValue = existing.value();
+            var incomingValue = incoming.value();
+            return (Uid.NAME.equals(existingValue) && Name.NAME.equals(incomingValue))
+                    || (Name.NAME.equals(existingValue) && Uid.NAME.equals(incomingValue));
         }
 
         /**

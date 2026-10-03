@@ -18,6 +18,10 @@ import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
  * {@code derivedFromUid}, so runtime code can recognize the derivation without re-deriving
  * it (see {@link BaseObjectClassDefinitionBuilder#applyDefaultNameFromUid}).
  * <p>
+ * This also covers object classes whose identifier doubles as their name: when the same
+ * protocol attribute is explicitly mapped to both {@code __UID__} and {@code __NAME__},
+ * the attribute keeps {@code __UID__} and this rule supplies the {@code __NAME__} copy.
+ * <p>
  * Runs as an object-class-level structural rule via
  * {@code BaseSchemaBuilder#applyStructuralRules}, after protocol-specific detection rules
  * (e.g. UID/NAME detection) and before the per-attribute structural rules, so the created

@@ -284,6 +284,11 @@ public class BaseObjectClassDefinitionBuilder<
      * The method verifies that the target protocol attribute exists in this object class's
      * attribute definitions; if it does not, an {@link IllegalArgumentException} is thrown.
      *
+     * <p>The same protocol attribute may be mapped to both "UID" and "NAME" (objects whose
+     * identifier doubles as their name): the attribute keeps {@code __UID__} and
+     * {@code __NAME__} is satisfied by the default derivation from {@code __UID__}
+     * (see {@code NameDefaultsToUidRule}).
+     *
      * @param connIdName    the ConnId built-in attribute name (must be "UID" or "NAME")
      * @param attributeName the protocol (JSON/database column) attribute name to bind it to
      * @return this builder for chaining
@@ -440,10 +445,10 @@ public class BaseObjectClassDefinitionBuilder<
      * the protocol-specific half of {@link #applyDefaultNameFromUid()}. The protocol mapping
      * is a copy of the UID's, so NAME always reads the same protocol value.
      *
-     * <p>The base implementation copies the UID attribute's JSON mapping (path, type and
-     * OpenAPI format); a custom value-mapping implementation on the UID is not inherited.
-     * Protocols with their own mapping model override this (e.g. SQL copies the column
-     * mapping, SCIM copies the SCIM path).
+     * <p>The base implementation copies the UID attribute's JSON mapping (protocol name,
+     * path, type and OpenAPI format); a custom value-mapping implementation on the UID is
+     * not inherited. Protocols with their own mapping model override this (e.g. SQL copies
+     * the column mapping, SCIM copies the SCIM path).
      *
      * @param uidAttribute the attribute builder mapped to {@code __UID__}
      * @return the created {@code __NAME__} attribute builder, or {@code null} if this
@@ -460,6 +465,12 @@ public class BaseObjectClassDefinitionBuilder<
         var nameAttribute = nativeAttributes.computeIfAbsent(Name.NAME,
                 key -> newAttribute(DefinitionValue.defaultFrom(Name.NAME)));
         var nameJson = (AbstractAttributeBuilder.JsonBuilder) nameAttribute.json();
+        // The derived attribute is named __NAME__, so without adopting the UID's protocol
+        // name its default JSON path would resolve to a literal __NAME__ wire field
+        // instead of the same wire location the UID reads
+        if (uidJson.name() != null) {
+            nameJson.name(uidJson.name());
+        }
         if (uidJson.jsonType() != null) {
             nameJson.type(uidJson.jsonType());
         }
