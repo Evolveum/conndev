@@ -14,20 +14,31 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import java.util.*;
 
 import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.ATTRIBUTE;
+import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_DESCRIPTION;
 import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAME;
 
 /**
- * Fluent builder for a {@code conndev_Attribute} embedded object. Carries only a {@code name} and
- * named, protocol-specific blocks (e.g. {@code "connId"}, {@code "scim"}, {@code "sql"}) - the
- * per-connector mapper decides exactly what each block carries.
+ * Fluent builder for a {@code conndev_Attribute} embedded object. Carries only a {@code name}, an
+ * optional {@code description} and named, protocol-specific blocks (e.g. {@code "connId"},
+ * {@code "scim"}, {@code "sql"}) - the per-connector mapper decides exactly what each block carries.
  */
 public final class ConnDevAttribute {
 
     private final String name;
+    private String description;
     private final Map<String, Collection<Attribute>> protocolSpecifics = new LinkedHashMap<>();
 
     ConnDevAttribute(String name) {
         this.name = name;
+    }
+
+    /**
+     * Sets the human-readable description of the attribute (e.g. which column it maps to in the
+     * source system). {@code null} leaves the export without a {@code description} attribute.
+     */
+    public ConnDevAttribute description(String description) {
+        this.description = description;
+        return this;
     }
 
     /**
@@ -56,6 +67,9 @@ public final class ConnDevAttribute {
     EmbeddedObject build() {
         Set<Attribute> properties = new HashSet<>();
         properties.add(AttributeBuilder.build(F_NAME, name));
+        if (description != null) {
+            properties.add(AttributeBuilder.build(F_DESCRIPTION, description));
+        }
         for (var entry : protocolSpecifics.entrySet()) {
             var block = new EmbeddedObject(
                     new ObjectClass(attributeProtocolBlockType(entry.getKey())), Set.copyOf(entry.getValue()));

@@ -29,9 +29,11 @@ public final class ConnDevObjectClass {
 
     static final String F_ATTRIBUTES = "attributes";
     static final String F_NAME = "name";
+    static final String F_DESCRIPTION = "description";
 
     private final String name;
     private String uid;
+    private String description;
     private final List<ConnDevAttribute> attributes = new ArrayList<>();
     private final Map<String, Collection<Attribute>> protocolSpecifics = new LinkedHashMap<>();
 
@@ -45,6 +47,15 @@ public final class ConnDevObjectClass {
 
     public ConnDevObjectClass uid(String uid) {
         this.uid = uid;
+        return this;
+    }
+
+    /**
+     * Sets the human-readable description of the object class (e.g. which table it maps to in the
+     * source system). {@code null} leaves the export without a {@code description} attribute.
+     */
+    public ConnDevObjectClass description(String description) {
+        this.description = description;
         return this;
     }
 
@@ -80,6 +91,9 @@ public final class ConnDevObjectClass {
         builder.setObjectClass(OBJECT_CLASS);
         builder.setUid(uid);
         builder.setName(name);
+        if (description != null) {
+            builder.addAttribute(F_DESCRIPTION, description);
+        }
         for (var entry : protocolSpecifics.entrySet()) {
             var block = new EmbeddedObject(new ObjectClass(protocolBlockType(entry.getKey())), Set.copyOf(entry.getValue()));
             builder.addAttribute(AttributeBuilder.build(entry.getKey(), block));

@@ -207,5 +207,14 @@ public interface SpiAttributeBuilder<B extends SpiAttributeBuilder<B,P>, P> exte
          * @return the name definition value (never null)
          */
         DefinitionValue<String> name();
+
+        /**
+         * Returns the attribute description, carrying its origin (DECLARED vs DETECTED).
+         *
+         * @return the description definition value, or an empty (null-valued) default when none
+         */
+        default DefinitionValue<String> description() {
+            return DefinitionValue.emptyDefault();
+        }
     }
 }

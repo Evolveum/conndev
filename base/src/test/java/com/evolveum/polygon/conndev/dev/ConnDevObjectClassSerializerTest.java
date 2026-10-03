@@ -103,6 +103,29 @@ public class ConnDevObjectClassSerializerTest {
         assertEquals(string(manager, "role"), "subject");
     }
 
+    private BaseSchema<BaseObjectClassDefinition<BaseAttributeDefinition>> schemaWithDescriptions() {
+        var builder = new BaseSchemaBuilder(StubConnector.class, NOOP_CONTEXT);
+        var user = builder.objectClass("user");
+        user.description("Mapped to table \"users\"");
+        var name = user.attribute("name");
+        name.connId().type(String.class);
+        name.description("Mapped to column \"name\" of table \"users\" (native type: VARCHAR)");
+        var lastLogin = user.attribute("last_login");
+        lastLogin.connId().type(String.class);
+        return builder.build();
+    }
+
+    @Test
+    public void emitsDescriptionsFromTheModel() {
+        var object = ConnDevObjectClassSerializer.serializeAll(schemaWithDescriptions().objectClasses()).getFirst();
+
+        assertEquals(AttributeUtil.getStringValue(object.getAttributeByName("description")), "Mapped to table \"users\"");
+        assertEquals(string(attribute(object, "name"), "description"),
+                "Mapped to column \"name\" of table \"users\" (native type: VARCHAR)");
+        // sparse: no description on the model -> no description attribute in the export
+        assertNull(AttributeUtil.find("description", attribute(object, "last_login").getAttributes()));
+    }
+
     private static EmbeddedObject attribute(ConnectorObject object, String name) {
         List<Object> attributes = object.getAttributeByName("attributes").getValue();
         return attributes.stream().map(EmbeddedObject.class::cast)

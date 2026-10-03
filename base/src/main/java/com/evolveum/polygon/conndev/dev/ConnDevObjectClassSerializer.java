@@ -25,6 +25,7 @@ public final class ConnDevObjectClassSerializer {
 
     public static final String CONN_ID_BLOCK = "connId";
     public static final String F_TYPE = "type";
+    public static final String F_DESCRIPTION = "description";
     public static final String F_REQUIRED = "required";
     public static final String F_MULTI_VALUED = "multiValued";
     public static final String F_CREATABLE = "creatable";
@@ -57,6 +58,9 @@ public final class ConnDevObjectClassSerializer {
     public static ConnectorObject serialize(ConnDevObjectClassSource source) {
         var name = source.connId().getType();
         var objectClass = ConnDevObjectClass.objectClass(name).uid(name);
+        if (isNotBlank(source.connId().getDescription())) {
+            objectClass.description(source.connId().getDescription());
+        }
         for (var attribute : source.attributes()) {
             serialize(attribute, objectClass.attribute(attribute.remoteName()));
         }
@@ -66,6 +70,9 @@ public final class ConnDevObjectClassSerializer {
 
     private static void serialize(ConnDevAttributeSource source, ConnDevAttribute target) {
         var info = source.connId();
+        if (isNotBlank(info.getDescription())) {
+            target.description(info.getDescription());
+        }
         var connId = new ArrayList<Attribute>();
         var type = source.nativeType() != null ? source.nativeType() : typeName(info.getType());
         if (type != null) {
@@ -110,6 +117,10 @@ public final class ConnDevObjectClassSerializer {
     /** ConnId stores the role as a special name ({@code __SUBJECT__}); export it as plain {@code subject}. */
     private static String role(String roleInReference) {
         return roleInReference.replace("__", "").toLowerCase();
+    }
+
+    private static boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
     }
 
     private static String typeName(Class<?> type) {

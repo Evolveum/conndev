@@ -362,6 +362,11 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         @Override
+        public DefinitionValue<String> description() {
+            return description;
+        }
+
+        @Override
         public ConnIdMapping returnedByDefault(DefinitionValue<Boolean> returnedByDefault) {
             this.returnedByDefault = this.returnedByDefault.moreSpecific(returnedByDefault);
             return self();

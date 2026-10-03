@@ -44,12 +44,14 @@ public final class ConnDevSchema {
         var objectClass = new ObjectClassInfoBuilder();
         objectClass.setType(OBJECT_CLASS_NAME);
         objectClass.addAttributeInfo(attributesList());
+        objectClass.addAttributeInfo(string(F_DESCRIPTION));
         extraObjectClassFields.forEach(objectClass::addAttributeInfo);
 
         var attribute = new ObjectClassInfoBuilder();
         attribute.setType(ATTRIBUTE_NAME);
         attribute.setEmbedded(true);
         attribute.addAttributeInfo(string(F_NAME));
+        attribute.addAttributeInfo(string(F_DESCRIPTION));
         attribute.addAttributeInfo(embeddedBlock(ConnDevObjectClassSerializer.CONN_ID_BLOCK, CONN_ID_BLOCK_TYPE));
         extraAttributeFields.forEach(attribute::addAttributeInfo);
 
