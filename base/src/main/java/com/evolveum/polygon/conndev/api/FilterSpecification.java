@@ -89,6 +89,24 @@ public interface FilterSpecification {
         }
 
         /**
+         * A derived specification that all previous conditions, and tests if the filter is an
+         * {@link EqualsFilter} whose attribute carries exactly one value equal to {@code value}.
+         *
+         * <p>Use this for concrete-value filters, e.g. {@code attribute("enabled").eq(false)}
+         * which matches only the filter {@code enabled = false}. The value comparison is an
+         * {@link Objects#equals(Object, Object) equality check} against the single value of the
+         * filter's attribute, so a filter carrying more (or no) values does not match.</p>
+         *
+         * @param value the concrete value the attribute must equal
+         * @return An {@link Attribute} specification matching the equals filter on the single concrete value
+         */
+        default FilterSpecification.Attribute eq(Object value) {
+            return chain(filter -> filter instanceof EqualsFilter
+                    && filter.getAttribute().getValue().size() == 1
+                    && Objects.equals(filter.getAttribute().getValue().getFirst(), value));
+        }
+
+        /**
          * A derived specification that all previous conditions, and tests if filter is {@link ContainsFilter}.
          *
          * @return A new {@link Attribute} specification that checks if an attribute contains a specific value.

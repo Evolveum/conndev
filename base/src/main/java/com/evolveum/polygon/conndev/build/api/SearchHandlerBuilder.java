@@ -43,7 +43,14 @@ public interface SearchHandlerBuilder<R extends SearchHandlerBuilder<R>> extends
     FilterSpecification.Attribute attribute(String name);
 
     /**
-     * Registers a filter specification as supported by this handler.
+     * Registers a filter specification as supported by this handler, without a mapping closure.
+     *
+     * <p>The handler serves the matching filters on its own: the framework routes a search
+     * whose filter matches {@code filterSpec} to this handler and passes it the filter
+     * unmodified. Implementations use this for concrete-value filters where the handler
+     * itself <em>is</em> the filter, e.g. a search endpoint at {@code users/disabled} that
+     * already returns only the disabled users and needs no request customization for
+     * {@code attribute("enabled").eq(false)}.</p>
      *
      * @param filterSpec the filter specification to mark as supported
      * @return this builder for chaining
