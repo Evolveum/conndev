@@ -407,11 +407,14 @@ attributes through a dedicated enum and type-resolution rules:
    mapping. When a mapping's native ConnId type differs from the final one,
    `JsonMapping.build()` wraps the mapping in a `ValueTypeOverrideMapping`
    (`schema/ValueTypeOverrideMapping.java`):
-** A *default* mapping (derived from the JSON type / OpenAPI format) is bridged
-   with a value conversion — only same-type passthrough and numeric-to-`String`
-   overrides are supported, so any other combination (e.g. a JSON `string`
-   mapping for a `GuardedString`-forced or reference attribute) fails the schema
-   build.
+ ** A *default* mapping (derived from the JSON type / OpenAPI format) is bridged
+    with a value conversion — supported overrides are same-type passthrough,
+    numeric/`ZonedDateTime`-to-`String` (e.g. an `int64`-backed
+    `pass:[__UID__]`) and `String`↔`GuardedString` (e.g. a JSON `string` or
+    `password`-format mapping behind a `GuardedString`-forced attribute — the
+    wire value stays a JSON string, the ConnId value a `GuardedString`), so any
+    other combination (e.g. a JSON `string` mapping for a reference attribute)
+    fails the schema build.
 ** A *custom* mapping (a user-supplied `implementation`) is never bridged: its
    `serialize`/`deserialize` closures own the wire↔ConnId conversion and produce
    the type from the connid section, not from the default JSON mapping, so the

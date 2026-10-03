@@ -16,6 +16,7 @@ import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.testng.annotations.Test;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -237,6 +238,29 @@ public class YamlSchemaLoadingTest {
 
         assertEquals(password.getType(), GuardedString.class);
         assertFalse(password.isReadable());
+    }
+
+    @Test
+    public void guardedStringConnIdTypeOverJsonStringMapping_buildsAndConverts() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  Secure:
+                    attributes:
+                      password:
+                        jsonType: string
+                        openApiFormat: password
+                        connId:
+                          type: GuardedString
+                """);
+
+        builder.applyStructuralRules();
+        var mapping = loader.build().objectClass("Secure").attributeFromProtocolName("password").json();
+
+        assertEquals(mapping.connIdType(), GuardedString.class);
+        assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.stringNode("secret")),
+                new GuardedString("secret".toCharArray()));
     }
 
     @Test

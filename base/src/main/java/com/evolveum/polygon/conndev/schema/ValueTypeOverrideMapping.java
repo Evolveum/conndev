@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.spi.ValueMapping;
+import org.identityconnectors.common.security.GuardedString;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -19,7 +20,8 @@ import java.util.function.Function;
  * <p>
  * When a schema declares a value mapping with one ConnId type but the connector expects
  * or produces a different type (e.g., overriding a mapping to use {@code Object} or
- * {@code String} instead of the original ConnId type), this wrapper adapts the conversion
+ * {@code String} instead of the original ConnId type, or a {@code String}-backed JSON
+ * mapping presented to ConnId as {@link GuardedString}), this wrapper adapts the conversion
  * by delegating to an underlying mapping with an intermediate conversion step.
  * <p>
  * The conversion pipeline works as follows:
@@ -42,6 +44,9 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
      * If the given mapping already uses {@code Object} as its ConnId type, a plain cast is returned.
      * If the given mapping uses a known type (Integer, Long, Number) and the override type is
      * {@code String}, a conversion is inserted to parse or serialize between String and the original type.
+     * If the override type is {@link GuardedString} and the mapping is {@code String}-backed
+     * (e.g. a JSON {@code string}/{@code password} mapping behind a forced password attribute),
+     * a {@code GuardedString}↔{@code String} conversion is inserted.
      *
      * @param <P> the protocol (wire) value type
      * @param connIdType the desired override ConnId type (typically {@code Object} or {@code String})
@@ -55,6 +60,9 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
         }
         if (String.class.equals(connIdType)) {
             return cast(Object.class, stringType(valueMapping));
+        }
+        if (GuardedString.class.equals(connIdType)) {
+            return cast(Object.class, guardedStringType(valueMapping));
         }
         throw new IllegalArgumentException("Unsupported override type combination: " + connIdType + " and " + valueMapping.toString());
     }
@@ -88,10 +96,11 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
 
     /**
      * Creates a String-typed override mapping by inserting conversions between the original
-     * ConnId type (Integer, Long, or Number) and String.
+     * ConnId type (Integer, Long, BigInteger, BigDecimal, Number, ZonedDateTime, or
+     * {@link GuardedString}) and String.
      *
      * @param <P> the protocol (wire) value type
-     * @param valueMapping the underlying value mapping with a numeric ConnId type
+     * @param valueMapping the underlying value mapping with a convertible ConnId type
      * @return a value mapping that uses {@code String} as the ConnId type with appropriate conversions
      * @throws IllegalArgumentException if the underlying mapping uses an unsupported ConnId type
      */
@@ -122,7 +131,41 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
             return new ValueTypeOverrideMapping<>(String.class, cast(ZonedDateTime.class, valueMapping),
                     ZonedDateTime::parse,Object::toString);
         }
+        if (GuardedString.class.equals(original)) {
+            return new ValueTypeOverrideMapping<>(String.class, cast(GuardedString.class, valueMapping),
+                    s -> new GuardedString(s.toCharArray()),
+                    ValueTypeOverrideMapping::unguard);
+        }
         throw new IllegalArgumentException("Unsupported override type combination: " + valueMapping.connIdType());
+    }
+
+    /**
+     * Creates a GuardedString-typed override mapping by inserting conversions between the original
+     * ConnId type ({@code String}) and {@link GuardedString}.
+     *
+     * @param <P> the protocol (wire) value type
+     * @param valueMapping the underlying value mapping with a {@code String} ConnId type
+     * @return a value mapping that uses {@code GuardedString} as the ConnId type with appropriate conversions
+     * @throws IllegalArgumentException if the underlying mapping uses an unsupported ConnId type
+     */
+    private static <P> ValueMapping<GuardedString,P> guardedStringType(ValueMapping<?,P> valueMapping) {
+        if (String.class.equals(valueMapping.connIdType())) {
+            return new ValueTypeOverrideMapping<>(GuardedString.class, cast(String.class, valueMapping),
+                    ValueTypeOverrideMapping::unguard,
+                    s -> new GuardedString(s.toCharArray()));
+        }
+        throw new IllegalArgumentException("Unsupported override type combination: "
+                + GuardedString.class + " and " + valueMapping.connIdType());
+    }
+
+    /**
+     * Extracts the string content of a {@link GuardedString} through its scoped
+     * {@link GuardedString.Accessor access} — the class exposes no plaintext getter.
+     */
+    private static String unguard(GuardedString value) {
+        var builder = new StringBuilder();
+        value.access(builder::append);
+        return builder.toString();
     }
 
     /**
@@ -171,12 +214,12 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
      * {@code toWireValue()} to produce the protocol value ({@code P}).
      *
      * @param value the override ConnId-side value
-     * @return the converted protocol-side value
+     * @return the converted protocol-side value, or {@code null} if the value is {@code null}
      * @throws IllegalArgumentException if the underlying conversion fails
      */
     @Override
     public P toWireValue(O value) throws IllegalArgumentException {
-        return impl.toWireValue(toDelegate.apply(value));
+        return value == null ? null : impl.toWireValue(toDelegate.apply(value));
     }
 
     /**
@@ -187,12 +230,14 @@ public record ValueTypeOverrideMapping<O, D, P>(Class<O> connIdType, ValueMappin
      * using {@link #toOverride()}.
      *
      * @param value the protocol-side value
-     * @return the converted override ConnId-side value
+     * @return the converted override ConnId-side value, or {@code null} if the underlying
+     *         mapping produces no value (e.g. a JSON {@code null} node)
      * @throws IllegalArgumentException if the underlying conversion fails
      */
     @Override
     public O toConnIdValue(P value) throws IllegalArgumentException {
-        return toOverride.apply(impl.toConnIdValue(value));
+        var delegate = impl.toConnIdValue(value);
+        return delegate == null ? null : toOverride.apply(delegate);
     }
 
 }

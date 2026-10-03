@@ -10,8 +10,10 @@ import com.evolveum.polygon.conndev.api.ContextLookup;
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.Name;
+import org.identityconnectors.framework.common.objects.OperationalAttributes;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.testng.annotations.Test;
@@ -23,10 +25,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.*;
 
 /**
- * Verifies that special ConnId attributes (UID / NAME) are always exposed as
- * {@link String} on the ConnId side, even when the protocol (JSON) native type
- * not textual — e.g. a schema whose native {@code id} attribute has an integer
- * wire type while being declared as the UID attribute.
+ * Verifies that special ConnId attributes (UID / NAME — forced {@link String},
+ * and the password attributes — forced {@link GuardedString}) are always exposed
+ * as their forced type on the ConnId side, even when the protocol (JSON) native
+ * type differs — e.g. a schema whose native {@code id} attribute has an integer
+ * wire type while being declared as the UID attribute, or a {@code String}-backed
+ * JSON mapping behind a {@code __PASSWORD__} attribute.
  * <p>
  * Covers both halves of the mechanism, both applied externally via
  * {@link BaseSchemaBuilder#applyStructuralRules()} before building (the production
@@ -74,6 +78,12 @@ public class ForcedConnIdTypeTest {
     private static TestAttributeBuilder newUidAttribute() {
         var attribute = newObjectClass().attribute("id");
         attribute.connId().name(Uid.NAME);
+        return attribute;
+    }
+
+    private static TestAttributeBuilder newPasswordAttribute() {
+        var attribute = newObjectClass().attribute("password");
+        attribute.connId().name(OperationalAttributes.PASSWORD_NAME);
         return attribute;
     }
 
@@ -198,6 +208,76 @@ public class ForcedConnIdTypeTest {
 
         assertEquals(mapping.connIdType(), Integer.class);
         assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.numberNode(42)), 42);
+    }
+
+    @Test
+    public void passwordAttribute_forcesGuardedString() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string");
+
+        assertThat(build(attribute).connId().getType()).isEqualTo(GuardedString.class);
+    }
+
+    @Test
+    public void passwordAttribute_stringWire_mappingReportsGuardedStringConnIdType() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string");
+
+        var mapping = build(attribute).json();
+
+        assertEquals(mapping.connIdType(), GuardedString.class);
+    }
+
+    @Test
+    public void passwordAttribute_stringWire_deserializesStringAsGuardedString() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string");
+
+        var mapping = build(attribute).json();
+        Object value = mapping.singleValueFromAttribute(JsonNodeFactory.instance.stringNode("secret"));
+
+        assertTrue(value instanceof GuardedString, "password value should be deserialized as GuardedString, got: " + value);
+        assertEquals(value, new GuardedString("secret".toCharArray()));
+    }
+
+    @Test
+    public void passwordAttribute_passwordFormatWire_deserializesStringAsGuardedString() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string").openApiFormat("password");
+
+        var mapping = build(attribute).json();
+
+        assertEquals(mapping.connIdType(), GuardedString.class);
+        assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.stringNode("secret")),
+                new GuardedString("secret".toCharArray()));
+    }
+
+    @Test
+    public void passwordAttribute_nullWire_deserializesAsNull() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string");
+
+        var mapping = build(attribute).json();
+
+        assertNull(mapping.singleValueFromAttribute(JsonNodeFactory.instance.nullNode()));
+    }
+
+    @Test
+    public void passwordAttribute_stringWire_serializesGuardedStringBackToString() {
+        var attribute = newPasswordAttribute();
+        attribute.json().type("string");
+
+        var mapping = build(attribute).json();
+        ObjectNode parent = JsonNodeFactory.instance.objectNode();
+
+        mapping.toJsonNode(
+                AttributeBuilder.build(OperationalAttributes.PASSWORD_NAME, new GuardedString("secret".toCharArray())),
+                parent);
+
+        JsonNode node = parent.get("password");
+        assertNotNull(node);
+        assertTrue(node.isTextual(), "Wire value should be a JSON string, got: " + node);
+        assertEquals(node.asText(), "secret");
     }
 
 }
