@@ -352,6 +352,108 @@ public class YamlSchemaLoadingTest {
         assertTrue(exception.getMessage().contains("$.emails[?(@.primary == )]"), exception.getMessage());
     }
 
+    /**
+     * The {@code json: implementation: { deserialize: | }} block — the declarative counterpart of the
+     * Groovy {@code json { implementation { deserialize { ... } } }} DSL: the fragment's own imports
+     * are hoisted, the delegate-provided {@code value} is the wire node, and the built mapping
+     * converts through the closure.
+     */
+    @Test
+    public void jsonImplementationBlockBindsDeserialize() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  Membership:
+                    embedded: true
+                    references:
+                      project:
+                        objectClass: Project
+                        json:
+                          type: string
+                          openApiFormat: uri-reference
+                          path: $._links.project
+                          implementation:
+                            deserialize: |
+                              import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder
+                              import org.identityconnectors.framework.common.objects.ConnectorObjectReference
+                              import org.identityconnectors.framework.common.objects.ObjectClass
+                              var href = value.get("href")?.asText()
+                              var pid = href.substring(href.lastIndexOf("/") + 1)
+                              var obj = new ConnectorObjectBuilder()
+                                      .setObjectClass(new ObjectClass("Project"))
+                                      .setUid(pid)
+                                      .setName(value.get("title")?.asText())
+                              return new ConnectorObjectReference(obj.build())
+                """);
+
+        builder.applyStructuralRules();
+        var mapping = loader.build().objectClass("Membership").attributeFromProtocolName("project").json();
+        var sample = JsonNodeFactory.instance.objectNode()
+                .set("_links", JsonNodeFactory.instance.objectNode()
+                        .set("project", JsonNodeFactory.instance.objectNode()
+                                .set("href", JsonNodeFactory.instance.textNode("https://op.example.org/api/v3/projects/123"))
+                                .set("title", JsonNodeFactory.instance.textNode("Proj"))));
+
+        var connId = mapping.singleValueFromAttribute(mapping.attributeFromObject(sample));
+
+        assertTrue(connId instanceof ConnectorObjectReference, "expected a ConnectorObjectReference, got " + connId);
+        var ref = (ConnectorObject) ((ConnectorObjectReference) connId).getValue();
+        assertEquals(ref.getUid(), new Uid("123"));
+        assertEquals(ref.getName(), new Name("Proj"));
+    }
+
+    /**
+     * A {@code type} / {@code openApiFormat} declared after the {@code implementation} block in
+     * document order still feeds the lazy base mapping — the Groovy path is order-independent the
+     * same way. Both directions compose onto that base.
+     */
+    @Test
+    public void jsonImplementationBeforeTypeStillResolvesTheBase() {
+        var builder = schemaBuilder();
+        var loader = new YamlSchemaLoader(builder);
+        loader.load("""
+                objectClasses:
+                  Widget:
+                    attributes:
+                      label:
+                        json:
+                          implementation:
+                            deserialize: |
+                              return "d:" + value.asText()
+                            serialize: |
+                              return "s:" + value
+                          type: string
+                """);
+
+        builder.applyStructuralRules();
+        var mapping = loader.build().objectClass("Widget").attributeFromProtocolName("label").json();
+
+        assertEquals(mapping.singleValueFromAttribute(JsonNodeFactory.instance.stringNode("x")), "d:x");
+
+        var parent = JsonNodeFactory.instance.objectNode();
+        mapping.toJsonNode(AttributeBuilder.build("label", "x"), parent);
+        assertEquals(parent.get("label").asText(), "s:x");
+    }
+
+    /** A typo'd sub-key inside the {@code implementation} block fails fast, naming the key. */
+    @Test
+    public void unknownKeyInsideJsonImplementationFailsFast() {
+        var exception = expectThrows(IllegalArgumentException.class, () -> new YamlSchemaLoader(schemaBuilder()).load("""
+                objectClasses:
+                  Widget:
+                    attributes:
+                      label:
+                        json:
+                          type: string
+                          implementation:
+                            deserialise: |
+                              return value
+                """));
+
+        assertTrue(exception.getMessage().contains("deserialise"), exception.getMessage());
+    }
+
     /** An unrecognized object-class-level block (e.g. a protocol block no @Yaml binding declares) fails fast. */
     @Test
     public void unknownTopLevelBlockFailsFast() {

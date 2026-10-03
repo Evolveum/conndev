@@ -14,6 +14,7 @@ import tools.jackson.databind.JsonNode;
 
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Builder for JSON value mappings that composes with the mapping derived from the
@@ -33,10 +34,24 @@ import java.util.function.Function;
  */
 public class JsonValueMappingBuilder extends AbstractValueMappingBuilder<Object, JsonNode, JsonValueMappingBuilder> {
 
-    private final JsonValueMapping base;
+    private final Supplier<JsonValueMapping> baseSupplier;
 
     public JsonValueMappingBuilder(JsonValueMapping base) {
-        this.base = base;
+        this(() -> base);
+    }
+
+    /**
+     * Creates a builder whose base mapping resolves lazily — the supplier is consulted at
+     * {@link #build()} time (and when a custom {@code serialize} falls back to it), so a base
+     * that depends on state declared later in a declarative document (e.g. a JSON {@code type}
+     * bound after the {@code implementation} block) still resolves correctly.
+     */
+    public JsonValueMappingBuilder(Supplier<JsonValueMapping> base) {
+        this.baseSupplier = base;
+    }
+
+    private JsonValueMapping base() {
+        return baseSupplier.get();
     }
 
     @Override
@@ -49,7 +64,7 @@ public class JsonValueMappingBuilder extends AbstractValueMappingBuilder<Object,
             if (result == null) {
                 return JsonValueMapping.NODE_FACTORY.nullNode();
             }
-            return base.toWireValue(result);
+            return base().toWireValue(result);
         };
         return this;
     }
@@ -60,6 +75,7 @@ public class JsonValueMappingBuilder extends AbstractValueMappingBuilder<Object,
      * @return the constructed value mapping
      */
     public ValueMapping<Object, JsonNode> build() {
+        JsonValueMapping base = base();
         Function<JsonNode, Object> toConnId = deserialize != null ? deserialize : base::toConnIdValue;
         Function<Object, JsonNode> toWire = serialize != null ? serialize : base::toWireValue;
         return new JsonMappingImpl(base, toConnId, toWire);

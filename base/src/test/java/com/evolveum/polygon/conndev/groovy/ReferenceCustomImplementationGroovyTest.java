@@ -12,6 +12,7 @@ import com.evolveum.polygon.conndev.schema.BaseSchema;
 import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
 import com.evolveum.polygon.conndev.schema.StubConnector;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.ConnectorObjectReference;
 import org.identityconnectors.framework.common.objects.Name;
@@ -19,6 +20,7 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import java.util.List;
 
@@ -125,6 +127,40 @@ public class ReferenceCustomImplementationGroovyTest {
         object.putObject("_links");
 
         assertThat(mapping.valuesFromObject(object)).isNull();
+    }
+
+    /**
+     * The Groovy DSL's {@code implementation { serialize { ... } }} direction runs through the
+     * same shared value-mapping sub-builder as the declarative YAML block: the closure's result
+     * is encoded by the base mapping derived from the declared JSON type.
+     */
+    @Test
+    public void groovyDslSerializeDirection_buildsThroughTheSharedSubBuilder() {
+        var builder = new BaseSchemaBuilder(StubConnector.class, ContextLookup.none());
+        var shell = new GroovyContext().createShell();
+        shell.setVariable("objectClass", new MethodClosure(builder, "objectClass"));
+        shell.evaluate("""
+                objectClass("Widget") {
+                    attribute("label") {
+                        json {
+                            type("string")
+                            implementation {
+                                serialize {
+                                    return "s:" + value
+                                }
+                            }
+                        }
+                    }
+                }
+                """);
+        builder.applyStructuralRules();
+
+        var mapping = builder.build().objectClass("Widget").attributeFromProtocolName("label").json();
+
+        var parent = JsonNodeFactory.instance.objectNode();
+        mapping.toJsonNode(AttributeBuilder.build("label", "x"), parent);
+
+        assertThat(parent.get("label").asText()).isEqualTo("s:x");
     }
 
 }

@@ -454,8 +454,9 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         private String openApiFormat;
         /** The JSON value mapping implementation. */
         private ValueMapping<Object, JsonNode> implementation;
-        /** Closure-based implementation configuration. */
-        private Closure<?> implementationClosure;
+        /** The value-mapping sub-builder shared by the Groovy {@code implementation} closure and the
+         *  declarative YAML {@code implementation} block; its base mapping resolves at {@link #build()}. */
+        private JsonValueMappingBuilder implementationBuilder;
         /** The attribute's final ConnId type, applied by {@code AttributeTypeCoercionRule}. */
         private Class<?> connIdTypeOverride;
 
@@ -557,9 +558,27 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
                 @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
                 @Script.Initialization
                 Closure<?> closure) {
-            this.implementationClosure = closure;
-
+            // a null closure is treated as unspecified; the default implementation applies
+            if (closure != null) {
+                GroovyClosures.callAndReturnDelegate(closure, implementation());
+            }
             return this;
+        }
+
+        /**
+         * The value-mapping sub-builder for the {@code implementation} block — configured by the
+         * Groovy {@link #implementation(Closure)} closure or by the declarative YAML
+         * {@code implementation:} sub-map. The base mapping resolves lazily at {@link #build()}
+         * so a {@code type} / {@code openApiFormat} declared after the block still applies
+         * (order-independent for both front-ends).
+         */
+        @Override
+        public JsonValueMappingBuilder implementation() {
+            if (implementationBuilder == null) {
+                implementationBuilder = new JsonValueMappingBuilder(
+                        () -> OpenApiValueMapping.from(type, openApiFormat));
+            }
+            return implementationBuilder;
         }
 
         @Override
@@ -590,9 +609,10 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
          * (recorded via {@link #applyConnIdTypeOverride(Class)}) differs from the
          * implementation's native type, a default implementation is bridged with a
          * {@link ValueTypeOverrideMapping} that inserts the value conversion, while a
-         * custom implementation (explicit mapping or closure) is only re-labeled to the
-         * final ConnId type — its closures own the conversion and produce the type from
-         * the connId section, not from the default JSON mapping.
+         * custom implementation (an explicit mapping, or the {@code implementation}
+         * sub-builder — Groovy closure or declarative YAML block) is only re-labeled to
+         * the final ConnId type — its closures own the conversion and produce the type
+         * from the connId section, not from the default JSON mapping.
          *
          * @return the built JsonAttributeMapping
          */
@@ -601,15 +621,13 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             ValueMapping<Object, JsonNode> implementation;
             // a custom implementation's values come from the connid section, so it is
             // never bridged against the default JSON mapping's native type
-            var customImplementation = this.implementation != null || implementationClosure != null;
+            var customImplementation = this.implementation != null || implementationBuilder != null;
 
             if (this.implementation != null) {
                 implementation = this.implementation;
 
-            } else if (implementationClosure != null) {
-                var builder = new JsonValueMappingBuilder(OpenApiValueMapping.from(type, openApiFormat));
-                GroovyClosures.callAndReturnDelegate(implementationClosure, builder);
-                implementation = builder.build();
+            } else if (implementationBuilder != null) {
+                implementation = implementationBuilder.build();
 
             } else {
                 implementation = OpenApiValueMapping.from(type, openApiFormat);

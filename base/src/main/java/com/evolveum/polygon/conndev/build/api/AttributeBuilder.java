@@ -308,25 +308,6 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
 
     interface MappingBuilder<T extends MappingBuilder<T>> {
         /**
-         * Sets a custom value mapping implementation for JSON serialization/deserialization.
-         *
-         * @param mapping the value mapping to use
-         * @return this mapping builder
-         */
-        T implementation(ValueMapping<?, JsonNode> mapping);
-
-        /**
-         * Sets a custom value mapping implementation via a closure.
-         *
-         * @param closure a closure that configures the value mapping
-         * @return this mapping builder
-         */
-        T implementation(
-                @Script.Initialization
-                @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
-                Closure<?> closure);
-
-        /**
          * Creates a mapping table for discrete value translations.
          *
          * @return the mapping table builder
@@ -393,6 +374,34 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          */
         @Yaml.Key
         JsonMapping openApiFormat(String openapiFormat);
+
+        /**
+         * Sets a custom value mapping implementation for JSON serialization/deserialization.
+         *
+         * @param mapping the value mapping to use
+         * @return this JSON mapping instance
+         */
+        JsonMapping implementation(ValueMapping<?, JsonNode> mapping);
+
+        /**
+         * Sets a custom value mapping implementation via a closure.
+         *
+         * @param closure a closure that configures the value mapping
+         * @return this JSON mapping instance
+         */
+        JsonMapping implementation(
+                @Script.Initialization
+                @DelegatesTo(value = ValueMappingBuilder.class, strategy = Closure.DELEGATE_ONLY)
+                Closure<?> closure);
+
+        /**
+         * Returns the value-mapping sub-builder for the {@code implementation} block: the Groovy
+         * {@link #implementation(Closure)} closure and the declarative YAML {@code implementation:}
+         * sub-map (whose {@code deserialize} / {@code serialize} Groovy blocks bind onto it) both
+         * configure the same builder.
+         */
+        @Yaml.Sub
+        ValueMappingBuilder<?, ?> implementation();
 
         /**
          * Convenience method to create an {@link AttributePath} for a simple field.
