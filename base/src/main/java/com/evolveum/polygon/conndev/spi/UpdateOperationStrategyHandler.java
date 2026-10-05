@@ -20,6 +20,7 @@ import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -80,15 +81,44 @@ public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {
             if (before != null) {
                 OperationTracing.detail(facade, OperationTracing.ORIGINAL_STATE, uid.getUidValue());
             }
+            var applied = new LinkedHashSet<AttributeDelta>();
             for (var i = 0; i < selected.size(); i++) {
                 var capability = selected.get(i);
                 OperationTracing.executing(facade, labels.get(i),
                         OperationTracing.deltaNames(capability.supported()));
-                capability.handler().update(new UpdateOperationBuilder.UpdateRequest(
+                var response = capability.handler().update(new UpdateOperationBuilder.UpdateRequest(
                         objectClass, uid, capability.supported(), before), options, scope);
+                checkResponse(uid, capability.handler(), capability.supported(), response);
+                applied.addAll(response.changesApplied());
             }
-            return requested;
+            return applied;
         });
+    }
+
+    /** Validates a handler's {@link UpdateOperationHandler.UpdateResponse} against the updated object and its claimed deltas. */
+    private static void checkResponse(Uid uid, UpdateOperationHandler handler,
+            Collection<AttributeDelta> supported, UpdateOperationHandler.UpdateResponse response) {
+        if (response == null) {
+            throw new ConnectorException("Update handler " + handler.getClass().getName()
+                    + " returned no update response");
+        }
+        if (!response.uid().equals(uid)) {
+            throw new ConnectorException("Update handler " + handler.getClass().getName()
+                    + " reported UID " + response.uid().getUidValue()
+                    + " different from the updated object " + uid.getUidValue());
+        }
+        if (response.changesApplied() == null) {
+            throw new ConnectorException("Update handler " + handler.getClass().getName()
+                    + " returned no applied changes");
+        }
+        var claimed = supported.stream().map(AttributeDelta::getName).toList();
+        for (var delta : response.changesApplied()) {
+            if (!claimed.contains(delta.getName())) {
+                throw new ConnectorException("Update handler " + handler.getClass().getName()
+                        + " reported a change for attribute '" + delta.getName()
+                        + "' it does not handle");
+            }
+        }
     }
 
     private ConnectorObject readObject(Uid uid, OperationOptions options,

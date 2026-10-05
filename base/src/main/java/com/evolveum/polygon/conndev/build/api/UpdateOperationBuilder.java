@@ -17,7 +17,6 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Uid;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Builder for configuring the update operation on an object class.
@@ -111,15 +110,5 @@ public interface UpdateOperationBuilder extends ObjectClassOperationBuilder<Upda
             Uid uid,
             Collection<AttributeDelta> attributeDeltaSet,
             ConnectorObject before) {
-    }
-
-    /**
-     * Represents the response after an update operation.
-     *
-     * @param uid the unique identifier of the updated object
-     * @param changesApplied the set of deltas that were actually applied
-     */
-    record UpdateResponse(Uid uid, Set<AttributeDelta> changesApplied) {
-
     }
 }

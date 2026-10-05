@@ -136,6 +136,62 @@ public class OperationStrategyHandlerTest {
     }
 
     @Test
+    public void updateReturnsAppliedChangesReportedByHandlers() {
+        var fixture = new Fixture();
+        var title = delta("title", "Engineer");
+        // The remote system normalized the name — the first handler reports the
+        // applied change with the value the remote actually holds.
+        var renamed = delta("name", "A. Smith");
+        var operation = new UpdateOperationStrategyHandler(fixture, ACCOUNT, fixture.executor,
+                List.of(fixture.customUpdater("first",
+                        request -> new UpdateOperationHandler.UpdateResponse(
+                                request.uid(), Set.of(renamed)), "name"),
+                        fixture.updater("second", false, "title")));
+
+        assertEquals(operation.updateDelta(UID, Set.of(delta("name", "Alice"), title), OPTIONS),
+                Set.of(renamed, title));
+        assertEquals(fixture.events,
+                List.of("begin", "first", "second", "commit", "close"));
+    }
+
+    @Test
+    public void updateRejectsHandlerWithoutResponse() {
+        var fixture = new Fixture();
+        var operation = new UpdateOperationStrategyHandler(fixture, ACCOUNT, fixture.executor,
+                List.of(fixture.customUpdater("first", request -> null, "name")));
+
+        expectThrows(ConnectorException.class,
+                () -> operation.updateDelta(UID, Set.of(delta("name", "Alice")), OPTIONS));
+        assertEquals(fixture.events, List.of("begin", "first", "rollback", "close"));
+    }
+
+    @Test
+    public void updateRejectsAppliedChangeOutsideClaimedAttributes() {
+        var fixture = new Fixture();
+        var operation = new UpdateOperationStrategyHandler(fixture, ACCOUNT, fixture.executor,
+                List.of(fixture.customUpdater("first",
+                        request -> new UpdateOperationHandler.UpdateResponse(
+                                request.uid(), Set.of(delta("unknown", "x"))), "name")));
+
+        expectThrows(ConnectorException.class,
+                () -> operation.updateDelta(UID, Set.of(delta("name", "Alice")), OPTIONS));
+        assertEquals(fixture.events, List.of("begin", "first", "rollback", "close"));
+    }
+
+    @Test
+    public void updateRejectsMismatchedUid() {
+        var fixture = new Fixture();
+        var operation = new UpdateOperationStrategyHandler(fixture, ACCOUNT, fixture.executor,
+                List.of(fixture.customUpdater("first",
+                        request -> new UpdateOperationHandler.UpdateResponse(
+                                new Uid("other"), Set.copyOf(request.attributeDeltaSet())), "name")));
+
+        expectThrows(ConnectorException.class,
+                () -> operation.updateDelta(UID, Set.of(delta("name", "Alice")), OPTIONS));
+        assertEquals(fixture.events, List.of("begin", "first", "rollback", "close"));
+    }
+
+    @Test
     public void deleteRunsCleanupBeforePrimaryAndRollsBackFailure() {
         var fixture = new Fixture();
         var operation = new DeleteOperationStrategyHandler(fixture.executor,
@@ -474,12 +530,47 @@ public class OperationStrategyHandlerTest {
                 }
 
                 @Override
-                public void update(UpdateOperationBuilder.UpdateRequest request,
+                public UpdateOperationHandler.UpdateResponse update(
+                        UpdateOperationBuilder.UpdateRequest request,
                         OperationOptions options, ContextLookup context) {
                     if (original) {
                         assertSame(request.before(), OBJECT);
                     }
                     Fixture.this.step(step, context);
+                    return allApplied(request);
+                }
+            };
+        }
+
+        private static UpdateOperationHandler.UpdateResponse allApplied(
+                UpdateOperationBuilder.UpdateRequest request) {
+            return new UpdateOperationHandler.UpdateResponse(
+                    request.uid(), Set.copyOf(request.attributeDeltaSet()));
+        }
+
+        /** A handler that answers with a caller-defined {@link UpdateOperationHandler.UpdateResponse}. */
+        private UpdateOperationHandler customUpdater(
+                String step,
+                Function<UpdateOperationBuilder.UpdateRequest, UpdateOperationHandler.UpdateResponse> responder,
+                String... names) {
+            return new UpdateOperationHandler() {
+                @Override
+                public boolean requiresOriginalState() {
+                    return false;
+                }
+
+                @Override
+                public Capability<AttributeDelta, UpdateOperationHandler> canHandle(
+                        Collection<AttributeDelta> request, OperationOptions options) {
+                    return new Capability<>(this, supported(request, AttributeDelta::getName, names));
+                }
+
+                @Override
+                public UpdateOperationHandler.UpdateResponse update(
+                        UpdateOperationBuilder.UpdateRequest request,
+                        OperationOptions options, ContextLookup context) {
+                    step(step, context);
+                    return responder.apply(request);
                 }
             };
         }
@@ -619,12 +710,14 @@ public class OperationStrategyHandlerTest {
         }
 
         @Override
-        public void update(UpdateOperationBuilder.UpdateRequest request,
+        public UpdateOperationHandler.UpdateResponse update(
+                UpdateOperationBuilder.UpdateRequest request,
                 OperationOptions options, ContextLookup context) {
             if (original) {
                 assertSame(request.before(), OBJECT);
             }
             fixture.step(step, context);
+            return Fixture.allApplied(request);
         }
     }
 
@@ -654,7 +747,8 @@ public class OperationStrategyHandlerTest {
         }
 
         @Override
-        public void update(UpdateOperationBuilder.UpdateRequest request,
+        public UpdateOperationHandler.UpdateResponse update(
+                UpdateOperationBuilder.UpdateRequest request,
                 OperationOptions options, ContextLookup context) {
             fixture.step(step, context);
             var entry = ConnDevLog.of(getClass()).currentOperation();
@@ -662,6 +756,7 @@ public class OperationStrategyHandlerTest {
                 entry.http(new HttpProtocolData.Request("PUT", "/api/account/1",
                         Map.of("name", "Alice", "password", "s3cret")));
             }
+            return Fixture.allApplied(request);
         }
     }
 
