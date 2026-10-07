@@ -18,6 +18,7 @@ import org.identityconnectors.framework.common.objects.filter.FilterTranslator;
 import org.identityconnectors.framework.spi.Connector;
 import org.identityconnectors.framework.spi.operations.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -192,7 +193,8 @@ public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> impl
         try {
             return validateScript(validationRequest).toMap();
         } catch (Exception e) {
-            return GroovyScriptValidator.error(ScriptError.Phase.INITIALIZATION, GroovyExceptionSanitizer.sanitize(e)).toMap();
+            var error = GroovyScriptValidator.error(ScriptError.Phase.INITIALIZATION, GroovyExceptionSanitizer.sanitize(e)).errors().getFirst();
+            return ScriptValidationResult.combined(List.of(error)).toMap();
         }
     }
 
@@ -214,11 +216,25 @@ public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> impl
      * simply won't have sibling schema scripts loaded.
      */
     protected List<String> schemaResources(String excludedResource) {
+        return schemaResources(excludedResource == null ? List.of() : List.of(excludedResource));
+    }
+
+    /**
+     * Same as {@link #schemaResources(String)}, excluding several resources at once — so a whole
+     * batch of not-yet-saved replacements can be validated as a set, each one standing in for its
+     * own still-broken deployed version instead of being reloaded from disk.
+     */
+    protected List<String> schemaResources(Collection<String> excludedResources) {
         return List.of();
     }
 
-    /** Same as {@link #schemaResources}, for operation/handler scripts. */
+    /** Same as {@link #schemaResources(String)}, for operation/handler scripts. */
     protected List<String> operationResources(String excludedResource) {
+        return operationResources(excludedResource == null ? List.of() : List.of(excludedResource));
+    }
+
+    /** Same as {@link #schemaResources(Collection)}, for operation/handler scripts. */
+    protected List<String> operationResources(Collection<String> excludedResources) {
         return List.of();
     }
 }

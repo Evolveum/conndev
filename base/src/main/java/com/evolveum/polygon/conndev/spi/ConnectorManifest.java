@@ -17,6 +17,7 @@ import tools.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ConnectorManifest {
@@ -76,14 +77,14 @@ public class ConnectorManifest {
     }
 
     /**
-     * Resource names for the given manifest section, skipping {@code excludedResource} if given
-     * — used to reload every other already-deployed script while validating a not-yet-saved
-     * replacement for one of them, so the replacement is evaluated in place of its old content
-     * rather than alongside it. Entries marked {@code disabled: true} are skipped entirely, in
-     * both real connector loading and validation — a disabled script is treated as if it weren't
-     * bundled at all.
+     * Resource names for the given manifest section, skipping any name in {@code
+     * excludedResources} — used to reload every other already-deployed script while validating
+     * one or more not-yet-saved replacements, so each replacement is evaluated in place of its old
+     * content rather than alongside it. Entries marked {@code disabled: true} are skipped
+     * entirely, in both real connector loading and validation — a disabled script is treated as
+     * if it weren't bundled at all.
      */
-    List<String> scripts(String type, String excludedResource) {
+    List<String> scripts(String type, Collection<String> excludedResources) {
 
         var schemaScripts = connector().get(type);
         if (schemaScripts == null || schemaScripts.isEmpty()) {
@@ -95,7 +96,7 @@ public class ConnectorManifest {
                 continue;
             }
             var script = schema.get("script").asText();
-            if (!script.equals(excludedResource)) {
+            if (!excludedResources.contains(script)) {
                 ret.add(script);
             }
         }
@@ -103,7 +104,7 @@ public class ConnectorManifest {
     }
 
     List<String> scripts(String type) {
-        return scripts(type, null);
+        return scripts(type, List.of());
     }
 
     public List<String> schemaScripts() {
@@ -112,7 +113,12 @@ public class ConnectorManifest {
 
     /** {@link #schemaScripts()}, additionally skipping {@code excludedResource}. */
     public List<String> schemaScripts(String excludedResource) {
-        return scripts("schema", excludedResource);
+        return schemaScripts(excludedResource == null ? List.of() : List.of(excludedResource));
+    }
+
+    /** {@link #schemaScripts()}, additionally skipping every name in {@code excludedResources}. */
+    public List<String> schemaScripts(Collection<String> excludedResources) {
+        return scripts("schema", excludedResources);
     }
 
     public List<String> authorizationScripts() {
@@ -125,7 +131,12 @@ public class ConnectorManifest {
 
     /** {@link #operationScripts()}, additionally skipping {@code excludedResource}. */
     public List<String> operationScripts(String excludedResource) {
-        return scripts("operation", excludedResource);
+        return operationScripts(excludedResource == null ? List.of() : List.of(excludedResource));
+    }
+
+    /** {@link #operationScripts()}, additionally skipping every name in {@code excludedResources}. */
+    public List<String> operationScripts(Collection<String> excludedResources) {
+        return scripts("operation", excludedResources);
     }
 
 

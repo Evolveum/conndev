@@ -1,0 +1,8 @@
+{
+  "connector": {
+    "schema": [
+      { "script": "/Account.schema.groovy" },
+      { "script": "/Group.schema.groovy" }
+    ]
+  }
+}

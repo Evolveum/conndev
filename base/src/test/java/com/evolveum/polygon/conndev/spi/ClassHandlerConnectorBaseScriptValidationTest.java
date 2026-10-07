@@ -14,6 +14,8 @@ import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.ScriptContext;
 import org.identityconnectors.framework.spi.Configuration;
 import org.testng.annotations.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
@@ -23,8 +25,12 @@ import static org.testng.Assert.*;
  * {@link ClassHandlerConnectorBase#runScriptOnResource} dispatch: development-mode gate,
  * {@code language}/{@code operation} validation, and routing to {@link
  * ClassHandlerConnectorBase#validateScript} — independent of any concrete connector family.
+ * Arguments/results are compared as JSON trees, so expected values can stay naturally formatted
+ * instead of matching the compact wire encoding exactly.
  */
 public class ClassHandlerConnectorBaseScriptValidationTest {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static class TestConfiguration extends BaseGroovyConnectorConfiguration {
     }
@@ -106,17 +112,30 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
         }
     }
 
-    private static ScriptContext scriptContext(String scriptText, Map<String, Object> arguments) {
-        return new ScriptContext("groovy", scriptText, arguments);
+    private static ScriptContext scriptContext(String scriptText, String argumentsJson) {
+        return new ScriptContext("groovy", scriptText, arguments(argumentsJson));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> arguments(String json) {
+        return MAPPER.readValue(json, Map.class);
+    }
+
+    private static JsonNode json(String json) {
+        return MAPPER.readTree(json);
+    }
+
+    private static JsonNode tree(Object value) {
+        return MAPPER.valueToTree(value);
     }
 
     @Test
     public void rejectsWhenNotInDevelopmentMode() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(false);
-        var context = scriptContext("1 + 1", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, "operation"));
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
 
         try {
             connector.runScriptOnResource(context, null);
@@ -130,9 +149,9 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
     public void rejectsNonGroovyScriptLanguage() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
-        var context = new ScriptContext("javascript", "1 + 1", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, "operation"));
+        var context = new ScriptContext("javascript", "1 + 1", arguments("""
+                { "operation": "compile", "artifactKind": "operation" }
+                """));
 
         try {
             connector.runScriptOnResource(context, null);
@@ -146,13 +165,15 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
     public void acceptsYamlScriptLanguage() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
-        var context = new ScriptContext("yaml", "objectClasses: {}", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, ScriptValidationRequest.ARTIFACT_KIND_SCHEMA));
+        var context = new ScriptContext("yaml", "objectClasses: {}", arguments("""
+                { "operation": "compile", "artifactKind": "schema" }
+                """));
 
         var result = connector.runScriptOnResource(context, null);
 
-        assertEquals(result, Map.of("status", "ok"));
+        assertEquals(tree(result), json("""
+                { "status": "ok" }
+                """));
         assertEquals(connector.capturedRequest.language(), "yaml");
         assertTrue(connector.capturedRequest.isYaml());
     }
@@ -161,9 +182,9 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
     public void rejectsUnsupportedOperationValue() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
-        var context = scriptContext("1 + 1", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, "validate",
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, "operation"));
+        var context = scriptContext("1 + 1", """
+                { "operation": "validate", "artifactKind": "operation" }
+                """);
 
         try {
             connector.runScriptOnResource(context, null);
@@ -178,27 +199,114 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
     public void routesArtifactKindFilenameAndScriptToValidateScript() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
-        var context = scriptContext("objectClass('User') { }", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_BUILD,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, ScriptValidationRequest.ARTIFACT_KIND_SCHEMA,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_FILENAME, "/User.schema.groovy"));
+        var context = scriptContext("objectClass('User') { }", """
+                {
+                  "operation": "build",
+                  "artifactKind": "schema",
+                  "filename": "/User.schema.groovy"
+                }
+                """);
 
         var result = connector.runScriptOnResource(context, null);
 
-        assertEquals(result, Map.of("status", "ok"));
+        assertEquals(tree(result), json("""
+                { "status": "ok" }
+                """));
         assertEquals(connector.capturedRequest.artifactKind(), ScriptValidationRequest.ARTIFACT_KIND_SCHEMA);
         assertEquals(connector.capturedRequest.filename(), "/User.schema.groovy");
         assertEquals(connector.capturedRequest.scriptText(), "objectClass('User') { }");
         assertEquals(connector.capturedRequest.operation(), ScriptValidationRequest.SCRIPT_OPERATION_BUILD);
     }
 
+    /**
+     * "Repair object class" can regenerate several scripts in one response - every one of them
+     * needs to stand in for its own old content during validation, not just the one carried as
+     * {@code filename}/{@code scriptText}. The extra ones travel as a {@code overrides} script
+     * argument (filename -> candidate content).
+     */
+    @Test
+    public void overridesArePassedThroughFromScriptArguments() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        var context = scriptContext("objectClass('User') { }", """
+                {
+                  "operation": "build",
+                  "artifactKind": "schema",
+                  "filename": "/User.schema.groovy",
+                  "overrides": { "/User.search.all.op.yaml": "search { }" }
+                }
+                """);
+
+        connector.runScriptOnResource(context, null);
+
+        assertEquals(tree(connector.capturedRequest.overrides()), json("""
+                { "/User.search.all.op.yaml": "search { }" }
+                """));
+    }
+
+    /** No {@code overrides} argument at all - e.g. every single-file request today - defaults to an empty map, not null. */
+    @Test
+    public void missingOverridesArgumentDefaultsToEmptyMap() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
+
+        connector.runScriptOnResource(context, null);
+
+        assertEquals(tree(connector.capturedRequest.overrides()), json("{}"));
+    }
+
+    /**
+     * {@link ScriptValidationRequest#allOverrides()} merges the primary {@code filename}/{@code
+     * scriptText} pair together with the extra {@code overrides} into one map - the connector-side
+     * caller only has to deal with one unified set of substitutions.
+     */
+    @Test
+    public void allOverridesMergesPrimaryFilenameWithExtraOverrides() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        var context = scriptContext("objectClass('User') { }", """
+                {
+                  "operation": "build",
+                  "artifactKind": "schema",
+                  "filename": "/User.schema.groovy",
+                  "overrides": { "/User.search.all.op.yaml": "search { }" }
+                }
+                """);
+
+        connector.runScriptOnResource(context, null);
+
+        assertEquals(tree(connector.capturedRequest.allOverrides()), json("""
+                {
+                  "/User.search.all.op.yaml": "search { }",
+                  "/User.schema.groovy": "objectClass('User') { }"
+                }
+                """));
+    }
+
+    /** With no primary {@code filename} (e.g. a compile-only check), {@link ScriptValidationRequest#allOverrides()} is just the extra overrides. */
+    @Test
+    public void allOverridesWithNoPrimaryFilenameIsJustTheExtraOverrides() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
+
+        connector.runScriptOnResource(context, null);
+
+        assertEquals(tree(connector.capturedRequest.allOverrides()), json("{}"));
+    }
+
     @Test
     public void missingFilenameIsPassedAsNull() {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
-        var context = scriptContext("1 + 1", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, "operation"));
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
 
         connector.runScriptOnResource(context, null);
 
@@ -210,15 +318,19 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
         var connector = new TestConnector();
         connector.configuration.setDevelopmentMode(true);
         connector.validateScriptFailure = new IllegalStateException("schema not ready");
-        var context = scriptContext("1 + 1", Map.of(
-                ScriptValidationRequest.SCRIPT_ARGUMENT_OPERATION, ScriptValidationRequest.SCRIPT_OPERATION_COMPILE,
-                ScriptValidationRequest.SCRIPT_ARGUMENT_ARTIFACT_KIND, "operation"));
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
 
-        @SuppressWarnings("unchecked")
-        var result = (Map<String, Object>) connector.runScriptOnResource(context, null);
+        var result = connector.runScriptOnResource(context, null);
 
-        assertEquals(result.get("status"), "error");
-        assertEquals(result.get("phase"), "initialization");
-        assertEquals(result.get("message"), "schema not ready");
+        assertEquals(tree(result), json("""
+                {
+                  "status": "error",
+                  "errors": [
+                    { "status": "error", "phase": "initialization", "message": "schema not ready" }
+                  ]
+                }
+                """));
     }
 }
