@@ -8,6 +8,8 @@ package com.evolveum.polygon.conndev.schema;
 
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 
 /**
@@ -55,7 +57,7 @@ public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.
 
     /*
     private BaseParticipantBuilder<B,P> participant(String objectClass) {
-        return new BaseParticipantBuilder(this, schemaBuilder.objectClass(objectClass));
+        return new BaseParticipantBuilder(this, schemaBuilder.objectClass(objectClass), SourceLocation.capture());
     }
 
     @Override
@@ -83,17 +85,61 @@ public abstract class AbstractRelationshipBuilder<B extends RelationshipBuilder.
      * <p>Configures cross-references between subject and object: each side's reference
      * attribute is pointed to the opposite participant's object class, and the {@link AttributeInfo.RoleInReference}
      * is set (SUBJECT for the subject side, OBJECT for the object side).</p>
+     *
+     * <p>Each participant must declare its reference attribute via {@code attribute('<name>')};
+     * a participant without one is a configuration error, reported with the relationship name
+     * and the participant's source location instead of surfacing as a
+     * {@code NullPointerException}.</p>
+     *
+     * @throws ConfigurationException if either participant declares no reference attribute
      */
     @Override
     public void afterExecution() {
         if (subject != null && object != null) {
             // configure side mappings.
-            subject.attribute().objectClass(object.objectClass().getObjectClassValue());
-            subject.attribute().role(AttributeInfo.RoleInReference.SUBJECT);
+            var subjectAttribute = requireParticipantAttribute(subject, "subject");
+            var objectAttribute = requireParticipantAttribute(object, "object");
 
-            object.attribute().objectClass(subject.objectClass().getObjectClassValue());
-            object.attribute().role(AttributeInfo.RoleInReference.OBJECT);
+            subjectAttribute.objectClass(object.objectClass().getObjectClassValue());
+            subjectAttribute.role(AttributeInfo.RoleInReference.SUBJECT);
+
+            objectAttribute.objectClass(subject.objectClass().getObjectClassValue());
+            objectAttribute.role(AttributeInfo.RoleInReference.OBJECT);
 
         }
+    }
+
+    /**
+     * Returns the participant's reference attribute binding, failing fast when it was not declared.
+     *
+     * @param participant the participant to check
+     * @param side the participant's role within the relationship ({@code "subject"} or {@code "object"})
+     * @return the participant's reference attribute binding
+     * @throws ConfigurationException if the participant declares no reference attribute
+     */
+    private B requireParticipantAttribute(BaseParticipantBuilder<B, P> participant, String side) {
+        var attribute = participant.attribute();
+        if (attribute == null) {
+            throw new ConfigurationException(
+                    missingAttributeMessage(name, side, participant.objectClass().getObjectClassValue(), participant.location()));
+        }
+        return attribute;
+    }
+
+    /**
+     * Builds the configuration error message for a relationship participant that declares no
+     * reference attribute.
+     *
+     * @param relationshipName the relationship's name
+     * @param side the participant's role within the relationship ({@code "subject"} or {@code "object"})
+     * @param objectClass the object class value of the offending participant
+     * @param location the script location of the participant declaration (included when known)
+     * @return the error message
+     */
+    public static String missingAttributeMessage(String relationshipName, String side, String objectClass, SourceLocation location) {
+        return "Relationship '" + relationshipName + "': the " + side + " participant ('" + objectClass
+                + "') declares no reference attribute; declare one with attribute('<name>') inside "
+                + side + "('" + objectClass + "')"
+                + (location != null && location != SourceLocation.UNKNOWN ? " [at " + location + "]" : "");
     }
 }

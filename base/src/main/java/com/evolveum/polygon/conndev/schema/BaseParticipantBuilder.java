@@ -11,8 +11,10 @@ import com.evolveum.polygon.conndev.build.api.AttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.ReferenceAttributeBuilder;
 import com.evolveum.polygon.conndev.build.api.RelationshipBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
+import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 
 /**
@@ -36,20 +38,45 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
     private final B parent;
 
     /** The attribute binding for this participant; lazily initialized on first access. */
-    private ReferenceBuilder attribute;
+    private B attribute;
 
     /** Whether this participant is the owner of the relationship. */
     private Boolean owner;
+
+    /** The script location of the participant's {@code subject(...)} / {@code object(...)} declaration. */
+    private final SourceLocation location;
 
     /**
      * Constructs a new participant builder.
      *
      * @param relationshipBuilder the parent relationship builder
      * @param targetClass the object class definition builder for this participant
+     * @param location the script location of the participant declaration (used in configuration
+     *                 error messages); pass {@link SourceLocation#UNKNOWN} when unknown
      */
-    public BaseParticipantBuilder(B relationshipBuilder, BaseObjectClassDefinitionBuilder targetClass) {
+    public BaseParticipantBuilder(B relationshipBuilder, BaseObjectClassDefinitionBuilder targetClass, SourceLocation location) {
         this.parent = relationshipBuilder;
         this.objectClass = targetClass;
+        this.location = location != null ? location : SourceLocation.UNKNOWN;
+    }
+
+    /**
+     * Returns the script location of the participant declaration (never {@code null}).
+     *
+     * @return the captured location, or {@link SourceLocation#UNKNOWN}
+     */
+    public SourceLocation location() {
+        return location;
+    }
+
+    /**
+     * Stores the attribute binding created by {@link #attribute(String)} so the no-arg
+     * {@link #attribute()} accessor — and the relationship's post-execution wiring — see it.
+     *
+     * @param binding the reference attribute binding for this participant
+     */
+    protected void setReferenceAttribute(B binding) {
+        this.attribute = binding;
     }
 
     /**
@@ -57,7 +84,7 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
      *
      * @return the attribute builder, or {@code null}
      */
-    ReferenceBuilder attribute() {
+    B attribute() {
         return attribute;
     }
 
@@ -112,13 +139,33 @@ public abstract class BaseParticipantBuilder<B extends RelationshipBuilder.Refer
     /**
      * Marks this participant as the owner of the relationship.
      *
-     * @param owner {@code true} to mark this participant as the owner
-     * @return this participant builder for chaining
+     * <p>The participant's reference attribute must already be declared — {@code owner(...)}
+     * configures that attribute, so declaring it later is a configuration error reported with
+     * the participant's source location instead of a {@code NullPointerException}.</p>
+     *
+     * @param owner {@code true} to mark the participant as the owner
+     * @return the participant's reference builder for chaining
+     * @throws ConfigurationException if no reference attribute has been declared yet
      */
     @Override
     public B owner(boolean owner) {
         this.owner = owner;
-        return (B) this;
+        if (attribute == null) {
+            throw new ConfigurationException(ownerRequiresAttributeMessage());
+        }
+        return attribute;
+    }
+
+    /**
+     * Builds the configuration error message for {@link #owner(boolean)} called before the
+     * participant's reference attribute is declared.
+     *
+     * @return the message, including the participant's source location when known
+     */
+    private String ownerRequiresAttributeMessage() {
+        return "owner() requires the reference attribute to be declared first: declare attribute('<name>') "
+                + "in the " + objectClass.objectClass().getObjectClassValue() + " participant before owner(...)"
+                + (location != SourceLocation.UNKNOWN ? " [at " + location + "]" : "");
     }
 
     /**

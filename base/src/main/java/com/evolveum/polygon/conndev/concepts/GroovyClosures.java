@@ -58,11 +58,11 @@ public class GroovyClosures {
         Object result;
         try {
             result = closure.call();
+            if (delegate instanceof ClosureExecutionAware executionAware) {
+                executionAware.afterExecution();
+            }
         } catch (RuntimeException e) {
             throw GroovyExceptionSanitizer.sanitize(e);
-        }
-        if (delegate instanceof ClosureExecutionAware executionAware) {
-            executionAware.afterExecution();
         }
         @SuppressWarnings("unchecked")
         T ret = (T) result;
