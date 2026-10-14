@@ -38,8 +38,17 @@ public class YamlSchemaLoader {
     private final GroovyScriptCompiler compiler;
 
     public YamlSchemaLoader(BaseSchemaBuilder schemaBuilder) {
+        this(schemaBuilder, new GroovyContext());
+    }
+
+    /**
+     * Like the single-argument constructor, but compiles embedded Groovy fragments on the given
+     * shared {@code context} — pass {@code configuration.groovyContext()} so a {@code
+     * groovyDisabled} connector rejects Groovy fragments with a {@code ConfigurationException}.
+     */
+    public YamlSchemaLoader(BaseSchemaBuilder schemaBuilder, GroovyContext context) {
         this.schemaBuilder = schemaBuilder;
-        this.compiler = new GroovyScriptCompiler(new GroovyContext());
+        this.compiler = new GroovyScriptCompiler(context);
     }
 
     public void load(String yaml) {

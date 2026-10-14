@@ -11,6 +11,7 @@ import com.evolveum.polygon.conndev.concepts.DevelopmentMode;
 import com.evolveum.polygon.conndev.groovy.*;
 import com.evolveum.polygon.conndev.logging.ConnDevLog;
 import org.identityconnectors.common.security.GuardedString;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.Filter;
@@ -175,6 +176,13 @@ public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> impl
 
     @Override
     public Object runScriptOnResource(ScriptContext request, OperationOptions options) {
+        // The gate applies to Groovy-language requests only — YAML documents may carry no Groovy
+        // fragment at all, and any Groovy fragments they do carry fail on the gated context below.
+        if (getConfiguration() instanceof BaseGroovyConnectorConfiguration groovyConf
+                && Boolean.TRUE.equals(groovyConf.getGroovyDisabled())
+                && ScriptValidationRequest.LANGUAGE_GROOVY.equalsIgnoreCase(request.getScriptLanguage())) {
+            throw new ConfigurationException(GroovyContext.GROOVY_DISABLED_MESSAGE);
+        }
         if (!(getConfiguration() instanceof BaseGroovyConnectorConfiguration groovyConf)
                 || !Boolean.TRUE.equals(groovyConf.getDevelopmentMode())) {
             throw new UnsupportedOperationException("Script execution is supported only in development mode");

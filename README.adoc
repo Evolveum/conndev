@@ -154,6 +154,8 @@ With `developmentMode` enabled in the connector configuration:
 * *Source location capture.* `SourceLocation.capture()` walks the stack (only while development mode is active) so `DefinitionValue` conflicts and validation errors point at the exact script file/line.
 * *Definition metadata.* The `dev` package exposes the connector's own definition (`ConnDevSchema`, `ConnDevObjectClass`, `ConnDevAttribute`) as inspectable object classes, letting tooling browse the effective schema.
 
+The `groovyDisabled` option (same configuration group, default `false`) disables all Groovy code loading — manifest-based Groovy script loaders, editor script validation, and YAML-embedded Groovy fragments are rejected with a `ConfigurationException` naming the option.
+
 In production mode all of this is inert: no stack-walking, no validation surface.
 
 == Build & Test

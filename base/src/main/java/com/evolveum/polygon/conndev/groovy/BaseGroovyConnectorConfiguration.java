@@ -19,6 +19,8 @@ public abstract class BaseGroovyConnectorConfiguration implements Configuration,
 
     private Boolean developmentMode = false;
 
+    private Boolean groovyDisabled = false;
+
     @Override
     public ConnectorMessages getConnectorMessages() {
         return messages;
@@ -38,11 +40,20 @@ public abstract class BaseGroovyConnectorConfiguration implements Configuration,
         this.developmentMode = developmentMode;
     }
 
+    @ConfigurationProperty(groupMessageKey = "conndev.developmentMode", required = false, order=5010)
+    public Boolean getGroovyDisabled() {
+        return groovyDisabled;
+    }
+
+    public void setGroovyDisabled(Boolean groovyDisabled) {
+        this.groovyDisabled = groovyDisabled;
+    }
+
     public GroovyContext groovyContext() {
         if (groovyContext == null) {
             synchronized (this) {
                 if (groovyContext == null) {
-                    groovyContext = new GroovyContext();
+                    groovyContext = new GroovyContext(Boolean.TRUE.equals(groovyDisabled));
                 }
             }
         }

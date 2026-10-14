@@ -9,6 +9,7 @@ package com.evolveum.polygon.conndev.spi;
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
 import com.evolveum.polygon.conndev.groovy.*;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
+import org.identityconnectors.framework.common.exceptions.ConfigurationException;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Schema;
 import org.identityconnectors.framework.common.objects.ScriptContext;
@@ -143,6 +144,62 @@ public class ClassHandlerConnectorBaseScriptValidationTest {
         } catch (UnsupportedOperationException e) {
             assertTrue(e.getMessage().contains("development mode"));
         }
+    }
+
+    /** A {@code groovyDisabled} connector rejects script validation outright, before {@code validateScript} is reached. */
+    @Test
+    public void rejectsWhenGroovyDisabled() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        connector.configuration.setGroovyDisabled(true);
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
+
+        try {
+            connector.runScriptOnResource(context, null);
+            fail("Expected ConfigurationException");
+        } catch (ConfigurationException e) {
+            assertTrue(e.getMessage().contains("Groovy is disabled"), e.getMessage());
+        }
+        assertNull(connector.capturedRequest);
+    }
+
+    /** The {@code groovyDisabled} rejection wins over the development-mode gate. */
+    @Test
+    public void rejectsWhenGroovyDisabledEvenOutsideDevelopmentMode() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(false);
+        connector.configuration.setGroovyDisabled(true);
+        var context = scriptContext("1 + 1", """
+                { "operation": "compile", "artifactKind": "operation" }
+                """);
+
+        try {
+            connector.runScriptOnResource(context, null);
+            fail("Expected ConfigurationException");
+        } catch (ConfigurationException e) {
+            assertTrue(e.getMessage().contains("Groovy is disabled"), e.getMessage());
+        }
+        assertNull(connector.capturedRequest);
+    }
+
+    /** YAML requests are not gated by {@code groovyDisabled} — a document may carry no Groovy at all. */
+    @Test
+    public void yamlScriptLanguageIsNotRejectedWhenGroovyDisabled() {
+        var connector = new TestConnector();
+        connector.configuration.setDevelopmentMode(true);
+        connector.configuration.setGroovyDisabled(true);
+        var context = new ScriptContext("yaml", "objectClasses: {}", arguments("""
+                { "operation": "compile", "artifactKind": "schema" }
+                """));
+
+        var result = connector.runScriptOnResource(context, null);
+
+        assertEquals(tree(result), json("""
+                { "status": "ok" }
+                """));
+        assertEquals(connector.capturedRequest.language(), "yaml");
     }
 
     @Test
