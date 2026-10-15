@@ -17,11 +17,13 @@ import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.identityconnectors.framework.common.objects.filter.FilterTranslator;
 import org.identityconnectors.framework.spi.Connector;
+import org.identityconnectors.framework.spi.PoolableConnector;
 import org.identityconnectors.framework.spi.operations.*;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Generic Base Connector with support for separate handlers per Object Class
@@ -38,15 +40,41 @@ import java.util.Set;
 public abstract class ClassHandlerConnectorBase<C extends ConnectorContext> implements Connector,
         AuthenticateOp, CreateOp, DeleteOp, ResolveUsernameOp,
         SchemaOp, SearchOp<Filter>, TestOp,
-        UpdateDeltaOp, SyncOp, ScriptOnResourceOp {
+        UpdateDeltaOp, SyncOp, ScriptOnResourceOp,
+        PoolableConnector {
 
     protected final boolean reinitializeOnEachCall;
     protected C context;
     protected boolean coreInitialized;
     protected boolean fullyInitialized;
+    protected final AtomicBoolean disposed = new AtomicBoolean(false);
 
     protected ClassHandlerConnectorBase(boolean reinitializeOnEachCall) {
         this.reinitializeOnEachCall = reinitializeOnEachCall;
+    }
+
+    /**
+     * Poolability liveness check for the ConnId connector pool — a disposed connector must not be
+     * handed out again. Per-operation (re)initialization is instead driven by
+     * {@link #shouldReinitialize()}.
+     */
+    @Override
+    public void checkAlive() {
+        if (disposed.get()) {
+            throw new IllegalStateException("Connector was disposed");
+        }
+    }
+
+    /**
+     * Whether the connector re-runs its full (re)initialization on the next operation call instead
+     * of reusing what it already built. True when the connector was created with
+     * {@code reinitializeOnEachCall}, or when it is running in development mode so that script and
+     * schema edits are picked up without redeploying; a pooled production connector initializes
+     * once and is then reused. Reads the {@code context} field directly (never the
+     * {@link #context()} accessor) because subclasses may trigger initialization from there.
+     */
+    protected boolean shouldReinitialize() {
+        return reinitializeOnEachCall || (context != null && context.getDevelopmentMode());
     }
 
     public abstract C context();
