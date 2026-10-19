@@ -234,6 +234,18 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
     }
 
     /**
+     * Returns whether this attribute is currently declared multivalued on the ConnId side - the
+     * flag protocol mapping builders (JSON, and protocol-specific ones like SCIM in
+     * connector-scimrest) need in order to serialize a single value as a one-element array
+     * instead of a scalar.
+     *
+     * @return the current multivalue flag
+     */
+    protected boolean isMultiValued() {
+        return connIdBuilder.multiValued.value();
+    }
+
+    /**
      * Returns the JSON protocol mapping builder, creating it if necessary.
      *
      * @return the JSON mapping builder
@@ -690,7 +702,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             }
             // force parsing so that an invalid expression fails at schema build time
             path.actual();
-            return new JsonAttributeMapping(path, implementation);
+            return new JsonAttributeMapping(path, implementation, isMultiValued());
         }
     }
 }

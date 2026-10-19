@@ -14,6 +14,7 @@ import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.Path;
 import com.evolveum.polygon.conndev.spi.AttributeProtocolMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
+import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.*;
@@ -28,6 +29,7 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
     protected final AttributePathDeclaration<?, ?> pathDeclaration;
     protected final ValueMapping<Object, JsonNode> valueMapping;
     private final AttributePath path;
+    protected final boolean multiValued;
 
     public JsonAttributeMapping(String name,
                                 ValueMapping<Object, JsonNode> valueMapping) {
@@ -45,7 +47,20 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
      */
     public JsonAttributeMapping(AttributePath path,
                                 ValueMapping<Object, JsonNode> valueMapping) {
-        this(path == null ? null : AttributePathDeclaration.of(JavaPathFormat.INSTANCE, path), valueMapping);
+        this(path, valueMapping, false);
+    }
+
+    /**
+     * Creates a mapping for the given pre-built path, with an explicit multivalue flag.
+     *
+     * @param path the pre-built path, or {@code null} to disable path resolution
+     * @param valueMapping the value mapping
+     * @param multiValued whether the ConnId attribute this mapping serves is multivalued
+     */
+    public JsonAttributeMapping(AttributePath path,
+                                ValueMapping<Object, JsonNode> valueMapping,
+                                boolean multiValued) {
+        this(path == null ? null : AttributePathDeclaration.of(JavaPathFormat.INSTANCE, path), valueMapping, multiValued);
     }
 
     /**
@@ -60,9 +75,25 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
      */
     public JsonAttributeMapping(AttributePathDeclaration<?, ?> pathDeclaration,
                                 ValueMapping<Object, JsonNode> valueMapping) {
+        this(pathDeclaration, valueMapping, false);
+    }
+
+    /**
+     * Creates a mapping from the given path declaration, with an explicit multivalue flag.
+     *
+     * @param pathDeclaration the path declaration, or {@code null} to disable path resolution
+     * @param valueMapping the value mapping
+     * @param multiValued whether the ConnId attribute this mapping serves is multivalued -
+     *                    determines whether {@link #toJsonNode(Attribute, ObjectNode)} emits
+     *                    a single value as a one-element array or as a scalar node
+     */
+    public JsonAttributeMapping(AttributePathDeclaration<?, ?> pathDeclaration,
+                                ValueMapping<Object, JsonNode> valueMapping,
+                                boolean multiValued) {
         this.pathDeclaration = pathDeclaration;
         this.valueMapping = valueMapping;
         this.path = pathDeclaration != null ? pathDeclaration.actual() : null;
+        this.multiValued = multiValued;
     }
 
 
@@ -165,11 +196,28 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
 
         var last = components.getLast();
         if (last instanceof AttributePath.Attribute attr) {
-            JsonNode value = values.size() == 1
-                    ? values.getFirst()
-                    : parent.arrayNode().addAll(values);
-            current.set(attr.name(), value);
+            current.set(attr.name(), singleOrArrayNode(attribute.getName(), values, parent));
         }
+    }
+
+    /**
+     * Returns the given wire values as a one-element array node if {@link #multiValued}, or as a
+     * single scalar node otherwise.
+     *
+     * @throws InvalidAttributeValueException if more than one value is given for a mapping that
+     *                                is not declared multivalued - the schema and the actual
+     *                                attribute values disagree, which is a bug upstream, not
+     *                                something to silently paper over by emitting an array anyway
+     */
+    protected final JsonNode singleOrArrayNode(String attributeName, List<JsonNode> values, ObjectNode parent) {
+        if (multiValued) {
+            return parent.arrayNode().addAll(values);
+        }
+        if (values.size() > 1) {
+            throw new InvalidAttributeValueException(
+                    "Attribute '" + attributeName + "' is not declared multivalued but has " + values.size() + " values");
+        }
+        return values.getFirst();
     }
 
     private static boolean matches(AttributePath.SimpleValueFilter filter, JsonNode node) {

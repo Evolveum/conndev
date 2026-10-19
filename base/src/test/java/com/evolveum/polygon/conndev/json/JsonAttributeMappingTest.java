@@ -7,6 +7,7 @@
 package com.evolveum.polygon.conndev.json;
 
 import com.evolveum.polygon.conndev.api.AttributePath;
+import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.testng.annotations.Test;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class JsonAttributeMappingTest {
 
@@ -215,7 +217,8 @@ public class JsonAttributeMappingTest {
 
         var mapping = new JsonAttributeMapping(
                 AttributePath.of("tags"),
-                JsonSchemaValueMapping.STRING
+                JsonSchemaValueMapping.STRING,
+                true
         );
 
         Attribute attr = AttributeBuilder.build("tags", Arrays.asList("a", "b", "c"));
@@ -225,6 +228,23 @@ public class JsonAttributeMappingTest {
         assertThat(parent.has("tags")).isTrue();
         assertThat((parent.get("tags") instanceof ArrayNode)).isTrue();
         assertThat(parent.get("tags").size()).isEqualTo(3);
+    }
+
+    @Test
+    public void testToJsonNode_multipleValues_notMultiValued_throws() {
+        var mapper = new ObjectMapper();
+        var parent = mapper.createObjectNode();
+
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("tags"),
+                JsonSchemaValueMapping.STRING
+        );
+
+        Attribute attr = AttributeBuilder.build("tags", Arrays.asList("a", "b"));
+
+        assertThatThrownBy(() -> mapping.toJsonNode(attr, parent))
+                .isInstanceOf(InvalidAttributeValueException.class)
+                .hasMessageContaining("tags");
     }
 
     @Test
@@ -329,7 +349,8 @@ public class JsonAttributeMappingTest {
 
         var mapping = new JsonAttributeMapping(
                 AttributePath.of("roles", "names"),
-                JsonSchemaValueMapping.STRING
+                JsonSchemaValueMapping.STRING,
+                true
         );
 
         Attribute attr = AttributeBuilder.build("roles.names", Arrays.asList("admin", "user"));
