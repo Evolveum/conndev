@@ -23,14 +23,6 @@ topics:
     order: 50
 
   # --- reference material for the schema screens (served after the protocol-specific intro) ---
-  - key: connid-builtin-attributes
-    title: ConnId Built-in Attributes
-    resource: general/connid-builtin-attributes.html
-    order: 20
-  - key: native-schema
-    title: ConnId Built-in Attributes
-    resource: general/connid-builtin-attributes.html
-    order: 100
   - key: native-schema
     title: JSON Types and Formats
     resource: general/json-types.html

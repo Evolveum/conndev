@@ -36,5 +36,3 @@ The generated bundle is a self-contained connector JAR:
   this wizard's help drawer), and
 * its dependencies, bundled in `lib/`.
 
-Install the generated bundle to make the connector available to MidPoint; a later regeneration
-with the same coordinates and a higher version replaces the previous one.
