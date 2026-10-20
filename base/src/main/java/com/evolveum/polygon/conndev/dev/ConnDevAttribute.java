@@ -13,9 +13,7 @@ import org.identityconnectors.framework.common.objects.ObjectClass;
 
 import java.util.*;
 
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.ATTRIBUTE;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_DESCRIPTION;
-import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.F_NAME;
+import static com.evolveum.polygon.conndev.dev.ConnDevObjectClass.*;
 
 /**
  * Fluent builder for a {@code conndev_Attribute} embedded object. Carries only a {@code name}, an

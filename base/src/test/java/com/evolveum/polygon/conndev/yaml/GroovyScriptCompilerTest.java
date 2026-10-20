@@ -9,6 +9,8 @@ package com.evolveum.polygon.conndev.yaml;
 import com.evolveum.polygon.conndev.groovy.GroovyContext;
 import org.testng.annotations.Test;
 
+import java.math.BigInteger;
+
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -49,28 +51,31 @@ public class GroovyScriptCompilerTest {
     @Test
     public void hoistsLeadingImportOutOfTheClosure() {
         // imports are part of the Groovy script, not the YAML envelope — the fragment carries them
-        var closure = compiler.compile("import java.math.BigInteger\n"
-                + "var big = new BigInteger(\"41\")\n"
-                + "return big + 1");
+        var closure = compiler.compile("""
+                import java.math.BigInteger
+                var big = new BigInteger("41")
+                return big + 1""");
 
-        assertEquals(closure.call(), new java.math.BigInteger("42"));
+        assertEquals(closure.call(), new BigInteger("42"));
     }
 
     @Test
     public void hoistsMultipleImportsIncludingStarAndSemicolon() {
-        var closure = compiler.compile("import java.util.List;\n"
-                + "import java.math.*\n"
-                + "return new ArrayList<>(List.of(new BigDecimal(\"1\"))).size() + (int) new BigInteger(\"2\").longValue()");
+        var closure = compiler.compile("""
+                import java.util.List;
+                import java.math.*
+                return new ArrayList<>(List.of(new BigDecimal("1"))).size() + (int) new BigInteger("2").longValue()""");
 
         assertEquals(closure.call(), 3);
     }
 
     @Test
     public void hoistsImportsOfAParameterizedClosure() {
-        var closure = compiler.compile("import java.math.BigInteger\n"
-                + "return value * 2", "value");
+        var closure = compiler.compile("""
+                import java.math.BigInteger
+                return value * 2""", "value");
 
-        assertEquals(closure.call(new java.math.BigInteger("21")), new java.math.BigInteger("42"));
+        assertEquals(closure.call(new BigInteger("21")), new BigInteger("42"));
     }
 
     @Test

@@ -8,17 +8,8 @@ package com.evolveum.polygon.conndev.api;
 
 import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
-import com.evolveum.polygon.conndev.schema.BaseAttributeBuilder;
-import com.evolveum.polygon.conndev.schema.BaseAttributeDefinition;
-import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinition;
-import com.evolveum.polygon.conndev.schema.BaseObjectClassDefinitionBuilder;
-import com.evolveum.polygon.conndev.schema.BaseSchemaBuilder;
-import com.evolveum.polygon.conndev.schema.StubConnector;
-import org.identityconnectors.framework.common.objects.Attribute;
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.AttributeDelta;
-import org.identityconnectors.framework.common.objects.AttributeDeltaBuilder;
-import org.identityconnectors.framework.common.objects.ObjectClass;
+import com.evolveum.polygon.conndev.schema.*;
+import org.identityconnectors.framework.common.objects.*;
 import org.testng.annotations.Test;
 
 import java.util.List;

@@ -7,11 +7,7 @@
 package com.evolveum.polygon.conndev.yaml.decl;
 
 import com.evolveum.polygon.conndev.concepts.CheckedRunnable;
-import com.evolveum.polygon.conndev.groovy.GroovyExceptionSanitizer;
-import com.evolveum.polygon.conndev.groovy.GroovyScriptValidator;
-import com.evolveum.polygon.conndev.groovy.ScriptError;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
+import com.evolveum.polygon.conndev.groovy.*;
 
 import java.util.List;
 import java.util.function.Function;

@@ -16,6 +16,7 @@ import groovy.lang.GroovyShell;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -362,7 +363,7 @@ public class SourceLocationTest {
                 assertThat(SourceLocation.capture()).isSameAs(location);
                 throw new IllegalArgumentException("boom");
             });
-            org.testng.Assert.fail("Expected the IllegalArgumentException to propagate");
+            Assert.fail("Expected the IllegalArgumentException to propagate");
         } catch (IllegalArgumentException expected) {
             assertThat(expected.getMessage()).isEqualTo("boom");
         }

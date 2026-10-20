@@ -18,11 +18,7 @@ import org.identityconnectors.framework.common.objects.OperationOptions;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /** Routes deltas in registration order and executes the selected handlers in one scope. */
 public class UpdateOperationStrategyHandler implements ObjectUpdateOperation {

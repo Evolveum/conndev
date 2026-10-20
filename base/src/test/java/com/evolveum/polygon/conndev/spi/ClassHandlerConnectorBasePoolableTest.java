@@ -7,12 +7,7 @@
 package com.evolveum.polygon.conndev.spi;
 
 import com.evolveum.polygon.conndev.concepts.RetrievableContext;
-import com.evolveum.polygon.conndev.groovy.BaseGroovyConnectorConfiguration;
-import com.evolveum.polygon.conndev.groovy.ConnectorContext;
-import com.evolveum.polygon.conndev.groovy.GroovySchemaLoader;
-import com.evolveum.polygon.conndev.groovy.GroovyScriptLoader;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationRequest;
-import com.evolveum.polygon.conndev.groovy.ScriptValidationResult;
+import com.evolveum.polygon.conndev.groovy.*;
 import com.evolveum.polygon.conndev.schema.BaseSchema;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.Schema;
@@ -20,10 +15,7 @@ import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.PoolableConnector;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * {@link ClassHandlerConnectorBase} poolability: the base itself implements
