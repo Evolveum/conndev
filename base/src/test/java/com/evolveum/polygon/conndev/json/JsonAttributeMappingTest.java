@@ -10,6 +10,7 @@ import com.evolveum.polygon.conndev.api.AttributePath;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
@@ -247,20 +248,56 @@ public class JsonAttributeMappingTest {
                 .hasMessageContaining("tags");
     }
 
-    @Test
-    public void testToJsonNode_emptyValues() {
-        var mapper = new ObjectMapper();
-        var parent = mapper.createObjectNode();
+    @DataProvider
+    public Object[][] emptyAttributes() {
+        return new Object[][] {
+                {AttributeBuilder.build("roles", Collections.emptyList())},
+                {AttributeBuilder.build("roles")}
+        };
+    }
 
-        var mapping = new JsonAttributeMapping(
-                AttributePath.of("empty"),
-                JsonSchemaValueMapping.STRING
-        );
+    @Test(dataProvider = "emptyAttributes")
+    public void testToJsonNode_emptyValues(Attribute attr) {
+        var parent = JsonNodeFactory.instance.objectNode();
+        var mapping = new JsonAttributeMapping(AttributePath.of("roles"), JsonSchemaValueMapping.STRING);
 
-        Attribute attr = AttributeBuilder.build("empty", Collections.emptyList());
         mapping.toJsonNode(attr, parent);
 
         assertThat(parent.size()).isEqualTo(0);
+    }
+
+    @Test(dataProvider = "emptyAttributes")
+    public void testToJsonNode_emptyMultiValue_writesEmptyArray(Attribute attr) {
+        var parent = JsonNodeFactory.instance.objectNode();
+        var mapping = new JsonAttributeMapping(AttributePath.of("roles"), JsonSchemaValueMapping.STRING, true);
+
+        mapping.toJsonNode(attr, parent);
+
+        assertThat(parent.toString()).isEqualTo("{\"roles\":[]}");
+    }
+
+    @Test(dataProvider = "emptyAttributes")
+    public void testToJsonNode_emptyNestedMultiValue_clearsOnlyMappedField(Attribute attr) {
+        var parent = JsonNodeFactory.instance.objectNode();
+        var profile = parent.putObject("profile");
+        profile.put("name", "Alice");
+        profile.putArray("roles").add("admin");
+        var mapping = new JsonAttributeMapping(
+                AttributePath.of("profile", "roles"), JsonSchemaValueMapping.STRING, true);
+
+        mapping.toJsonNode(attr, parent);
+
+        assertThat(parent.toString()).isEqualTo("{\"profile\":{\"name\":\"Alice\",\"roles\":[]}}");
+    }
+
+    @Test
+    public void testToJsonNode_singleMultiValue_writesArray() {
+        var parent = JsonNodeFactory.instance.objectNode();
+        var mapping = new JsonAttributeMapping(AttributePath.of("roles"), JsonSchemaValueMapping.STRING, true);
+
+        mapping.toJsonNode(AttributeBuilder.build("roles", "admin"), parent);
+
+        assertThat(parent.toString()).isEqualTo("{\"roles\":[\"admin\"]}");
     }
 
     @Test
