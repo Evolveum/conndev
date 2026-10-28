@@ -27,8 +27,7 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             return NODE_FACTORY.stringNode((String) value);
         }
     },
-    /** Also accepts decimal integer strings with an optional sign, in the 32-bit signed range. */
-    INTEGER("integer", "A signed integer value", Integer.class, IntNode.class, StringNode.class) {
+    INTEGER("integer", "A signed integer value", Integer.class, IntNode.class) {
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
             if (value instanceof IntNode intNode) {
@@ -36,14 +35,6 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             }
             if (value instanceof NumericNode numericNode) {
                 return numericNode.asInt();
-            }
-            if (value instanceof StringNode textNode) {
-                try {
-                    return Integer.valueOf(textNode.asString());
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Cannot convert " + value
-                            + " to Integer: expected a decimal integer in the range -2147483648 to 2147483647", e);
-                }
             }
             return super.toConnIdValue(value);
         }
@@ -56,20 +47,11 @@ public enum JsonSchemaValueMapping implements JsonValueMapping {
             return super.toWireValue(value);
         }
     },
-    /** Also accepts the exact strings "true" and "false"; other textual values are rejected. */
-    BOOLEAN("boolean", "A boolean value", Boolean.class, BooleanNode.class, StringNode.class) {
+    BOOLEAN("boolean", "A boolean value", Boolean.class, BooleanNode.class) {
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
             if (value instanceof BooleanNode booleanNode) {
                 return booleanNode.asBoolean();
-            }
-            if (value instanceof StringNode textNode) {
-                return switch (textNode.asString()) {
-                    case "true" -> true;
-                    case "false" -> false;
-                    default -> throw new IllegalArgumentException("Cannot convert " + value
-                            + " to Boolean: expected \"true\" or \"false\"");
-                };
             }
             return super.toConnIdValue(value);
         }

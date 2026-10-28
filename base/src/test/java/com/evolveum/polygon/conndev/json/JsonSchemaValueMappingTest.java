@@ -7,7 +7,6 @@
 package com.evolveum.polygon.conndev.json;
 
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.*;
@@ -186,78 +185,6 @@ public class JsonSchemaValueMappingTest {
         var result = JsonSchemaValueMapping.STRING.toConnIdValue(nullNode);
 
         assertThat(result).isNull();
-    }
-
-    @DataProvider
-    public Object[][] textualScalars() {
-        return new Object[][] {
-                {"boolean", "true", true},
-                {"boolean", "false", false},
-                {"integer", "3", 3},
-                {"integer", "0", 0},
-                {"integer", "-3", -3},
-                {"integer", "+3", 3},
-                {"integer", "003", 3},
-                {"integer", "2147483647", Integer.MAX_VALUE},
-                {"integer", "-2147483648", Integer.MIN_VALUE}
-        };
-    }
-
-    @Test(dataProvider = "textualScalars")
-    public void testTextualScalar_defaultAttributeMapping(String type, String text, Object expected) {
-        var valueMapping = JsonSchemaValueMapping.from(type);
-        var mapping = new JsonAttributeMapping("field", valueMapping);
-        var input = JsonNodeFactory.instance.objectNode().put("field", text);
-
-        assertThat(mapping.valuesFromAttribute(mapping.attributeFromObject(input)))
-                .containsExactly(expected);
-        assertThat(valueMapping.supportedWireTypes()).contains(StringNode.class);
-        assertThat(valueMapping.primaryWireType()).isNotEqualTo(StringNode.class);
-        // Reading a string must not change the native JSON type used for writes.
-        var wireValue = valueMapping.toWireValue(expected);
-        assertThat(wireValue).isInstanceOf(valueMapping.primaryWireType());
-        assertThat(valueMapping.toConnIdValue(wireValue)).isEqualTo(expected);
-    }
-
-    @DataProvider
-    public Object[][] invalidTextualScalars() {
-        return new Object[][] {
-                {"boolean", ""},
-                {"boolean", "TRUE"},
-                {"boolean", "False"},
-                {"boolean", "yes"},
-                {"boolean", "1"},
-                {"boolean", "0"},
-                {"boolean", " true"},
-                {"boolean", "false "},
-                {"integer", ""},
-                {"integer", "abc"},
-                {"integer", "3.5"},
-                {"integer", "1e3"},
-                {"integer", " 3"},
-                {"integer", "3 "},
-                {"integer", "2147483648"},
-                {"integer", "-2147483649"},
-                {"integer", "9999999999999999999999999999"}
-        };
-    }
-
-    @Test(dataProvider = "invalidTextualScalars")
-    public void testTextualScalar_invalidValue_throws(String type, String text) {
-        var mapping = JsonSchemaValueMapping.from(type);
-        assertThatThrownBy(() -> mapping.toConnIdValue(JsonNodeFactory.instance.stringNode(text)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(mapping.connIdType().getSimpleName())
-                .hasMessageContaining("expected");
-    }
-
-    @Test
-    public void testTextualScalar_nullValues_remainNull() {
-        for (var mapping : new JsonSchemaValueMapping[] {
-                JsonSchemaValueMapping.BOOLEAN, JsonSchemaValueMapping.INTEGER}) {
-            assertThat(mapping.toConnIdValue(null)).isNull();
-            assertThat(mapping.toConnIdValue(JsonNodeFactory.instance.nullNode())).isNull();
-        }
     }
 
     // === from() static method ===
