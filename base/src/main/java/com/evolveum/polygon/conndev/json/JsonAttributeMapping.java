@@ -168,11 +168,13 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
     }
 
     public void toJsonNode(Attribute attribute, ObjectNode parent) {
-        var values = attribute.getValue().stream()
+        var attributeValues = attribute.getValue();
+        List<JsonNode> values = attributeValues == null ? List.of() : attributeValues.stream()
                 .map(valueMapping::toWireValue)
                 .toList();
 
-        if (values.isEmpty()) {
+        // An explicitly empty multivalued attribute clears the remote collection.
+        if (values.isEmpty() && !multiValued) {
             return;
         }
 
@@ -201,8 +203,8 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
     }
 
     /**
-     * Returns the given wire values as a one-element array node if {@link #multiValued}, or as a
-     * single scalar node otherwise.
+     * Returns the given wire values as an array node (including an empty array) if
+     * {@link #multiValued}, or as a single scalar node otherwise.
      *
      * @throws InvalidAttributeValueException if more than one value is given for a mapping that
      *                                is not declared multivalued - the schema and the actual
