@@ -40,7 +40,7 @@ public class JsonUidReferenceTest {
                     multiValued true
                     json {
                         path attribute('directory').child('members')
-                        referenceBy('uid') {
+                        referenceBy {
                             uidFrom 'id'
                             nameFrom 'title'
                         }

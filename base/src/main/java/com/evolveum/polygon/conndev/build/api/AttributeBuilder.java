@@ -384,10 +384,10 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
         }
 
         /** Configure the UID field and optional display name of each reference. */
-        default void referenceBy(String identifier,
+        default void referenceBy(
                 @DelegatesTo(value = JsonUidReferenceMapping.Options.class, strategy = Closure.DELEGATE_ONLY)
                 @Script.Initialization Closure<?> configure) {
-            GroovyClosures.callAndReturnDelegate(configure, referenceBy(identifier));
+            GroovyClosures.callAndReturnDelegate(configure, referenceBy("uid"));
         }
 
         /**

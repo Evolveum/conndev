@@ -48,6 +48,14 @@ For JSON objects containing an identifier and an optional display name, use
 reference with UID `42` and name `Alice`; writing it produces `{"id":"42"}`.
 If the title is absent, ConnDev uses the UID as the display name.
 
+[source,groovy]
+----
+referenceBy {
+    uidFrom 'id'
+    nameFrom 'title'
+}
+----
+
 [source,yaml]
 ----
 referenceBy:
