@@ -156,7 +156,9 @@ public class JsonAttributeMapping implements AttributeProtocolMapping<ObjectNode
         if (attribute instanceof ArrayNode arrayNode) {
             var ret = new ArrayList<>();
             for (var value : arrayNode) {
-                ret.add(singleValueFromAttribute(value));
+                if (valueMapping.includeArrayItem(value)) {
+                    ret.add(singleValueFromAttribute(value));
+                }
             }
             return ret;
         }

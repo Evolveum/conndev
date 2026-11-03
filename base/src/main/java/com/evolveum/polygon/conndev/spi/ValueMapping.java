@@ -58,6 +58,11 @@ public interface ValueMapping<C,P> {
 
     C toConnIdValue(P value) throws IllegalArgumentException;
 
+    /** Whether to convert this wire array item. A mapping can skip an absent value or reject a malformed item. */
+    default boolean includeArrayItem(P item) {
+        return true;
+    }
+
     static <C> C checkValueInstanceOf(Class<C> type, Object value) {
         if (value == null) {
             return null;
