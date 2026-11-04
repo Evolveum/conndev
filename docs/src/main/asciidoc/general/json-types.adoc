@@ -28,6 +28,41 @@ In declarative YAML the same settings are the `json: { name, type, openApiFormat
 attribute (the flat `jsonType` / `openApiFormat` keys are still accepted, for parity with the
 deprecated shortcuts).
 
+== References by UID
+
+A reference names its target object class. Use `referenceBy 'uid'` when the API
+supplies its UID as a JSON string. For a multivalued attribute, each array item
+maps to one ConnId reference. Writing the references produces the same UID array.
+
+[source,groovy]
+----
+reference('groups') {
+    objectClass 'Group'
+    multiValued true
+    json { referenceBy 'uid' }
+}
+----
+
+For JSON objects containing an identifier and an optional display name, use
+`uidFrom` and `nameFrom`. Reading `{"id":"42","title":"Alice"}` produces a
+reference with UID `42` and name `Alice`; writing it produces `{"id":"42"}`.
+If the title is absent, ConnDev uses the UID as the display name.
+
+[source,groovy]
+----
+referenceBy {
+    uidFrom 'id'
+    nameFrom 'title'
+}
+----
+
+[source,yaml]
+----
+referenceBy:
+  uidFrom: id
+  nameFrom: title
+----
+
 == Base JSON types
 
 The base JSON type selects the value class the connector converts the wire value to and from:

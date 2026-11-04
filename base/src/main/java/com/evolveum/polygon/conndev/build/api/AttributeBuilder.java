@@ -16,8 +16,10 @@ import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.FluentBuilder;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
+import com.evolveum.polygon.conndev.json.JsonUidReferenceMapping;
 import com.evolveum.polygon.conndev.spi.ValueMapping;
 import com.evolveum.polygon.conndev.yaml.decl.DeclConnIdTypeParser;
+import com.evolveum.polygon.conndev.yaml.decl.DeclReferenceByHandler;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.identityconnectors.framework.common.objects.ObjectClass;
@@ -374,6 +376,19 @@ public interface AttributeBuilder<B extends AttributeBuilder<B, P>, P> extends S
          */
         @Yaml.Key
         JsonMapping openApiFormat(String openapiFormat);
+
+        /** Map each JSON value to a reference identified by the target object's UID. */
+        @Yaml.Custom(DeclReferenceByHandler.class)
+        default JsonUidReferenceMapping.Options referenceBy(String identifier) {
+            throw new UnsupportedOperationException("This JSON builder does not support UID references");
+        }
+
+        /** Configure the UID field and optional display name of each reference. */
+        default void referenceBy(
+                @DelegatesTo(value = JsonUidReferenceMapping.Options.class, strategy = Closure.DELEGATE_ONLY)
+                @Script.Initialization Closure<?> configure) {
+            GroovyClosures.callAndReturnDelegate(configure, referenceBy("uid"));
+        }
 
         /**
          * Sets a custom value mapping implementation for JSON serialization/deserialization.

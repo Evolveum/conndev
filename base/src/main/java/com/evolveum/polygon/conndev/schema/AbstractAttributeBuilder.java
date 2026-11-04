@@ -14,6 +14,7 @@ import com.evolveum.polygon.conndev.concepts.DefinitionValue;
 import com.evolveum.polygon.conndev.concepts.GroovyClosures;
 import com.evolveum.polygon.conndev.concepts.SourceLocation;
 import com.evolveum.polygon.conndev.json.JsonAttributeMapping;
+import com.evolveum.polygon.conndev.json.JsonUidReferenceMapping;
 import com.evolveum.polygon.conndev.json.JsonValueMappingBuilder;
 import com.evolveum.polygon.conndev.json.OpenApiValueMapping;
 import com.evolveum.polygon.conndev.rules.AttributeTypeResolutionRule;
@@ -34,6 +35,7 @@ import tools.jackson.databind.JsonNode;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Abstract base implementation of {@link AttributeBuilder} that manages ConnId metadata
@@ -494,6 +496,11 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
     }
 
+    /** Protocols can extend the declarative mapping of reference identifiers. */
+    protected Supplier<JsonUidReferenceMapping.Options> uidReferenceOptionsFactory() {
+        return JsonUidReferenceMapping.Options::new;
+    }
+
     class JsonBuilder implements AttributeProtocolMappingBuilder, JsonMapping {
 
         /** The protocol-side name of this JSON mapping. */
@@ -509,6 +516,7 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         /** The value-mapping sub-builder shared by the Groovy {@code implementation} closure and the
          *  declarative YAML {@code implementation} block; its base mapping resolves at {@link #build()}. */
         private JsonValueMappingBuilder implementationBuilder;
+        private JsonUidReferenceMapping.Options uidReference;
         /** The attribute's final ConnId type, applied by {@code AttributeTypeCoercionRule}. */
         private Class<?> connIdTypeOverride;
 
@@ -600,6 +608,17 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
         }
 
         @Override
+        public JsonUidReferenceMapping.Options referenceBy(String identifier) {
+            if (!"uid".equals(identifier)) {
+                throw new IllegalArgumentException("Expected referenceBy 'uid', got: " + identifier);
+            }
+            if (uidReference == null) {
+                uidReference = uidReferenceOptionsFactory().get();
+            }
+            return uidReference;
+        }
+
+        @Override
         public JsonMapping implementation(ValueMapping<?, JsonNode> mapping) {
             this.implementation = (ValueMapping) mapping;
             return this;
@@ -675,7 +694,12 @@ public abstract class AbstractAttributeBuilder<B extends AbstractAttributeBuilde
             // never bridged against the default JSON mapping's native type
             var customImplementation = this.implementation != null || implementationBuilder != null;
 
-            if (this.implementation != null) {
+            if (uidReference != null) {
+                if (customImplementation) {
+                    throw new IllegalArgumentException("Choose either referenceBy or implementation for " + name);
+                }
+                implementation = uidReference.build(connIdBuilder.referencedObjectClassName.value());
+            } else if (this.implementation != null) {
                 implementation = this.implementation;
 
             } else if (implementationBuilder != null) {
