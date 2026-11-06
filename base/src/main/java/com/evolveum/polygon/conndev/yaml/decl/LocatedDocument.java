@@ -26,6 +26,8 @@ import java.io.StringReader;
  *
  * <p>The raw source text is also retained (see {@link #rawLine}) for detail the tree loses, like a
  * block scalar's indentation.
+ *
+ * <p>A document without any content (empty, or only comments) is valid and parses to an empty mapping.
  */
 public final class LocatedDocument {
 
@@ -53,7 +55,7 @@ public final class LocatedDocument {
     private static LocatedDocument parseInternal(String sourceName, String yaml) {
         try (JsonParser parser = MAPPER.createParser(new StringReader(yaml))) {
             if (parser.nextToken() == null) {
-                throw new IllegalArgumentException("Empty YAML document (" + sourceName + ")");
+                return new LocatedDocument(sourceName, LocatedNode.object(1, 1), yaml);
             }
             LocatedNode root = parseValue(parser);
             if (parser.nextToken() != null) {
