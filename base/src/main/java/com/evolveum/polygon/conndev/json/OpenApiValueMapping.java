@@ -46,7 +46,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof StringNode stringVal) {
                 return Base64.getUrlDecoder().decode(stringVal.asText());
             }
-            throw cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     Binary("binary","any sequence of octets", byte[].class, BINARY),
@@ -142,7 +142,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode node) {
                 return node.decimalValue();
             }
-            throw cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     Decimal128("decimal128","A decimal floating-point number with 34 significant decimal digits", BigDecimal.class, NUMBER ) {
@@ -161,7 +161,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode node) {
                 return node.decimalValue();
             }
-            throw cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     DoubleInt("double-int","an integer that can be stored in an IEEE 754 double-precision number without loss of precision", BigInteger.class, NUMBER ) {
@@ -195,7 +195,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode doubleVal) {
                 return doubleVal.doubleValue();
             }
-            throw cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     Duration("duration","duration as defined by duration - RFC3339", String.class,STRING),
@@ -214,7 +214,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode floatVal) {
                 return floatVal.floatValue();
             }
-            return cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     Hostname("hostname","A host name as defined by RFC1123", String.class,STRING),
@@ -239,7 +239,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode integerVal) {
                 return (int) integerVal.shortValue();
             }
-            return cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     Int32("int32","signed 32-bit integer", Integer.class, INTEGER),
@@ -314,7 +314,7 @@ public enum OpenApiValueMapping implements JsonValueMapping {
             if (value instanceof NumericNode numericVal) {
                 return numericVal.decimalValue();
             }
-            throw cannotConvertToConnId(value);
+            return nullOrThrowCannotConvertToConnId(value);
         }
     },
     SfInteger("sf-integer","structured fields integer as defined in [RFC8941]", Integer.class, INTEGER),
@@ -404,7 +404,10 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         return new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + openApiFormat);
     }
 
-        protected IllegalArgumentException cannotConvertToConnId(Object value) {
-            return new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + connidClass.getSimpleName());
+    protected <T> T nullOrThrowCannotConvertToConnId(Object value) {
+        if (value == null || value instanceof NullNode) {
+            return null;
         }
+        throw new IllegalArgumentException("Cannot convert " + value.getClass() + " to " + connidClass.getSimpleName());
+    }
 }

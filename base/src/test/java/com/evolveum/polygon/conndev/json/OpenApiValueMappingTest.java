@@ -319,6 +319,32 @@ public class OpenApiValueMappingTest {
         assertThat(result).isNotNull().isInstanceOf(Double.class).isEqualTo(2.718);
     }
 
+    @Test
+    public void testDouble_toConnIdValue_nullNode() {
+        var result = OpenApiValueMapping.Double.toConnIdValue(JsonNodeFactory.instance.nullNode());
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    public void testDouble_toConnIdValue_javaNull() {
+        var result = OpenApiValueMapping.Double.toConnIdValue(null);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    public void testDouble_toConnIdValue_fromIntNode() {
+        var mapper = new ObjectMapper();
+        var node = mapper.createObjectNode()
+                .put("x", 504)
+                .get("x");
+
+        var result = OpenApiValueMapping.Double.toConnIdValue(node);
+
+        assertThat(result).isInstanceOf(Double.class).isEqualTo(504.0);
+    }
+
     // === Binary ===
 
     @Test
@@ -359,6 +385,30 @@ public class OpenApiValueMappingTest {
         var converted = OpenApiValueMapping.Float.toConnIdValue(floatNode);
         assertThat(converted).isInstanceOf(Float.class);
         assertThat((Float) converted).isEqualTo(2.5f);
+    }
+
+    @Test
+    public void testFloat_toConnIdValue_nullNode() {
+        var result = OpenApiValueMapping.Float.toConnIdValue(JsonNodeFactory.instance.nullNode());
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    public void testFloat_toConnIdValue_javaNull() {
+        var result = OpenApiValueMapping.Float.toConnIdValue(null);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    public void testFloat_toConnIdValue_rejectsNonNumeric() {
+        var mapper = new ObjectMapper();
+        var textNode = (StringNode) mapper.createObjectNode()
+                .put("x", "1.5")
+                .get("x");
+
+        assertThatIllegalArgumentException().isThrownBy(() -> OpenApiValueMapping.Float.toConnIdValue(textNode));
     }
 
     @Test
