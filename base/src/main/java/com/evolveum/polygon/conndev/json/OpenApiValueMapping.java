@@ -12,9 +12,11 @@ import tools.jackson.databind.node.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.Set;
 
@@ -100,7 +102,12 @@ public enum OpenApiValueMapping implements JsonValueMapping {
         @Override
         public Object toConnIdValue(JsonNode value) throws IllegalArgumentException {
             if (value instanceof StringNode stringVal) {
-                return ZonedDateTime.parse(stringVal.asText());
+                try {
+                    return ZonedDateTime.parse(stringVal.asString());
+                } catch (DateTimeParseException e) {
+                    // naive timestamp (no zone): treat as UTC, consistent with the Date mapping
+                    return LocalDateTime.parse(stringVal.asString()).atZone(ZoneOffset.UTC);
+                }
             }
             return null;
         }
