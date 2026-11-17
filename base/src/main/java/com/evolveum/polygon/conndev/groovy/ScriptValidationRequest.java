@@ -30,6 +30,8 @@ public record ScriptValidationRequest(
     public static final String SCRIPT_OPERATION_COMPILE = "compile";
     public static final String SCRIPT_ARGUMENT_ARTIFACT_KIND = "artifactKind";
     public static final String ARTIFACT_KIND_SCHEMA = "schema";
+    public static final String ARTIFACT_KIND_AUTHENTICATION = "authentication";
+    public static final String ARTIFACT_KIND_OPERATION = "operation";
     public static final String SCRIPT_ARGUMENT_FILENAME = "filename";
     public static final String SCRIPT_ARGUMENT_OVERRIDES = "overrides";
     public static final String LANGUAGE_GROOVY = "groovy";
