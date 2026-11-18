@@ -91,6 +91,12 @@
             <groupId>tools.jackson.datatype</groupId>
             <artifactId>jackson-datatype-json-org</artifactId>
         </dependency>
+        <!-- Declared directly (version managed in the root pom) so that consumers of conndev-base
+             resolve the fixed org.json instead of the 20250107 one from jackson-datatype-json-org. -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+        </dependency>
         <dependency>
             <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>

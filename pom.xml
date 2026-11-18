@@ -79,6 +79,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Pinned above the version jackson-datatype-json-org brings in (20250107):
+                 GHSA-ghc9-756g-vrcv / CVE-2026-59171, fixed in 20260719. -->
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20260814</version>
+            </dependency>
             <dependency>
                 <groupId>com.evolveum.polygon.conndev</groupId>
                 <artifactId>devtools-base</artifactId>
